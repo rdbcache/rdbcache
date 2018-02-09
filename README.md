@@ -61,7 +61,7 @@ mvn clean package
 
 Playing with rdbcache
 ---------------------
-
+<pre>
 curl http://localhost:8181/v1/set/my-hash-key/my-value
 {"timestamp":1518188737321,"duration":"0.00639","key":"my-hash-key","trace_id":"5554d502d58448e0a137196af0a4b1fa"}
 
@@ -73,5 +73,7 @@ curl http://localhost:8181/v1/select/rdbcache_monitor?limit=3
 
 curl http://localhost:8181/v1/select/rdbcache_stopwatch?limit=3
 ...
+</pre>
+
 
 You can find all the available APIs at http://rdbcache.com.
