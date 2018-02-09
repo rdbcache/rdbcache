@@ -46,8 +46,8 @@ OR Install and run rdbcache as service
 
 ./install_service
 
-Build rdbcache
---------------
+Play with source code
+---------------------
 
 rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and JDK version 1.8+.
 
@@ -57,7 +57,7 @@ git clone https://github.com/rdbcache/rdbcache.git
 
 cd rdbcache
 
-mvn clean package
+mvn clean spring-boot:run
 
 Playing with rdbcache
 ---------------------
