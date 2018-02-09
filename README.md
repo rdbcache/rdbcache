@@ -10,16 +10,24 @@ The asynchronous nature makes rdbcache very fast and useful in many scenarios. T
 Build rdbcache
 --------------
 
-rdbcache is a maven project and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and Java SDK 1.8+.
+rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and Java SDK 1.8+.
+
+Download source from github
+
+git clone https://github.com/rdbcache/rdbcache.git
+
+cd rdbcache
 
 mvn -P prod clean package
 
 ./build
 
 Install rdbcache
---------------
+----------------
 
-1) Download rdbcache.tar.gz
+Download rdbcache.tar.gz
+
+http://rdbcache.com/download/rdbcache.tar.gz
 
 tar xvf rdbcache.tar.gz
 
@@ -27,7 +35,7 @@ cd rdbcache
 
 ./rdbcache -v
 
-2) Configure redis server and mysql data source
+Configure redis server and mysql data source
 
 setup environment variables:
 
@@ -38,7 +46,7 @@ export DATABASE_SERVER=
 export DB_USER_NAME=
 export DB_USER_PASS=
 
-3) Change server port
+Change server port
 
 The default server listening port is 8181. 
 To change it:
@@ -47,11 +55,11 @@ vi application.properties
 
 server.port=NEW_PORT
 
-4) run rdbcache in background
+run rdbcache in background
 
 ./rdbcache &
 
-5) install and run rdbcache as service
+install and run rdbcache as service
 
 ./install_service
 
