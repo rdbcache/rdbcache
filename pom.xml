@@ -12,8 +12,8 @@
   <packaging>jar</packaging>
 
   <scm>
-    <connection>scm:git:https://git-codecommit.us-east-1.amazonaws.com/v1/repos/rdbcache</connection>
-    <url>https://git-codecommit.us-east-1.amazonaws.com/v1/repos/rdbcache</url>
+    <connection>scm:git:git@github.com:rdbcache/rdbcache.git</connection>
+    <url>https://github.com/rdbcache/rdbcache</url>
   </scm>
 
   <parent>
