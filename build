@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [ -e target/rdbcache.jar ]; then
+
+  mkdir target/rdbcache
+  mkdir target/rdbcache/log
+
+  cp target/rdbcache.jar target/rdbcache/rdbcache
+  cp -pr dist/* target/rdbcache
+  cp LICENSE.txt target/rdbcache
+  cp README.md target/rdbcache
+
+  cd target
+  tar --exclude=.DS_Store --exclude=*-push --exclude=ssh? --exclude=.* -zpcf rdbcache.tar.gz rdbcache
+  cd ..
+
+  echo "target/rdbcache.tar.gz is built successful!\n"
+
+else
+
+  echo "target/rdbcache.jar not found!\nPlease run \"mvn -P prod clean package\" first.\n" 
+
+fi
