@@ -59,8 +59,6 @@ cd rdbcache
 
 mvn clean package
 
-./build
-
 Playing with rdbcache
 ---------------------
 

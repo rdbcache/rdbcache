@@ -1,25 +1,46 @@
 #!/bin/bash
 
-if [ -e target/rdbcache.jar ]; then
+git add .
 
-  mkdir target/rdbcache
-  mkdir target/rdbcache/log
+git commit -m "update before release"
 
-  cp target/rdbcache.jar target/rdbcache/rdbcache
-  cp -pr dist/* target/rdbcache
-  cp LICENSE.txt target/rdbcache
-  cp README.md target/rdbcache
+git pull
 
-  cd target
-  tar --exclude=.DS_Store --exclude=*-push --exclude=ssh? --exclude=.* -zpcf rdbcache.tar.gz rdbcache
-  cd ..
-
-  cp target/rdbcache.tar.gz download/
-
-  echo "download/rdbcache.tar.gz is ready!"
-
-else
-
-  echo "target/rdbcache.jar not found!\nPlease run \"mvn -P prod clean package\" first." 
-
+if [ $? -ne 0 ]; then
+  echo "git pull failed"
+  exit 1
 fi
+
+mvn -P prod clean package
+
+if [ $? -ne 0 ]; then
+  echo "maven failed"
+  exit 1
+fi
+  
+if [ ! -f target/rdbcache.jar ]; then
+  echo "target/rdbcache.jar not found!"
+  exit 1
+fi
+
+mkdir target/rdbcache
+mkdir target/rdbcache/log
+
+cp target/rdbcache.jar target/rdbcache/rdbcache
+cp -pr dist/* target/rdbcache
+cp LICENSE.txt target/rdbcache
+cp README.md target/rdbcache
+
+cd target
+tar --exclude=.DS_Store --exclude=*-push --exclude=ssh? --exclude=.* -zpcf rdbcache.tar.gz rdbcache
+cd ..
+
+cp target/rdbcache.tar.gz download/
+
+echo "download/rdbcache.tar.gz is ready!"
+
+git add .
+
+git commit -m "update build"
+
+git push
