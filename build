@@ -14,7 +14,9 @@ if [ -e target/rdbcache.jar ]; then
   tar --exclude=.DS_Store --exclude=*-push --exclude=ssh? --exclude=.* -zpcf rdbcache.tar.gz rdbcache
   cd ..
 
-  echo "target/rdbcache.tar.gz is built successful!"
+  cp target/rdbcache.tar.gz download/
+
+  echo "download/rdbcache.tar.gz is ready!"
 
 else
 
