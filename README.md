@@ -55,7 +55,7 @@ git clone https://github.com/rdbcache/rdbcache.git
 
 cd rdbcache
 
-mvn -P prod clean package
+mvn clean package
 
 ./build
 
