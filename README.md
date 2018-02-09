@@ -5,7 +5,7 @@ What is rdbcache?
 
 rdbcache stands for redis database cache. It is an open source database cache server. rdbcache uses redis as cache to offers asynchronous cache api service. It provides eventually consistency between redis and database. rdbcache attempts to bridge the gap between redis and database.
 
-The asynchronous nature makes rdbcache very fast and useful in many scenarios. Through few simple restful APIs , rdbcache offers the convenience for developers to easily take advantage of the powers and benefits of both redis and database.
+The asynchronous nature makes rdbcache very fast and useful in many scenarios. Through few simple restful APIs, rdbcache offers the convenience for developers to easily take advantage of the powers and benefits of both redis and database.
 
 Install rdbcache
 ----------------
@@ -14,7 +14,7 @@ rdbcache is a java application. It requires Java version 1.8+ runtime environmen
 
 Download rdbcache.tar.gz:
 
-https://github.com/rdbcache/rdbcache/blob/master/download/rdbcache.tar.gz
+https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.tar.gz
 
 tar xvf rdbcache.tar.gz
 
@@ -46,19 +46,6 @@ OR Install and run rdbcache as service
 
 ./install_service
 
-Play with source code
----------------------
-
-rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and JDK version 1.8+.
-
-Download source from github
-
-git clone https://github.com/rdbcache/rdbcache.git
-
-cd rdbcache
-
-mvn clean spring-boot:run
-
 Playing with rdbcache
 ---------------------
 <pre>
@@ -77,3 +64,16 @@ curl http://localhost:8181/v1/select/rdbcache_stopwatch?limit=3
 
 
 You can find all the available APIs at http://rdbcache.com.
+
+Playing with source code
+---------------------
+
+rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and JDK version 1.8+.
+
+Download source from github
+
+git clone https://github.com/rdbcache/rdbcache.git
+
+cd rdbcache
+
+mvn clean spring-boot:run

@@ -45,7 +45,7 @@
     <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
     <buildnumber-maven-plugin.version>1.4</buildnumber-maven-plugin.version>
     <maven-jar-plugin.version>2.1</maven-jar-plugin.version>
-    <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
+    <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
 
   </properties>
 
@@ -209,6 +209,26 @@
         </configuration>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>${maven-clean-plugin.version}</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${basedir}/src/main/resources</directory>
+              <includes>
+                <include>**/data.sql</include>
+              </includes>
+              <excludes>
+                <exclude>**/*.properties</exclude>
+              </excludes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+      
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
