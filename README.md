@@ -18,6 +18,8 @@ https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.tar
 
 tar xvf rdbcache.tar.gz
 
+chown -R root.root rdbcache
+
 cd rdbcache
 
 ./rdbcache -v
