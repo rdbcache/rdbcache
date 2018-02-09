@@ -10,6 +10,8 @@ The asynchronous nature makes rdbcache very fast and useful in many scenarios. T
 Install rdbcache
 ----------------
 
+rdbcache is a java application. It requires Java version 1.8+ runtime environment.
+
 Download rdbcache.tar.gz:
 
 https://github.com/rdbcache/rdbcache/blob/master/download/rdbcache.tar.gz
@@ -47,7 +49,7 @@ OR Install and run rdbcache as service
 Build rdbcache
 --------------
 
-rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and Java SDK 1.8+.
+rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and JDK version 1.8+.
 
 Download source from github
 
