@@ -10,7 +10,7 @@ The asynchronous nature makes rdbcache very fast and useful in many scenarios. T
 Install rdbcache
 ----------------
 
-Download rdbcache.tar.gz
+###Download rdbcache.tar.gz
 
 https://github.com/rdbcache/rdbcache/blob/master/download/rdbcache.tar.gz
 
@@ -20,33 +20,27 @@ cd rdbcache
 
 ./rdbcache -v
 
-Configure redis server and mysql data source
+###Setup Environment Variables:
 
-setup environment variables:
+Please replace the values with proper ones for your environment.
 
-export REDIS_SERVER=
+export RDBCACHE_PORT=8181
 
-export DATABASE_NAME=
+export REDIS_SERVER=localhost
 
-export DATABASE_SERVER=
+export DATABASE_NAME=testdb
 
-export DB_USER_NAME=
+export DATABASE_SERVER=localhost
 
-export DB_USER_PASS=
+export DB_USER_NAME=dbuser
 
-Change server port
+export DB_USER_PASS=rdbcache
 
-The default server listening port is 8181. To change it:
-
-vi application.properties
-
-server.port=NEW_PORT
-
-run rdbcache in background
+###Run rdbcache in background
 
 ./rdbcache &
 
-install and run rdbcache as service
+###Install and run rdbcache as service
 
 ./install_service
 
