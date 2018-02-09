@@ -14,10 +14,10 @@ if [ -e target/rdbcache.jar ]; then
   tar --exclude=.DS_Store --exclude=*-push --exclude=ssh? --exclude=.* -zpcf rdbcache.tar.gz rdbcache
   cd ..
 
-  echo "target/rdbcache.tar.gz is built successful!\n"
+  echo "target/rdbcache.tar.gz is built successful!"
 
 else
 
-  echo "target/rdbcache.jar not found!\nPlease run \"mvn -P prod clean package\" first.\n" 
+  echo "target/rdbcache.jar not found!\nPlease run \"mvn -P prod clean package\" first." 
 
 fi

@@ -7,27 +7,12 @@ rdbcache stands for redis database cache. It is an open source database cache se
 
 The asynchronous nature makes rdbcache very fast and useful in many scenarios. Through few simple restful APIs , rdbcache offers the convenience for developers to easily take advantage of the powers and benefits of both redis and database.
 
-Build rdbcache
---------------
-
-rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and Java SDK 1.8+.
-
-Download source from github
-
-git clone https://github.com/rdbcache/rdbcache.git
-
-cd rdbcache
-
-mvn -P prod clean package
-
-./build
-
 Install rdbcache
 ----------------
 
 Download rdbcache.tar.gz
 
-http://rdbcache.com/download/rdbcache.tar.gz
+https://github.com/rdbcache/rdbcache/blob/master/download/rdbcache.tar.gz
 
 tar xvf rdbcache.tar.gz
 
@@ -42,14 +27,16 @@ setup environment variables:
 export REDIS_SERVER=
 
 export DATABASE_NAME=
+
 export DATABASE_SERVER=
+
 export DB_USER_NAME=
+
 export DB_USER_PASS=
 
 Change server port
 
-The default server listening port is 8181. 
-To change it:
+The default server listening port is 8181. To change it:
 
 vi application.properties
 
@@ -62,6 +49,21 @@ run rdbcache in background
 install and run rdbcache as service
 
 ./install_service
+
+Build rdbcache
+--------------
+
+rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and Java SDK 1.8+.
+
+Download source from github
+
+git clone https://github.com/rdbcache/rdbcache.git
+
+cd rdbcache
+
+mvn -P prod clean package
+
+./build
 
 Playing with rdbcache
 ---------------------
