@@ -10,7 +10,7 @@ The asynchronous nature makes rdbcache very fast and useful in many scenarios. T
 Install rdbcache
 ----------------
 
-###Download rdbcache.tar.gz
+Download rdbcache.tar.gz:
 
 https://github.com/rdbcache/rdbcache/blob/master/download/rdbcache.tar.gz
 
@@ -20,9 +20,9 @@ cd rdbcache
 
 ./rdbcache -v
 
-###Setup Environment Variables:
+Setup Environment Variables:
 
-Please replace the values with proper ones for your environment.
+Please replace the values with the proper ones for your environment.
 
 export RDBCACHE_PORT=8181
 
@@ -36,11 +36,11 @@ export DB_USER_NAME=dbuser
 
 export DB_USER_PASS=rdbcache
 
-###Run rdbcache in background
+Run rdbcache in background
 
 ./rdbcache &
 
-###Install and run rdbcache as service
+OR Install and run rdbcache as service
 
 ./install_service
 
