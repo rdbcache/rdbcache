@@ -102,7 +102,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 String msg = e.getCause().getMessage();
                 LOGGER.error(msg);
                 e.printStackTrace();
-                if (Config.getEnableDbFallback()) {
+                if (Cfg.getEnableDbFallback()) {
                     context.logTraceMessage(msg);
                 } else {
                     throw new BadRequestException(context, msg);
@@ -482,7 +482,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 String msg = e.getCause().getMessage();
                 LOGGER.error(msg);
                 e.printStackTrace();
-                if (Config.getEnableDbFallback()) {
+                if (Cfg.getEnableDbFallback()) {
                     context.logTraceMessage(msg);
                 } else {
                     throw new BadRequestException(context, msg);
@@ -505,7 +505,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 return true;
             }
 
-            if (Config.getEnableDbFallback()) {
+            if (Cfg.getEnableDbFallback()) {
                 String msg = "save fallbacked to default table for " + pair.getId();
                 LOGGER.warn(msg);
                 context.logTraceMessage(msg);
@@ -681,7 +681,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                     String msg = e.getCause().getMessage();
                     LOGGER.error(msg);
                     e.printStackTrace();
-                    if (Config.getEnableDbFallback()) {
+                    if (Cfg.getEnableDbFallback()) {
                         context.logTraceMessage(msg);
                     } else {
                         throw new BadRequestException(context, msg);
@@ -690,7 +690,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             }
             String msg = "update fallbacked to default table for " + pair.getId();
             LOGGER.warn(msg);
-            if (Config.getEnableDbFallback()) {
+            if (Cfg.getEnableDbFallback()) {
                 context.logTraceMessage(msg);
             } else {
                 throw new BadRequestException(context, "failed to update database");
@@ -740,7 +740,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 String msg = e.getCause().getMessage();
                 LOGGER.error(msg);
                 e.printStackTrace();
-                if (Config.getEnableDbFallback()) {
+                if (Cfg.getEnableDbFallback()) {
                     context.logTraceMessage(msg);
                 } else {
                     throw new BadRequestException(context, msg);
@@ -748,7 +748,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             }
             String msg = "delete fallbacked to default table for " + pair.getId();
             LOGGER.warn(msg);
-            if (Config.getEnableDbFallback()) {
+            if (Cfg.getEnableDbFallback()) {
                 context.logTraceMessage(msg);
             } else {
                 throw new BadRequestException(context, "failed to delete from database");

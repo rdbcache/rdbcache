@@ -21,10 +21,15 @@
 
 package com.rdbcache.controllers;
 
-import com.rdbcache.helpers.Config;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
 import com.rdbcache.helpers.Utils;
+import com.rdbcache.models.KeyInfo;
+import com.rdbcache.models.KvIdType;
+import com.rdbcache.models.KvPair;
+import com.rdbcache.models.Query;
+
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.NotFoundException;
 
@@ -33,16 +38,13 @@ import org.springframework.web.bind.annotation.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.rdbcache.models.KeyInfo;
-import com.rdbcache.models.KvIdType;
-import com.rdbcache.models.KvPair;
-import com.rdbcache.models.Query;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
+
 import java.text.DecimalFormat;
-import java.util.*;
 import java.util.regex.Pattern;
+import java.util.*;
 
 @RestController
 public class RedisDbaseCacheApis {
@@ -55,7 +57,6 @@ public class RedisDbaseCacheApis {
 
     @PostConstruct
     private void init() {
-
         expPattern = Pattern.compile("([0-9]+|-[0-9]+|\\+[0-9]+)");
         durationFormat = new DecimalFormat("#.######");
     }
@@ -503,7 +504,7 @@ public class RedisDbaseCacheApis {
         }
 
         Context context = new Context(key, false);
-        if (Config.getEnableMonitor()) context.enableMonitor(request);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
 
         AppCtx.getAsyncOps().doDeleteFromRedis(context);
 
@@ -533,7 +534,7 @@ public class RedisDbaseCacheApis {
         }
 
         Context context = new Context(false);
-        if (Config.getEnableMonitor()) context.enableMonitor(request);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
 
         List<KvPair> pairs = context.getPairs();
 
@@ -569,7 +570,7 @@ public class RedisDbaseCacheApis {
         }
 
         Context context = new Context(key, false);
-        if (Config.getEnableMonitor()) context.enableMonitor(request);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
 
         AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context);
 
@@ -599,7 +600,7 @@ public class RedisDbaseCacheApis {
         }
 
         Context context = new Context(false);
-        if (Config.getEnableMonitor()) context.enableMonitor(request);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
 
         List<KvPair> pairs = context.getPairs();
 
@@ -783,7 +784,7 @@ public class RedisDbaseCacheApis {
         }
 
         Context context = new Context(true);
-        if (Config.getEnableMonitor()) context.enableMonitor(request);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
 
         KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(traceId, "trace"));
         if (dbPair != null) {
@@ -811,7 +812,7 @@ public class RedisDbaseCacheApis {
         }
 
         Context context = new Context( true);
-        if (Config.getEnableMonitor()) context.enableMonitor(request);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
         List<KvPair> pairs = context.getPairs();
 
         for (String referenced_id: traceIds) {
@@ -832,7 +833,7 @@ public class RedisDbaseCacheApis {
             String key,
             Optional<String> opt1, Optional<String> opt2) throws BadRequestException {
 
-        if (Config.getEnableMonitor()) context.enableMonitor(request);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
 
         KeyInfo keyInfo = null;
         if (key != null && !key.equals("*")) {
@@ -858,7 +859,7 @@ public class RedisDbaseCacheApis {
             if (opts[0] != null) {
                 keyInfo.setExpire(opts[0]);
             } else {
-                keyInfo.setExpire(Config.getDefaultExpire());
+                keyInfo.setExpire(Cfg.getDefaultExpire());
             }
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {

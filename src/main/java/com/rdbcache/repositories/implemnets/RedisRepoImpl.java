@@ -22,7 +22,7 @@
 package com.rdbcache.repositories.implemnets;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.helpers.Config;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
 import com.rdbcache.models.KeyInfo;
@@ -65,7 +65,7 @@ public class RedisRepoImpl implements RedisRepo {
         LOGGER.trace("ifExits: " + key + " table: " + table);
 
         StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
-        boolean result = AppCtx.getRedisTemplate().hasKey(Config.getHdataKey(key));
+        boolean result = AppCtx.getRedisTemplate().hasKey(Cfg.getHdataKey(key));
         if (stopWatch != null) stopWatch.stopNow();
 
         return result;
@@ -80,7 +80,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         LOGGER.trace("findOne: " + key + " table: " + table);
 
-        String hashKey = Config.getHdataKey(key);
+        String hashKey = Cfg.getHdataKey(key);
         Map<String, Object> map = null;
 
         StopWatch stopWatch = context.startStopWatch("redis", "hashOps.entries");
@@ -115,7 +115,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         LOGGER.trace("saveOne: " + key + " table: " + table);
 
-        String hashKey = Config.getHdataKey(key);
+        String hashKey = Cfg.getHdataKey(key);
         Map<String, Object> map = pair.getData();
 
         StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
@@ -142,7 +142,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         LOGGER.trace("updateIfExists: " + key + " table: " + table);
 
-        String hashKey = Config.getHdataKey(key);
+        String hashKey = Cfg.getHdataKey(key);
 
         StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
         boolean result = AppCtx.getRedisTemplate().hasKey(hashKey);
@@ -179,7 +179,7 @@ public class RedisRepoImpl implements RedisRepo {
         for (KvPair pair: pairs) {
 
             String key = pair.getId();
-            String hashKey = Config.getHdataKey(key);
+            String hashKey = Cfg.getHdataKey(key);
             Map<String, Object> map = null;
 
             StopWatch stopWatch = context.startStopWatch("redis", "hashOps.entries");
@@ -219,7 +219,7 @@ public class RedisRepoImpl implements RedisRepo {
         for (KvPair pair: pairs) {
 
             String key = pair.getId();
-            String hashKey = Config.getHdataKey(key);
+            String hashKey = Cfg.getHdataKey(key);
             Map<String, Object> map = pair.getData();
             StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
             try {
@@ -248,7 +248,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         LOGGER.trace("findAndSave: " + key + " table: " + table);
 
-        String hashKey = Config.getHdataKey(key);
+        String hashKey = Cfg.getHdataKey(key);
         Map<String, Object> map = pair.getData();
         Map<String, Object> fmap = null;
 
@@ -291,7 +291,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         AppCtx.getKeyInfoRepo().deleteOne(context);
 
-        String hashKey = Config.getHdataKey(key);
+        String hashKey = Cfg.getHdataKey(key);
 
         StopWatch stopWatch = context.startStopWatch("redis", "hashOps.delete");
         AppCtx.getRedisTemplate().delete(hashKey);
@@ -322,7 +322,7 @@ public class RedisRepoImpl implements RedisRepo {
         String table = keyInfo.getTable();
 
         // get existing expire key
-        String expKey = Config.getEventPrefix() + "::" + key;
+        String expKey = Cfg.getEventPrefix() + "::" + key;
 
         StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
         Set<String> expKeys = AppCtx.getRedisTemplate().keys(expKey + "::*");

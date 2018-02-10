@@ -2,6 +2,9 @@
 #
 # install_service
 #
+# By Sam Wen @ 02/10/2018
+#
+##########################
 
 if [ -L /etc/init.d/rdbcache ]; then
   service rdbcache stop

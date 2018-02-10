@@ -21,18 +21,13 @@
 
 package com.rdbcache.helpers;
 
-import com.rdbcache.exceptions.ServerErrorException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.stereotype.Component;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
 @Component
-public class Config {
+public class Cfg {
 
     private static String hdataPrefix = "";
 
@@ -134,7 +129,7 @@ public class Config {
 
     @Value("${rdbcache.local_cache_max_size}")
     public void setMaxCacheSize(Long maxCacheSize) {
-        Config.maxCacheSize = maxCacheSize;
+        Cfg.maxCacheSize = maxCacheSize;
     }
 
     public static Long getMaxCacheSize() {
@@ -152,7 +147,7 @@ public class Config {
 
     @Value("${rdbcache.enable_db_fallback}")
     public void setEnableDbFallback(Boolean enableDbFallback) {
-        Config.enableDbFallback = enableDbFallback;
+        Cfg.enableDbFallback = enableDbFallback;
     }
 
     public static Boolean getEnableDbFallback() {

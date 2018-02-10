@@ -22,7 +22,7 @@
 package com.rdbcache.services;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.helpers.Config;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
 import com.rdbcache.models.KvIdType;
@@ -97,7 +97,7 @@ public class DbaseOps {
             return list;
         }
 
-        Object object = AppCtx.getLocalCache().put("database::table_list", Config.getTableInfoCacheTTL() * 1000L, () -> {
+        Object object = AppCtx.getLocalCache().put("database::table_list", Cfg.getTableInfoCacheTTL() * 1000L, () -> {
             List<String> list2 = fetchTableList(context);
             if (list2 == null) {
                 LOGGER.error("failed to get table list");
@@ -116,7 +116,7 @@ public class DbaseOps {
             return map;
         }
 
-        Object object = AppCtx.getLocalCache().put("table_columns::" + table, Config.getTableInfoCacheTTL() * 1000L, () -> {
+        Object object = AppCtx.getLocalCache().put("table_columns::" + table, Cfg.getTableInfoCacheTTL() * 1000L, () -> {
             Map<String, Object> map2 = fetchTableColumns(context, table);
             if (map2 == null) {
                 String msg = "failed to get table columns";
@@ -139,7 +139,7 @@ public class DbaseOps {
             return map;
         }
 
-        Object object = AppCtx.getLocalCache().put("table_indexes::" + table, Config.getTableInfoCacheTTL() * 1000L, () -> {
+        Object object = AppCtx.getLocalCache().put("table_indexes::" + table, Cfg.getTableInfoCacheTTL() * 1000L, () -> {
             Map<String, Object> map2 = fetchTableIndexes(context, table);
             if (map2 == null) {
                 String msg = "failed to get table indexes";

@@ -34,92 +34,35 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import redis.clients.jedis.JedisPoolConfig;
 
 @Configuration
 public class RedisConfig {
 
     @Bean
-    RedisProperties redisProperties() {
+    public RedisProperties redisProperties() {
         return new RedisProperties();
     }
 
     @Bean
-    JedisConnectionFactory redisConnectionFactory() {
+    public JedisConnectionFactory redisConnectionFactory() {
         JedisConnectionFactory factory = new JedisConnectionFactory();
 
         RedisProperties properties = redisProperties();
 
-        if (properties.getHost() != null) {
-            System.out.println("properties.getHost() = "+properties.getHost());
-            factory.setHostName(properties.getHost());
-        } else {
-            factory.setHostName("localhost");
-        }
-        if (properties.getPort() != null) {
-            System.out.println("properties.getPort() = "+properties.getPort());
-            factory.setPort(properties.getPort());
-        } else {
-            factory.setPort(6379);
-        }
-        if (properties.getPassword() != null) {
-            System.out.println("properties.getPassword() = "+properties.getPassword());
-            factory.setPassword(properties.getPassword());
-        }
-        if (properties.getTimeout() != null) {
-            System.out.println("properties.getTimeout() = "+properties.getTimeout());
-            factory.setTimeout(properties.getTimeout());
-        }
-
-        factory.setUseSsl(false);
-        factory.setUsePool(true);
-
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        poolConfig.setBlockWhenExhausted(true);
-
-        if (properties.getPool().getMaxActive() != null) {
-            System.out.println("properties.getPool().getMaxActive() = "+properties.getPool().getMaxActive());
-            int maxTotal = properties.getPool().getMaxActive();
-            if (properties.getPool().getMinIdle() != null) {
-                maxTotal += properties.getPool().getMinIdle();
-            } else {
-                maxTotal += 2;
-            }
-            poolConfig.setMaxTotal(maxTotal);
-        } else {
-            poolConfig.setMaxTotal(18);
-        }
-        if (properties.getPool().getMaxIdle() != null) {
-            System.out.println("properties.getPool().getMaxIdle() = "+properties.getPool().getMaxIdle());
-            poolConfig.setMaxIdle(properties.getPool().getMaxIdle());
-        } else {
-            poolConfig.setMaxIdle(8);
-        }
-        if (properties.getPool().getMinIdle() != null) {
-            System.out.println("properties.getPool().getMinIdle() = "+properties.getPool().getMinIdle());
-            poolConfig.setMinIdle(properties.getPool().getMinIdle());
-        } else {
-            poolConfig.setMinIdle(2);
-        }
-        if (properties.getPool().getMaxWait() != null) {
-            System.out.println("properties.getPool().getMaxWait() = "+properties.getPool().getMaxWait());
-            poolConfig.setMaxWaitMillis(properties.getPool().getMaxWait());
-        } else {
-            poolConfig.setMaxWaitMillis(60000);
-        }
-        factory.setPoolConfig(poolConfig);
+        properties.configure(factory);
 
         factory.afterPropertiesSet();
+
         return factory;
     }
 
     @Bean
-    ExpireOps expireOps() {
+    public ExpireOps expireOps() {
         return new ExpireOps();
     }
 
     @Bean
-    RedisTemplate<String, KeyInfo> keyInfoTemplate() {
+    public RedisTemplate<String, KeyInfo> keyInfoTemplate() {
 
         RedisTemplate<String, KeyInfo> template =  new RedisTemplate<String, KeyInfo>();
 
@@ -143,7 +86,7 @@ public class RedisConfig {
     }
 
     @Bean
-    MessageListenerAdapter listenerAdapter() {
+    public MessageListenerAdapter listenerAdapter() {
         return new MessageListenerAdapter(expireOps(), "onMessage");
     }
 

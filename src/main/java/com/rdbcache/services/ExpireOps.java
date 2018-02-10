@@ -21,7 +21,7 @@
 
 package com.rdbcache.services;
 
-import com.rdbcache.helpers.Config;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
 import com.rdbcache.models.KeyInfo;
@@ -75,7 +75,7 @@ public class ExpireOps {
         LOGGER.trace("setExpireKey: " + key + " expire: " +keyInfo.getExpire());
 
         // get existing expire key
-        String expKey = Config.getEventPrefix() + "::" + key;
+        String expKey = Cfg.getEventPrefix() + "::" + key;
 
         StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
         Set<String> expKeys = AppCtx.getRedisTemplate().keys(expKey + "::*");
@@ -129,7 +129,7 @@ public class ExpireOps {
 
         LOGGER.trace("Received message: " + message);
 
-        if (!message.startsWith(Config.getEventPrefix())) {
+        if (!message.startsWith(Cfg.getEventPrefix())) {
             return;
         }
 
@@ -145,7 +145,7 @@ public class ExpireOps {
 
         Context context = new Context(key, traceId);
 
-        if (Config.getEnableMonitor()) context.enableMonitor(message, "event", key);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(message, "event", key);
 
         KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
         if (keyInfo == null) {

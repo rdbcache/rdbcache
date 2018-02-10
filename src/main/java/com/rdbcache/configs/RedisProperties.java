@@ -1,7 +1,6 @@
 package com.rdbcache.configs;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +14,10 @@ import java.net.URL;
 @Configuration
 @ComponentScan(basePackages = { "com.rdbcache.*" })
 @ConfigurationProperties(prefix = "spring.redis")
-@PropertySources({@PropertySource("classpath:application.properties"), @PropertySource("./application.properties")})
+@PropertySources({
+        @PropertySource("classpath:application.properties"),
+        @PropertySource(value = "./application.properties", ignoreResourceNotFound = true)
+})
 public class RedisProperties {
 
     private String host;
@@ -134,25 +136,21 @@ public class RedisProperties {
 
     public void configure(JedisConnectionFactory factory) {
         
-        if (getHost() != null) {
-            System.out.println("getHost() = "+getHost());
-            factory.setHostName(getHost());
+        if (host != null) {
+            factory.setHostName(host);
         } else {
             factory.setHostName("localhost");
         }
-        if (getPort() != null) {
-            System.out.println("getPort() = "+getPort());
-            factory.setPort(getPort());
+        if (port != null) {
+            factory.setPort(port);
         } else {
             factory.setPort(6379);
         }
-        if (getPassword() != null) {
-            System.out.println("getPassword() = "+getPassword());
-            factory.setPassword(getPassword());
+        if (password != null) {
+            factory.setPassword(password);
         }
-        if (getTimeout() != null) {
-            System.out.println("getTimeout() = "+getTimeout());
-            factory.setTimeout(getTimeout());
+        if (timeout != null) {
+            factory.setTimeout(timeout);
         }
 
         factory.setUseSsl(false);
@@ -161,11 +159,10 @@ public class RedisProperties {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setBlockWhenExhausted(true);
 
-        if (pool.getMaxActive() != null) {
-            System.out.println("pool.getMaxActive() = "+pool.getMaxActive());
-            int maxTotal = pool.getMaxActive();
-            if (pool.getMinIdle() != null) {
-                maxTotal += pool.getMinIdle();
+        if (pool.maxActive != null) {
+            int maxTotal = pool.maxActive;
+            if (pool.minIdle != null) {
+                maxTotal += pool.minIdle;
             } else {
                 maxTotal += 2;
             }
@@ -173,21 +170,18 @@ public class RedisProperties {
         } else {
             poolConfig.setMaxTotal(18);
         }
-        if (pool.getMaxIdle() != null) {
-            System.out.println("pool.getMaxIdle() = "+pool.getMaxIdle());
-            poolConfig.setMaxIdle(pool.getMaxIdle());
+        if (pool.maxIdle != null) {
+            poolConfig.setMaxIdle(pool.maxIdle);
         } else {
             poolConfig.setMaxIdle(8);
         }
-        if (pool.getMinIdle() != null) {
-            System.out.println("pool.getMinIdle() = "+pool.getMinIdle());
-            poolConfig.setMinIdle(pool.getMinIdle());
+        if (pool.minIdle != null) {
+            poolConfig.setMinIdle(pool.minIdle);
         } else {
             poolConfig.setMinIdle(2);
         }
-        if (pool.getMaxWait() != null) {
-            System.out.println("pool.getMaxWait() = "+pool.getMaxWait());
-            poolConfig.setMaxWaitMillis(pool.getMaxWait());
+        if (pool.maxWait != null) {
+            poolConfig.setMaxWaitMillis(pool.maxWait);
         } else {
             poolConfig.setMaxWaitMillis(60000);
         }

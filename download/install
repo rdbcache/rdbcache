@@ -2,6 +2,9 @@
 #
 # install rdbcache
 #
+# By Sam Wen @ 02/10/2018
+#
+##########################
 
 DOWNLOAD_URL='https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.tar.gz'
 

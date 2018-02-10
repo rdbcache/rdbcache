@@ -23,7 +23,7 @@ package com.rdbcache.services;
 
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Cached;
-import com.rdbcache.helpers.Config;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.models.KeyInfo;
 
 import org.slf4j.Logger;
@@ -109,7 +109,7 @@ public class LocalCache extends Thread {
             clone = keyInfo.clone();
             keyInfo.setIsNew(false);
         }
-        Cached cached = new Cached(clone, Config.getKeyInfoCacheTTL() * 1000L);
+        Cached cached = new Cached(clone, Cfg.getKeyInfoCacheTTL() * 1000L);
         cache.put("keyinfo::" + key, cached);
     }
 
@@ -174,7 +174,7 @@ public class LocalCache extends Thread {
                 timeoutKeys.clear();
                 lastAccessSortedKeys.clear();
                 
-                Thread.sleep(Config.getRecycleSchedule() * 1000L);
+                Thread.sleep(Cfg.getRecycleSchedule() * 1000L);
 
                 for (Map.Entry<String, Cached> entry: cache.entrySet()) {
                     Cached cached = entry.getValue();
@@ -215,7 +215,7 @@ public class LocalCache extends Thread {
                     }
                 }
 
-                if (cache.size() < Config.getMaxCacheSize() * 3 / 4) {
+                if (cache.size() < Cfg.getMaxCacheSize() * 3 / 4) {
                     continue;
                 }
 
@@ -227,7 +227,7 @@ public class LocalCache extends Thread {
 
                 for (Pair<String, Long> context: lastAccessSortedKeys) {
                     cache.remove(context.getKey());
-                    if (cache.size() < Config.getMaxCacheSize() * 3 / 4) {
+                    if (cache.size() < Cfg.getMaxCacheSize() * 3 / 4) {
                         break;
                     }
                 }

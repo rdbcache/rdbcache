@@ -21,7 +21,7 @@
 
 package com.rdbcache.services;
 
-import com.rdbcache.helpers.Config;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
 import com.rdbcache.models.KeyInfo;
@@ -51,7 +51,7 @@ public class TaskQueue extends Thread {
 
     @PostConstruct
     public void init() {
-        taskQueue = Config.getHkeyPrefix() + ":queue";
+        taskQueue = Cfg.getHkeyPrefix() + ":queue";
         listOps = redisTemplate.opsForList();
     }
 
@@ -88,11 +88,11 @@ public class TaskQueue extends Thread {
 
                 Context context = new Context(key, traceId);
 
-                if (Config.getEnableMonitor()) context.enableMonitor(task, "queue", action);
+                if (Cfg.getEnableMonitor()) context.enableMonitor(task, "queue", action);
 
                 KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
                 if (keyInfo == null) {
-                    keyInfo = new KeyInfo(Config.getDefaultExpire(), "value");
+                    keyInfo = new KeyInfo(Cfg.getDefaultExpire(), "value");
                 }
 
                 //...

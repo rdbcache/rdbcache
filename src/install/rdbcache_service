@@ -3,7 +3,10 @@
 # rdbcache service
 #
 # chkconfig: 2345 99 01
-######################################
+#
+# By Sam Wen @ 02/10/2018
+#
+##########################
 
 pid_file=/var/run/rdbcache.pid
 log_file=/var/log/rdbcache.log
