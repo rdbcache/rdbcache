@@ -32,9 +32,6 @@ cp -r dist/* target/rdbcache
 
 cd target/rdbcache
 
-chmod +x rdbcache
-ln -s rdbcache.jar rdbcache
-
 cd ..
 tar --exclude=.DS_Store --exclude=.* -zcf rdbcache.tar.gz rdbcache
 cd ..

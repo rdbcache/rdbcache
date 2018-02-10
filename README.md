@@ -40,13 +40,7 @@ export DB_USER_NAME=dbuser
 
 export DB_USER_PASS=rdbcache
 
-Run rdbcache in background
-
-./rdbcache &
-
-OR Install and run rdbcache as service
-
-./install_service
+./rdbcache
 
 Playing with rdbcache
 ---------------------
