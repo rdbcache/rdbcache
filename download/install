@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# install
+# install rdbcache
 #
 
 DOWNLOAD_URL='https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.tar.gz'
@@ -44,41 +44,48 @@ if [ "${VERSION_ARRAY[0]}" -eq 1 ] && [ "${VERSION_ARRAY[1]}" -lt 8 ] ; then
   exit 1
 fi
 
-DOWNLOAD_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}")" && pwd )"
+echo "Download..."
 
-if [ ! -f $DOWNLOAD_DIR/rdbcache.jar ]; then
-  echo "Download..."
-  WGET_BIN=$(which wget)
-  if [ -z "$WGET_BIN" ]; then
-    echo "Unable to find wget. Please install wget."
-    exit 1
-  fi
-  $WGET_BIN $DOWNLOAD_URL
-  if [ $? -ne 0 ]; then
-    echo "Run wget failed"
-    exit 1
-  fi
-  if [ ! -f ./rdbcache.tar.gz ]; then
-    echo "Failed to locate rdbcache.tar.gz"
-    exit 1
-  fi
-  tar xvf ./rdbcache.tar.gz
-  DOWNLOAD_DIR=$(pwd)/rdbcache
+WGET_BIN=$(which wget)
+if [ -z "$WGET_BIN" ]; then
+  echo "Unable to find wget. Please install wget."
+  exit 1
+fi
+if [ -f ./rdbcache.tar.gz ]; then
   rm -f ./rdbcache.tar.gz
 fi
+$WGET_BIN -q $DOWNLOAD_URL
+if [ $? -ne 0 ]; then
+  echo "Run wget failed"
+  exit 1
+fi
+if [ ! -f ./rdbcache.tar.gz ]; then
+  echo "Failed to locate rdbcache.tar.gz"
+  exit 1
+fi
+if [ -d ./rdbcache ]; then
+  rm -rf rdbcache
+fi
+tar xf ./rdbcache.tar.gz
+DOWNLOAD_DIR=$(pwd)/rdbcache
+rm -f ./rdbcache.tar.gz
 
-if [ ! -f $DOWNLOAD_DIR/application.properties ]; then
-  echo "File application.properties not found."
+if [ ! -f $DOWNLOAD_DIR/rdbcache.jar ]; then
+  echo "File rdbcache.jar not found."
   exit 1
 fi
 
 chown -R root.root $DOWNLOAD_DIR
 
+if [ -d /opt/rdbcache ]; then
+  rm -rf /opt/rdbcache
+fi
+
 mkdir -p /opt/rdbcache
 
-cp $DOWNLOAD_DIR/rdbcache.jar /opt/rdbcache
+cp $DOWNLOAD_DIR/* /opt/rdbcache
 
-cp $DOWNLOAD_DIR/application.properties /opt/rdbcache
+rm -rf ./rdbcache
 
 cat <<EOT > /opt/rdbcache/rdbcache
 #!/bin/bash
@@ -90,7 +97,12 @@ EOT
 
 chmod +x /opt/rdbcache/rdbcache
 
-ln -s /usr/bin/rdbcache /opt/rdbcache/rdbcache
+if [ -L /usr/bin/rdbcache ]; then
+  rm -f /usr/bin/rdbcache
+fi
 
+ln -s /opt/rdbcache/rdbcache /usr/bin/rdbcache
+
+echo ""
 echo "rdbcache is installed in /opt/rdbcache folder"
-echo "You can run /opt/rdbcache/install_service to install and run rdbcache as service"
+echo "You can run /opt/rdbcache/install_service to install rdbcache as service"

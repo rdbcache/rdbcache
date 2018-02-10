@@ -106,6 +106,8 @@ public class TaskQueue extends Thread {
 
                 LOGGER.warn("Connection failure occurred. Restarting task queue after 5000 ms");
 
+                e.printStackTrace();
+
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ie) {
@@ -117,7 +119,7 @@ public class TaskQueue extends Thread {
             } catch (Exception e) {
                 String msg = e.getCause().getMessage();
                 LOGGER.error(msg);
-                //e.printStackTrace();
+                e.printStackTrace();
             }
         }
     }

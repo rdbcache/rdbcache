@@ -70,12 +70,8 @@ public class Application implements ApplicationRunner {
 
         String messsage = "";
 
-        messsage += "\nredis url: " + redisUrl + ", pool size: (" +
-                jedisConnectionFactory.getPoolConfig().getMinIdle() + ", " +
-                jedisConnectionFactory.getPoolConfig().getMaxTotal() + ")";
-        messsage += "\ndatabase url: " + dbaseUrl + ", pool size: (" +
-                hikariDataSource.getMinimumIdle() + ", " +
-                hikariDataSource.getMaximumPoolSize() + ")";
+        messsage += "\nredis url: " + redisUrl + ", pool size: " + jedisConnectionFactory.getPoolConfig().getMaxTotal();
+        messsage += "\ndatabase url: " + dbaseUrl + ", pool size: " + hikariDataSource.getMaximumPoolSize();
 
         LOGGER.info(messsage);
 
