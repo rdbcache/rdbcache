@@ -175,8 +175,8 @@
       </activation>
       <properties>
         <build.profile.id>prod</build.profile.id>
-        <build.doCheck>false</build.doCheck>
-        <build.doUpdate>false</build.doUpdate>
+        <build.doCheck>true</build.doCheck>
+        <build.doUpdate>true</build.doUpdate>
         <profile_finalname>${project.artifactId}</profile_finalname>
       </properties>
     </profile>
