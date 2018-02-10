@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# install
+#
+
+DOWNLOAD_URL='https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.tar.gz'
+
+if [ "$(id -u)" -ne 0 ] ; then
+  echo "This script must run under root."
+  exit 1
+fi
+
+JAVA_BIN=$(which java)
+
+if [ -z "$JAVA_BIN" ]; then
+  if [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]]; then
+      JAVA_BIN="$JAVA_HOME/bin/java"
+  elif type -p java > /dev/null 2>&1; then
+      JAVA_BIN=$(type -p java)
+  elif [[ -x "/usr/bin/java" ]];  then
+      JAVA_BIN="/usr/bin/java"
+  else
+      echo "Unable to find Java"
+      exit 1
+  fi
+fi
+
+JAVA_VERSION=$(echo "$($JAVA_BIN -version 2>&1)" | grep "java version" | awk '{ print substr($3, 2, length($3)-2); }')
+
+if [ -z "$JAVA_VERSION" ]; then
+  echo "Unable to get Java version"
+  exit 1
+fi
+
+VERSION_ARRAY=($(echo "$JAVA_VERSION" | tr \. ' '))
+
+if [ "${VERSION_ARRAY[0]}" -lt 1 ]; then
+  echo "Iava version $JAVA_VERSION is not supported. Please upgrade java to 1.8 or higher version."
+  exit 1
+fi
+
+if [ "${VERSION_ARRAY[0]}" -eq 1 ] && [ "${VERSION_ARRAY[1]}" -lt 8 ] ; then
+  echo "Java version $JAVA_VERSION is not supported. Please upgrade java to 1.8 or higher version."
+  exit 1
+fi
+
+DOWNLOAD_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}")" && pwd )"
+
+if [ ! -f $DOWNLOAD_DIR/rdbcache.jar ]; then
+  echo "Download..."
+  WGET_BIN=$(which wget)
+  if [ -z "$WGET_BIN" ]; then
+    echo "Unable to find wget. Please install wget."
+    exit 1
+  fi
+  $WGET_BIN $DOWNLOAD_URL
+  if [ $? -ne 0 ]; then
+    echo "Run wget failed"
+    exit 1
+  fi
+  if [ ! -f ./rdbcache.tar.gz ]; then
+    echo "Failed to locate rdbcache.tar.gz"
+    exit 1
+  fi
+  tar xvf ./rdbcache.tar.gz
+  DOWNLOAD_DIR=$(pwd)/rdbcache
+  rm -f ./rdbcache.tar.gz
+fi
+
+if [ ! -f $DOWNLOAD_DIR/application.properties ]; then
+  echo "File application.properties not found."
+  exit 1
+fi
+
+chown -R root.root $DOWNLOAD_DIR
+
+mkdir -p /opt/rdbcache
+
+cp $DOWNLOAD_DIR/rdbcache.jar /opt/rdbcache
+
+cp $DOWNLOAD_DIR/application.properties /opt/rdbcache
+
+cat <<EOT > /opt/rdbcache/rdbcache
+#!/bin/bash
+
+source /root/.bash_profile
+cd /opt/rdbcache
+$JAVA_BIN -jar ./rdbcache.jar "\$@"
+EOT
+
+chmod +x /opt/rdbcache/rdbcache
+
+ln -s /usr/bin/rdbcache /opt/rdbcache/rdbcache
+
+echo "rdbcache is installed in /opt/rdbcache folder"
+echo "You can run /opt/rdbcache/install_service to install and run rdbcache as service"
