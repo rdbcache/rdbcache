@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# rdbcache service
+#
+# chkconfig: 2345 99 01
+######################################
+
+pid_file=/var/run/rdbcache.pid
+log_file=/var/log/rdbcache.log
+app_file=/opt/rdbcache/rdbcache
+
+is_running() {
+  running=0
+  if [ -f $pid_file ]; then
+    pid=$(cat "$pid_file")
+    ps -p "$pid" &> /dev/null
+    if [ $? -ne 0 ]; then
+      rm -f "$pid_file"
+    else
+      running=1
+    fi
+  fi
+  echo $running
+}
+
+start() {
+  if [[ "$(is_running)" -eq 0 ]]; then
+    "$app_file" "$@" >> "$log_file" 2>&1 &
+    pid=$!
+    disown $pid
+    echo "$pid" > "$pid_file"
+    echo "OK! $0 started"
+  else
+    echo "$0 is running"
+  fi
+  exit 0
+}
+stop() {
+  if [[ "$(is_running)" -eq 1 ]]; then
+    pid=$(cat "$pid_file")
+    kill "$pid" &> /dev/null
+    if [ $? -ne 0 ]; then
+      echo "Failed to kill process $0"
+      exit 1
+    fi
+    for i in $(seq 1 15); do
+      if [ "$(is_running)" -eq 0 ]; then
+        echo "Stopped"
+        exit 0
+      fi
+      [[ $i -eq 10 ]] && kill "$pid" &> /dev/null
+      sleep 1
+    done
+    echo "Failed to stop $0";
+    exit 1
+  else
+    echo "$0 is not running"
+    exit 0
+  fi
+}
+status() {
+  if [[ "$(is_running)" -eq 0 ]]; then
+    echo "$0 is not running"
+    exit 1
+  else
+    echo "$0 is running"
+    exit 0
+  fi
+}
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    status
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  *)
+    echo "Usage: $app_file { start | stop | restart status }"
+    exit 1
+    ;;
+esac
+exit $?

@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# install_service
+#
+
+if [ -L /etc/init.d/rdbcache ]; then
+  service rdbcache stop
+  rm -f /etc/init.d/rdbcache
+fi
+
+ln -s /opt/rdbcache/rdbcache_service /etc/init.d/rdbcache
+
+if [ -L /etc/rdbcache.conf ]; then
+  rm -f /etc/rdbcache.conf
+fi
+
+if [ -f /var/log/rdbcache.log ]; then
+  rm -f /var/log/rdbcache.log
+fi
+
+touch /var/log/rdbcache.log
+chmod 666 /var/log/rdbcache.log
+
+cat <<EOT > /etc/logrotate.d/rdbcache
+"/var/log/rdbcache.log" {
+  weekly
+  size 512k
+  rotate 12
+  create 666 root root
+  missingok
+  compress
+  delaycompress
+  copytruncate
+  notifempty
+}
+EOT
+
+ln -s /opt/rdbcache/application.properties /etc/rdbcache.conf
+
+chkconfig --add rdbcache
+
+service rdbcache start

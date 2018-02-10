@@ -21,11 +21,9 @@
 
 package com.rdbcache.configs;
 
-import com.rdbcache.helpers.Config;
 import com.rdbcache.helpers.NullableSerializer;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.services.ExpireOps;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -42,34 +40,48 @@ import redis.clients.jedis.JedisPoolConfig;
 public class RedisConfig {
 
     @Bean
+    RedisProperties redisProperties() {
+        return new RedisProperties();
+    }
+
+    @Bean
     JedisConnectionFactory redisConnectionFactory() {
         JedisConnectionFactory factory = new JedisConnectionFactory();
 
-        if (Config.getRedisServer() != null) {
-            factory.setHostName(Config.getRedisServer());
+        RedisProperties properties = redisProperties();
+
+        if (properties.getHost() != null) {
+            System.out.println("properties.getHost() = "+properties.getHost());
+            factory.setHostName(properties.getHost());
         } else {
             factory.setHostName("localhost");
         }
-        if (Config.getRedisPort() != null) {
-            factory.setPort(Config.getRedisPort());
+        if (properties.getPort() != null) {
+            System.out.println("properties.getPort() = "+properties.getPort());
+            factory.setPort(properties.getPort());
         } else {
             factory.setPort(6379);
         }
-        if (Config.getRedisPassword() != null) {
-            factory.setPassword(Config.getRedisPassword());
+        if (properties.getPassword() != null) {
+            System.out.println("properties.getPassword() = "+properties.getPassword());
+            factory.setPassword(properties.getPassword());
         }
-        if (Config.getRedisTimeout() != null) {
-            factory.setTimeout(Config.getRedisTimeout());
+        if (properties.getTimeout() != null) {
+            System.out.println("properties.getTimeout() = "+properties.getTimeout());
+            factory.setTimeout(properties.getTimeout());
         }
-        factory.setUseSsl(false);
 
+        factory.setUseSsl(false);
         factory.setUsePool(true);
+
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setBlockWhenExhausted(true);
-        if (Config.getRedisPoolMaxActive() != null) {
-            int maxTotal = Config.getRedisPoolMaxActive();
-            if (Config.getRedisPoolMinIdle() != null) {
-                maxTotal += Config.getRedisPoolMinIdle();
+
+        if (properties.getPool().getMaxActive() != null) {
+            System.out.println("properties.getPool().getMaxActive() = "+properties.getPool().getMaxActive());
+            int maxTotal = properties.getPool().getMaxActive();
+            if (properties.getPool().getMinIdle() != null) {
+                maxTotal += properties.getPool().getMinIdle();
             } else {
                 maxTotal += 2;
             }
@@ -77,18 +89,21 @@ public class RedisConfig {
         } else {
             poolConfig.setMaxTotal(18);
         }
-        if (Config.getRedisPoolMaxIdle() != null) {
-            poolConfig.setMaxIdle(Config.getRedisPoolMaxIdle());
+        if (properties.getPool().getMaxIdle() != null) {
+            System.out.println("properties.getPool().getMaxIdle() = "+properties.getPool().getMaxIdle());
+            poolConfig.setMaxIdle(properties.getPool().getMaxIdle());
         } else {
             poolConfig.setMaxIdle(8);
         }
-        if (Config.getRedisPoolMinIdle() != null) {
-            poolConfig.setMinIdle(Config.getRedisPoolMinIdle());
+        if (properties.getPool().getMinIdle() != null) {
+            System.out.println("properties.getPool().getMinIdle() = "+properties.getPool().getMinIdle());
+            poolConfig.setMinIdle(properties.getPool().getMinIdle());
         } else {
             poolConfig.setMinIdle(2);
         }
-        if (Config.getRedisPoolMaxWait() != null) {
-            poolConfig.setMaxWaitMillis(Config.getRedisPoolMaxWait());
+        if (properties.getPool().getMaxWait() != null) {
+            System.out.println("properties.getPool().getMaxWait() = "+properties.getPool().getMaxWait());
+            poolConfig.setMaxWaitMillis(properties.getPool().getMaxWait());
         } else {
             poolConfig.setMaxWaitMillis(60000);
         }

@@ -23,6 +23,9 @@ package com.rdbcache.helpers;
 
 import com.rdbcache.exceptions.ServerErrorException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.*;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
@@ -51,21 +54,10 @@ public class Config {
 
     private static Boolean enableDbFallback = false;
 
-    private static String redisServer;
-
-    private static Integer redisPort;
-
-    private static String redisPassword;
-
-    private static Integer redisTimeout;
-
-    private static Integer redisPoolMaxActive;
-
-    private static Integer redisPoolMaxIdle;
-
-    private static Integer redisPoolMinIdle;
-
-    private static Integer redisPoolMaxWait;
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertyConfig() {
+        return new PropertySourcesPlaceholderConfigurer();
+    }
 
     @Value("${rdbcache.hdata_prefix}")
     public void setHdataPrefix(String prefix) {
@@ -165,99 +157,5 @@ public class Config {
 
     public static Boolean getEnableDbFallback() {
         return enableDbFallback;
-    }
-
-    public static String getRedisServer() {
-        return redisServer;
-    }
-
-    @Value("${spring.redis.host}")
-    public void setRedisServer(String redisServer) {
-        if (redisServer == null || redisServer.length() == 0) {
-            return;
-        }
-        throw new ServerErrorException("spring.redis.host is not supported. use spring.redis.url instead");
-    }
-
-    @Value("${spring.redis.url}")
-    public void setRedisUrl(String redisUrl) {
-        try {
-            if (!redisUrl.substring(0, 5).equalsIgnoreCase("redis")) {
-                throw new ServerErrorException("redis protocol is expected");
-            }
-            String httpUrl = "http"+redisUrl.substring(5);
-            URL url = new URL(httpUrl);
-            redisServer = url.getHost();
-            redisPort = url.getPort();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ServerErrorException(e.getCause().getMessage());
-        }
-    }
-
-    public static Integer getRedisPort() {
-        return redisPort;
-    }
-
-    @Value("${spring.redis.port}")
-    public void setRedisPort(Integer redisPort) {
-        if (redisPort == null || redisPort == 0) {
-            return;
-        }
-        throw new ServerErrorException("spring.redis.port is not supported. use spring.redis.url instead");
-    }
-
-    public static String getRedisPassword() {
-        return redisPassword;
-    }
-
-    @Value("${spring.redis.password}")
-    public void setRedisPassword(String redisPassword) {
-        Config.redisPassword = redisPassword;
-    }
-
-    public static Integer getRedisTimeout() {
-        return redisTimeout;
-    }
-
-    @Value("${spring.redis.timeout}")
-    public void setRedisTimeout(Integer redisTimeout) {
-        Config.redisTimeout = redisTimeout;
-    }
-
-    public static Integer getRedisPoolMaxActive() {
-        return redisPoolMaxActive;
-    }
-
-    @Value("${spring.redis.pool.max-active}")
-    public void setRedisPoolMaxActive(Integer redisPoolMaxActive) {
-        Config.redisPoolMaxActive = redisPoolMaxActive;
-    }
-
-    public static Integer getRedisPoolMaxIdle() {
-        return redisPoolMaxIdle;
-    }
-
-    @Value("${spring.redis.pool.max-idle}")
-    public void setRedisPoolMaxIdle(Integer redisPoolMaxIdle) {
-        Config.redisPoolMaxIdle = redisPoolMaxIdle;
-    }
-
-    public static Integer getRedisPoolMinIdle() {
-        return redisPoolMinIdle;
-    }
-
-    @Value("${spring.redis.pool.min-idle}")
-    public void setRedisPoolMinIdle(Integer redisPoolMinIdle) {
-        Config.redisPoolMinIdle = redisPoolMinIdle;
-    }
-
-    public static Integer getRedisPoolMaxWait() {
-        return redisPoolMaxWait;
-    }
-
-    @Value("${spring.redis.pool.max-wait}")
-    public void setRedisPoolMaxWait(Integer redisPoolMaxWait) {
-        Config.redisPoolMaxWait = redisPoolMaxWait;
     }
 }

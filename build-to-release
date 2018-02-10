@@ -28,7 +28,7 @@ mkdir target/rdbcache
 cp target/rdbcache.jar target/rdbcache
 cp LICENSE.txt target/rdbcache
 cp README.md target/rdbcache
-cp -r src/dist/* target/rdbcache
+cp -r src/install/* target/rdbcache
 
 cd target/rdbcache
 

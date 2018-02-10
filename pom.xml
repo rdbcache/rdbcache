@@ -219,9 +219,6 @@
               <includes>
                 <include>**/data.sql</include>
               </includes>
-              <excludes>
-                <exclude>**/*.properties</exclude>
-              </excludes>
               <followSymlinks>false</followSymlinks>
             </fileset>
           </filesets>
@@ -233,6 +230,24 @@
         <artifactId>maven-resources-plugin</artifactId>
         <version>${maven-resources-plugin.version}</version>
         <executions>
+          <execution>
+            <id>copy-configuration</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/install</directory>
+                  <includes>
+                    <include>application.properties</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
           <execution>
             <id>copy-resources</id>
             <phase>validate</phase>

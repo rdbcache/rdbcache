@@ -22,21 +22,25 @@
 package com.rdbcache;
 
 import com.rdbcache.helpers.AppCtx;
+import com.rdbcache.helpers.Config;
 import com.rdbcache.helpers.VersionInfo;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 
 import com.zaxxer.hikari.HikariDataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.io.PrintStream;
@@ -52,7 +56,7 @@ public class Application implements ApplicationRunner {
     private String redisUrl;
 
     @Autowired
-    private RedisConnectionFactory redisConnectionFactory;
+    private JedisConnectionFactory redisConnectionFactory;
 
     @Value("${spring.datasource.url}")
     private String dbaseUrl;
@@ -60,10 +64,13 @@ public class Application implements ApplicationRunner {
     @Autowired
     DataSource dataSource;
 
+    @Bean
+    JdbcTemplate jdbcTemplate() {
+        return new JdbcTemplate(dataSource);
+    }
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
-
-        AppCtx.getDbaseOps().setup();
 
         JedisConnectionFactory jedisConnectionFactory = (JedisConnectionFactory) redisConnectionFactory;
         HikariDataSource hikariDataSource = (HikariDataSource)dataSource;
@@ -75,6 +82,7 @@ public class Application implements ApplicationRunner {
 
         LOGGER.info(messsage);
 
+        AppCtx.getDbaseOps().setup();
         AppCtx.getLocalCache().start();
         AppCtx.getTaskQueue().start();
     }

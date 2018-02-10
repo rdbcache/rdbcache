@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source /root/.bash_profile
+cd /opt/rdbcache
+java -jar ./rdbcache.jar "$@"
