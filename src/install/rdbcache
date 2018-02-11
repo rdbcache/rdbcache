@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# load env variables
 source /root/.bash_profile
+
+# show env variables, you may comment out
+echo "RDBCACHE_PORT=$RDBCACHE_PORT"
+echo "REDIS_SERVER=$REDIS_SERVER"
+echo "DATABASE_NAME=$DATABASE_NAME"
+echo "DATABASE_SERVER=$DATABASE_SERVER"
+echo "DB_USER_NAME=$DB_USER_NAME"
+echo "DB_USER_PASS=$DB_USER_PASS"
+
 cd /opt/rdbcache
 java -jar ./rdbcache.jar "$@"

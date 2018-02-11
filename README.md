@@ -3,7 +3,7 @@ This README serves as a quick start docuement. For more detailed documentation, 
 What is rdbcache?
 ----------------
 
-rdbcache stands for redis database cache. It is an open source database cache server. rdbcache uses redis as cache to offers asynchronous cache api service. It provides eventually consistency between redis and database. rdbcache attempts to bridge the gap between redis and database.
+rdbcache stands for redis database cache. It is an open source database cache server. rdbcache uses redis as cache to offers asynchronous database cache api service. It provides eventually consistency between redis and database. rdbcache attempts to bridge the gap between redis and database.
 
 The asynchronous nature makes rdbcache very fast and useful in many scenarios. Through few simple restful APIs, rdbcache offers the convenience for developers to easily take advantage of the powers and benefits of both redis and database.
 
@@ -12,20 +12,20 @@ Install rdbcache
 
 rdbcache is a java application. It requires Java version 1.8+ runtime environment.
 
-Download rdbcache.tar.gz:
+wget https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/install
 
-https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.tar.gz
+sh install
 
-tar xvf rdbcache.tar.gz
+check if OK
 
-chown -R root.root rdbcache
+rdbcache -v
 
-cd rdbcache
+rm install
 
-./rdbcache -v
+Before running, we need to setup environment variables and database:
+--------------------------------------------------------------------
 
-Setup Environment Variables:
-
+Put following environment variables in your /root/.bash_profile.
 Please replace the values with the proper ones for your environment.
 
 export RDBCACHE_PORT=8181
@@ -40,7 +40,9 @@ export DB_USER_NAME=dbuser
 
 export DB_USER_PASS=rdbcache
 
-./rdbcache
+run from console
+
+rdbcache
 
 Playing with rdbcache
 ---------------------

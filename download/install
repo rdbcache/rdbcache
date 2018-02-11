@@ -92,8 +92,48 @@ rm -rf ./rdbcache
 
 cat <<EOT > /opt/rdbcache/rdbcache
 #!/bin/bash
+#
+# By Sam Wen @ 02/10/2018
+#
+##########################
 
+# load env variables
 source /root/.bash_profile
+
+# check env variables, you may comment out
+# if you are not use env variables for configurations
+
+if [ -z "\$RDBCACHE_PORT" ]; then
+  echo "RDBCACHE_PORT is not set"
+  exit 1
+fi
+
+if [ -z "\$REDIS_SERVER" ]; then
+  echo "REDIS_SERVER is not set"
+  exit 1
+fi
+
+if [ -z "\$DATABASE_SERVER" ]; then
+  echo "DATABASE_SERVER is not set"
+  exit 1
+fi
+
+if [ -z "\$DATABASE_NAME" ]; then
+  echo "DATABASE_NAME is not set"
+  exit 1
+fi
+
+
+if [ -z "\$DB_USER_NAME" ]; then
+  echo "DB_USER_NAME is not set"
+  exit 1
+fi
+
+if [ -z "\$DB_USER_PASS" ]; then
+  echo "DB_USER_PASS is not set"
+  exit 1
+fi
+
 cd /opt/rdbcache
 $JAVA_BIN -jar ./rdbcache.jar "\$@"
 EOT
@@ -108,4 +148,5 @@ ln -s /opt/rdbcache/rdbcache /usr/bin/rdbcache
 
 echo ""
 echo "rdbcache is installed in /opt/rdbcache folder"
+echo "symlink /usr/bin/rdbcache is created"
 echo "You can run /opt/rdbcache/install_service to install rdbcache as service"
