@@ -12,59 +12,64 @@ Install rdbcache
 
 rdbcache is a java application. It requires Java version 1.8+ runtime environment.
 
-wget https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/install
+#### For Mac/Linux:
 
-sh install
+    curl https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/install | sh
 
-check if OK
+    # check if OK
+    rdbcache -v
 
-rdbcache -v
+    Put following environment variables in your /root/.bash_profile.
+    Please replace the values with the proper ones for your environment.
 
-rm install
+    export RDBCACHE_PORT=8181
+    export REDIS_SERVER=localhost
+    export DATABASE_NAME=testdb
+    export DATABASE_SERVER=localhost
+    export DB_USER_NAME=dbuser
+    export DB_USER_PASS=rdbcache
 
-Before running, we need to setup environment variables and database:
---------------------------------------------------------------------
+    rdbcache
 
-Put following environment variables in your /root/.bash_profile.
-Please replace the values with the proper ones for your environment.
+#### For Windows:
 
-export RDBCACHE_PORT=8181
+click [download rdbcache.zip](https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.zip)
 
-export REDIS_SERVER=localhost
+    # check if OK
+    java -jar rdbcache.jar -v
 
-export DATABASE_NAME=testdb
+    Please replace the values with the proper ones for your environment.
 
-export DATABASE_SERVER=localhost
+    SET RDBCACHE_PORT=8181
+    SET REDIS_SERVER=localhost
+    SET DATABASE_NAME=testdb
+    SET DATABASE_SERVER=localhost
+    SET DB_USER_NAME=dbuser
+    SET DB_USER_PASS=rdbcache
 
-export DB_USER_NAME=dbuser
+    java -jar rdbcache.jar
 
-export DB_USER_PASS=rdbcache
-
-run from console
-
-rdbcache
 
 Playing with rdbcache
 ---------------------
-<pre>
-curl http://localhost:8181/v1/set/my-hash-key/my-value
-{"timestamp":1518188737321,"duration":"0.00639","key":"my-hash-key","trace_id":"5554d502d58448e0a137196af0a4b1fa"}
 
-curl http://localhost:8181/v1/get/my-hash-key
-{"timestamp":1518188797475,"duration":"0.000454","key":"my-hash-key","data":"my-value","trace_id":"6f7c05360ec74b12bda80ec692030031"}
+    curl http://localhost:8181/v1/set/my-hash-key/my-value
+    {"timestamp":1518188737321,"duration":"0.00639","key":"my-hash-key","trace_id":"5554d502d58448e0a137196af0a4b1fa"}
 
-curl http://localhost:8181/v1/select/rdbcache_monitor?limit=3
-...
+    curl http://localhost:8181/v1/get/my-hash-key
+    {"timestamp":1518188797475,"duration":"0.000454","key":"my-hash-key","data":"my-value","trace_id":"6f7c05360ec74b12bda80ec692030031"}
 
-curl http://localhost:8181/v1/select/rdbcache_stopwatch?limit=3
-...
-</pre>
+    curl http://localhost:8181/v1/select/rdbcache_monitor?limit=3
+    ...
+
+    curl http://localhost:8181/v1/select/rdbcache_stopwatch?limit=3
+    ...
 
 
-You can find all the available APIs at http://rdbcache.com.
+You can find all the available APIs and complete documentation at http://rdbcache.com.
 
 Playing with source code
----------------------
+------------------------
 
 rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and JDK version 1.8+.
 

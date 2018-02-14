@@ -6,7 +6,7 @@
 #
 ##########################
 
-DOWNLOAD_URL='https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.tar.gz'
+DOWNLOAD_URL='https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.zip'
 
 if [ "$(id -u)" -ne 0 ] ; then
   echo "This script must run under root."
@@ -54,31 +54,39 @@ if [ -z "$WGET_BIN" ]; then
   echo "Unable to find wget. Please install wget."
   exit 1
 fi
-if [ -f ./rdbcache.tar.gz ]; then
-  rm -f ./rdbcache.tar.gz
+if [ -f ./rdbcache.zip ]; then
+  rm -f ./rdbcache.zip
 fi
 $WGET_BIN -q $DOWNLOAD_URL
 if [ $? -ne 0 ]; then
   echo "Run wget failed"
   exit 1
 fi
-if [ ! -f ./rdbcache.tar.gz ]; then
-  echo "Failed to locate rdbcache.tar.gz"
+if [ ! -f ./rdbcache.zip ]; then
+  echo "Failed to locate rdbcache.zip"
   exit 1
 fi
 if [ -d ./rdbcache ]; then
   rm -rf rdbcache
 fi
-tar xf ./rdbcache.tar.gz
+
+UNZIP_BIN=$(which unzip)
+if [ -z "$UNZIP_BIN" ]; then
+  echo "Unable to find unzip. Please install unzip."
+  exit 1
+fi
+
+$UNZIP_BIN ./rdbcache.zip
+
 DOWNLOAD_DIR=$(pwd)/rdbcache
-rm -f ./rdbcache.tar.gz
+rm -f ./rdbcache.zip
 
 if [ ! -f $DOWNLOAD_DIR/rdbcache.jar ]; then
   echo "File rdbcache.jar not found."
   exit 1
 fi
 
-chown -R root.root $DOWNLOAD_DIR
+#chown -R root.root $DOWNLOAD_DIR
 
 if [ -d /opt/rdbcache ]; then
   rm -rf /opt/rdbcache
@@ -144,9 +152,11 @@ if [ -L /usr/bin/rdbcache ]; then
   rm -f /usr/bin/rdbcache
 fi
 
-ln -s /opt/rdbcache/rdbcache /usr/bin/rdbcache
+BIN_FOLDER=$(dirname /usr/local/bin/wget)
+
+ln -s /opt/rdbcache/rdbcache $BIN_FOLDER/rdbcache
 
 echo ""
 echo "rdbcache is installed in /opt/rdbcache folder"
-echo "symlink /usr/bin/rdbcache is created"
+echo "symlink $BIN_FOLDER/rdbcache is created"
 echo "You can run /opt/rdbcache/install_service to install rdbcache as service"
