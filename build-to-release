@@ -36,7 +36,7 @@ cd target
 #cp -f rdbcache.tar.gz download/
 
 zip rdbcache.zip rdbcache/*
-cp -f rdbcache.zip download/
+cp -f rdbcache.zip ../download/
 
 cd ..
 
