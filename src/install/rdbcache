@@ -1,15 +1,43 @@
 #!/bin/bash
 
 # load env variables
-source /root/.bash_profile
+if [ -f ~/.bash_profile ]; then
+  source ~/.bash_profile
+fi
 
-# show env variables, you may comment out
-echo "RDBCACHE_PORT=$RDBCACHE_PORT"
-echo "REDIS_SERVER=$REDIS_SERVER"
-echo "DATABASE_NAME=$DATABASE_NAME"
-echo "DATABASE_SERVER=$DATABASE_SERVER"
-echo "DB_USER_NAME=$DB_USER_NAME"
-echo "DB_USER_PASS=$DB_USER_PASS"
+# check env variables, you may comment out
+# if you are not use env variables for configurations
+
+if [ -z "$RDBCACHE_PORT" ]; then
+  echo "RDBCACHE_PORT is not set"
+  exit 1
+fi
+
+if [ -z "$REDIS_SERVER" ]; then
+  echo "REDIS_SERVER is not set"
+  exit 1
+fi
+
+if [ -z "$DATABASE_SERVER" ]; then
+  echo "DATABASE_SERVER is not set"
+  exit 1
+fi
+
+if [ -z "$DATABASE_NAME" ]; then
+  echo "DATABASE_NAME is not set"
+  exit 1
+fi
+
+
+if [ -z "$DB_USER_NAME" ]; then
+  echo "DB_USER_NAME is not set"
+  exit 1
+fi
+
+if [ -z "$DB_USER_PASS" ]; then
+  echo "DB_USER_PASS is not set"
+  exit 1
+fi
 
 cd /opt/rdbcache
 java -jar ./rdbcache.jar "$@"

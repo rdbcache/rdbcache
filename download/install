@@ -106,7 +106,9 @@ cat <<EOT > /opt/rdbcache/rdbcache
 ##########################
 
 # load env variables
-source /root/.bash_profile
+if [ -f ~/.bash_profile ]; then
+  source ~/.bash_profile
+fi
 
 # check env variables, you may comment out
 # if you are not use env variables for configurations
@@ -159,4 +161,6 @@ ln -s /opt/rdbcache/rdbcache $BIN_FOLDER/rdbcache
 echo ""
 echo "rdbcache is installed in /opt/rdbcache folder"
 echo "symlink $BIN_FOLDER/rdbcache is created"
-echo "You can run /opt/rdbcache/install_service to install rdbcache as service"
+if [ "$(uname -s)" == "Linux" ]; then
+  echo "You can run /opt/rdbcache/install_service to install rdbcache as service"
+fi
