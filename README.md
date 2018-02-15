@@ -19,7 +19,7 @@ rdbcache is a java application. It requires Java version 1.8+ runtime environmen
     # check if OK
     rdbcache -v
 
-    Put following environment variables in your /root/.bash_profile.
+    Put following environment variables in your ~/.bash_profile.
     Please replace the values with the proper ones for your environment.
 
     export RDBCACHE_PORT=8181
