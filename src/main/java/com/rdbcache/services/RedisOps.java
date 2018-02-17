@@ -7,7 +7,11 @@
 package com.rdbcache.services;
 
 import com.rdbcache.helpers.AppCtx;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.DefaultScriptExecutor;
+import org.springframework.data.redis.core.script.ScriptExecutor;
 import org.springframework.stereotype.Service;
 
 import org.slf4j.Logger;
@@ -51,5 +55,4 @@ public class RedisOps {
         }
         connection.setConfig("notify-keyspace-events", config);
     }
-
 }

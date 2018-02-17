@@ -5,7 +5,7 @@
 
   <groupId>rdbcache.com</groupId>
   <artifactId>rdbcache</artifactId>
-  <version>1.0.0 beta</version>
+  <version>1.0.0-beta</version>
   <name>rdbcache</name>
   <description>redis database cache asynchronous api server</description>
   <url>http://rdbcache.com/</url>

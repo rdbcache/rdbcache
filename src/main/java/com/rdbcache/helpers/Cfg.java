@@ -24,6 +24,8 @@ public class Cfg {
 
     private static Boolean enableMonitor = false;
 
+    private static Long eventLockTimeout = 60L;
+
     private static Long keyInfoCacheTTL = 180L;
 
     private static Long tableInfoCacheTTL = 3600L;
@@ -93,6 +95,11 @@ public class Cfg {
     public static Boolean getEnableMonitor() {
         return enableMonitor;
     }
+
+    @Value("${rdbcache.event_lock_timeout}")
+    public void setEventLockTimeout(Long timeout) { eventLockTimeout = timeout; }
+
+    public static Long getEventLockTimeout() { return eventLockTimeout; }
 
     @Value("${rdbcache.key_info_cache_ttl}")
     public void setKeyInfoCacheTTL(Long ttl) {
