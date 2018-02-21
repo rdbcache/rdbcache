@@ -1,12 +1,5 @@
 This README serves as a quick start docuement. For more detailed documentation, please visit website: http://rdbcache.com
 
-What is rdbcache?
-----------------
-
-rdbcache stands for redis database cache. rdbcache uses redis as cache to offer asynchronous database cache api service. It provides eventually consistency between redis and database. rdbcache attempts to bridge the gap between redis and database.
-
-The asynchronous nature makes rdbcache very fast and useful in many scenarios. Through few simple restful APIs, rdbcache offers the convenience for developers to easily take advantage of the powers and benefits of both redis and database.
-
 Install rdbcache
 ----------------
 
