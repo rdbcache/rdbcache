@@ -80,7 +80,9 @@ public class RedisDbaseCacheApis {
                 AppCtx.getAsyncOps().doSaveToRedis(context, keyInfo);
 
             } else {
+
                 throw new NotFoundException(context, "data not found");
+
             }
         } else {
 
@@ -93,7 +95,9 @@ public class RedisDbaseCacheApis {
                 AppCtx.getAsyncOps().doSaveToRedis(context, keyInfo);
 
             } else {
+
                 throw new NotFoundException(context, "data not found");
+
             }
         }
         return response(context);
