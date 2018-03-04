@@ -161,6 +161,13 @@ public class KeyInfo implements Serializable {
     }
 
     @JsonIgnore
+    public Long getTTL() {
+        Long ttl = Long.valueOf(expire);
+        if (ttl < 0l) return -ttl;
+        return ttl;
+    }
+
+    @JsonIgnore
     public Integer getQueryLimit() {
         if (query == null) return null;
         return query.getLimit();

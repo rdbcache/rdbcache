@@ -131,6 +131,8 @@ public class RedisDbaseCacheApis {
         Context context = new Context(key, value, false);
         KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
 
+        //todo save key value to cache
+
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
 
         return response(context);
@@ -167,6 +169,8 @@ public class RedisDbaseCacheApis {
 
         Context context = new Context(key, value, false);
         KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
+
+        //todo save key value to cache
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
 
@@ -209,6 +213,8 @@ public class RedisDbaseCacheApis {
             AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
 
         } else {
+
+            //todo update key value to cache
 
             AppCtx.getAsyncOps().doPutOperation(context, keyInfo);
 
@@ -814,6 +820,36 @@ public class RedisDbaseCacheApis {
         }
 
         return response(context, true);
+    }
+
+    @RequestMapping(value = {
+            "/v1/flush-cache",
+            "/v1/flush-cache/{opt}"
+    }, method = RequestMethod.GET)
+    public ResponseEntity<?> flashCache(
+            HttpServletRequest request,
+            @PathVariable Optional<String> opt) throws BadRequestException {
+
+        Context context = new Context( true);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
+
+        if (!opt.isPresent()) {
+            AppCtx.getLocalCache().removeAllKeyInfo();
+            AppCtx.getLocalCache().removeAllData();
+        } else {
+            String action = opt.get();
+            if (action.equals("all")) {
+                AppCtx.getLocalCache().removeAll();
+            } else if (action.equals("table")) {
+                AppCtx.getLocalCache().removeAllTable();
+            } else if (action.equals("key")) {
+                AppCtx.getLocalCache().removeAllKeyInfo();
+            } else if (action.equals("data")) {
+                AppCtx.getLocalCache().removeAllData();
+            }
+        }
+
+        return response(context);
     }
 
     private KeyInfo setupContextAndKeyInfo(

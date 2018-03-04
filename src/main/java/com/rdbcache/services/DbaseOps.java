@@ -77,12 +77,12 @@ public class DbaseOps {
 
     public List<String> getTableList(Context context) {
 
-        List<String> list = (List<String>) AppCtx.getLocalCache().get("database::table_list");
+        List<String> list = (List<String>) AppCtx.getLocalCache().get("table_list::");
         if (list != null) {
             return list;
         }
 
-        Object object = AppCtx.getLocalCache().put("database::table_list", Cfg.getTableInfoCacheTTL() * 1000L, () -> {
+        Object object = AppCtx.getLocalCache().put("table_list::", Cfg.getTableInfoCacheTTL() * 1000L, () -> {
             List<String> list2 = fetchTableList(context);
             if (list2 == null) {
                 LOGGER.error("failed to get table list");

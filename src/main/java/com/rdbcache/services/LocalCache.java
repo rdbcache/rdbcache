@@ -9,6 +9,7 @@ package com.rdbcache.services;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Cached;
 import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 
 import org.slf4j.Logger;
@@ -94,17 +95,11 @@ public class LocalCache extends Thread {
             clone = keyInfo.clone();
             keyInfo.setIsNew(false);
         }
-        Cached cached = new Cached(clone, Cfg.getKeyInfoCacheTTL() * 1000L);
-        cache.put("keyinfo::" + key, cached);
-    }
 
-    public void putKeyInfo(String key, KeyInfo keyInfo, Long timeToLive) {
-        KeyInfo clone = null;
-        if (keyInfo != null) {
-            clone = keyInfo.clone();
-            keyInfo.setIsNew(false);
-        }
-        Cached cached = new Cached(clone, timeToLive);
+        Long ttl = Cfg.getKeyInfoCacheTTL();
+        if (ttl > keyInfo.getTTL()) ttl = keyInfo.getTTL();
+
+        Cached cached = new Cached(clone, ttl * 1000l);
         cache.put("keyinfo::" + key, cached);
     }
 
@@ -134,6 +129,72 @@ public class LocalCache extends Thread {
 
     public void removeKeyInfo(String key) {
         cache.remove("keyinfo::" + key);
+    }
+
+    public void removeAllKeyInfo() {
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (key.startsWith("keyinfo::")) {
+                cache.remove(key);
+            }
+        }
+    }
+
+    public void putData(String key, Map map, KeyInfo keyInfo) {
+        if (Cfg.getDataMaxCacheTLL() <= 0L) {
+            return;
+        }
+        Long ttl = Cfg.getDataMaxCacheTLL();
+        if (ttl > keyInfo.getTTL()) ttl = keyInfo.getTTL();
+        Cached cached = new Cached(map, ttl * 1000l);
+        cache.put("datamap::" + key, cached);
+    }
+
+    public void updateData(String key, Map update, KeyInfo keyInfo) {
+        if (Cfg.getDataMaxCacheTLL() <= 0L) {
+            return;
+        }
+        Cached cached = cache.get("datamap::" + key);
+        if (cached == null) {
+            return;
+        }
+        if (cached.isTimeout()) {
+            cache.remove(key);
+            return;
+        }
+
+        Map<String, Object> map = (Map<String, Object>) cached.getObject();
+        Utils.updateMap(update, map);
+    }
+
+    public Map<String, Object> getData(String key) {
+        return (Map<String, Object>) get("datamap::" + key);
+    }
+
+    public void removeData(String key) {
+        cache.remove("datamap::" + key);
+    }
+
+    public void removeAllData() {
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (key.startsWith("datamap::")) {
+                cache.remove(key);
+            }
+        }
+    }
+
+    public void removeAllTable() {
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (key.startsWith("table_")) {
+                cache.remove(key);
+            }
+        }
+    }
+
+    public void removeAll() {
+        cache.clear();
     }
 
     @Override

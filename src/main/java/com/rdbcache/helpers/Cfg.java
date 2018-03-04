@@ -36,6 +36,8 @@ public class Cfg {
 
     private static Boolean enableDbFallback = false;
 
+    private static Long dataMaxCacheTLL = 60L;
+
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertyConfig() {
         return new PropertySourcesPlaceholderConfigurer();
@@ -144,5 +146,14 @@ public class Cfg {
 
     public static Boolean getEnableDbFallback() {
         return enableDbFallback;
+    }
+
+    @Value("${rdbcache.data_max_cache_ttl}")
+    public void setDataMaxCacheTLL(Long tll) {
+        Cfg.dataMaxCacheTLL = tll;
+    }
+
+    public static Long getDataMaxCacheTLL() {
+        return dataMaxCacheTLL;
     }
 }

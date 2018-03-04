@@ -66,20 +66,24 @@ public class RedisRepoImpl implements RedisRepo {
         LOGGER.trace("findOne: " + key + " table: " + table);
 
         String hashKey = Cfg.getHdataKey(key);
-        Map<String, Object> map = null;
+        Map<String, Object> map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
 
-        StopWatch stopWatch = context.startStopWatch("redis", "hashOps.entries");
-        try {
-            map = hashOps.entries(hashKey);
-            if (stopWatch != null) stopWatch.stopNow();
+        if (map == null) {
 
-        } catch (Exception e) {
-            if (stopWatch != null) stopWatch.stopNow();
+            StopWatch stopWatch = context.startStopWatch("redis", "hashOps.entries");
+            try {
+                map = hashOps.entries(hashKey);
+                if (stopWatch != null) stopWatch.stopNow();
+                AppCtx.getLocalCache().putData(key, map, keyInfo);
 
-            String msg = e.getCause().getMessage();
-            LOGGER.error(msg);
-            context.logTraceMessage(msg);
-            throw new ServerErrorException(context, msg);
+            } catch (Exception e) {
+                if (stopWatch != null) stopWatch.stopNow();
+
+                String msg = e.getCause().getMessage();
+                LOGGER.error(msg);
+                context.logTraceMessage(msg);
+                throw new ServerErrorException(context, msg);
+            }
         }
 
         if (map == null || map.size() == 0) {
@@ -107,6 +111,7 @@ public class RedisRepoImpl implements RedisRepo {
         try {
             hashOps.putAll(hashKey, map);
             if (stopWatch != null) stopWatch.stopNow();
+            AppCtx.getLocalCache().putData(key, map, keyInfo);
             return true;
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
@@ -141,6 +146,7 @@ public class RedisRepoImpl implements RedisRepo {
         try {
             hashOps.putAll(hashKey, map);
             if (stopWatch != null) stopWatch.stopNow();
+            AppCtx.getLocalCache().updateData(key, map, keyInfo);
             return true;
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
@@ -165,20 +171,24 @@ public class RedisRepoImpl implements RedisRepo {
 
             String key = pair.getId();
             String hashKey = Cfg.getHdataKey(key);
-            Map<String, Object> map = null;
+            Map<String, Object> map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
 
-            StopWatch stopWatch = context.startStopWatch("redis", "hashOps.entries");
-            try {
-                map = hashOps.entries(hashKey);
-                if (stopWatch != null) stopWatch.stopNow();
+            if (map == null) {
 
-            } catch (Exception e) {
-                if (stopWatch != null) stopWatch.stopNow();
+                StopWatch stopWatch = context.startStopWatch("redis", "hashOps.entries");
+                try {
+                    map = hashOps.entries(hashKey);
+                    if (stopWatch != null) stopWatch.stopNow();
+                    AppCtx.getLocalCache().putData(key, map, keyInfo);
 
-                String msg = e.getCause().getMessage();
-                LOGGER.error(msg);
-                context.logTraceMessage(msg);
-                e.printStackTrace();
+                } catch (Exception e) {
+                    if (stopWatch != null) stopWatch.stopNow();
+
+                    String msg = e.getCause().getMessage();
+                    LOGGER.error(msg);
+                    context.logTraceMessage(msg);
+                    e.printStackTrace();
+                }
             }
 
             if (map == null || map.size() == 0) {
@@ -206,10 +216,12 @@ public class RedisRepoImpl implements RedisRepo {
             String key = pair.getId();
             String hashKey = Cfg.getHdataKey(key);
             Map<String, Object> map = pair.getData();
+
             StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
             try {
                 hashOps.putAll(hashKey, map);
                 if (stopWatch != null) stopWatch.stopNow();
+                AppCtx.getLocalCache().putData(key, map, keyInfo);
 
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
@@ -235,16 +247,20 @@ public class RedisRepoImpl implements RedisRepo {
 
         String hashKey = Cfg.getHdataKey(key);
         Map<String, Object> map = pair.getData();
-        Map<String, Object> fmap = null;
+        Map<String, Object> fmap = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
 
-        StopWatch stopWatch = context.startStopWatch("redis", "hashOps.entries");
+        StopWatch stopWatch = null;
         try {
-            fmap = hashOps.entries(hashKey);
-            if (stopWatch != null) stopWatch.stopNow();
+            if (fmap == null) {
+                stopWatch = context.startStopWatch("redis", "hashOps.entries");
+                fmap = hashOps.entries(hashKey);
+                if (stopWatch != null) stopWatch.stopNow();
+            }
 
             stopWatch = context.startStopWatch("redis", "hashOps.putAll");
             hashOps.putAll(hashKey, map);
             if (stopWatch != null) stopWatch.stopNow();
+            AppCtx.getLocalCache().putData(key, map, keyInfo);
 
             if (fmap != null && fmap.size() > 0) {
                 pair.setData(fmap);
@@ -275,6 +291,8 @@ public class RedisRepoImpl implements RedisRepo {
         deleteExpireEvents(context, keyInfo);
 
         AppCtx.getKeyInfoRepo().deleteOne(context);
+
+        AppCtx.getLocalCache().removeData(key);
 
         String hashKey = Cfg.getHdataKey(key);
 

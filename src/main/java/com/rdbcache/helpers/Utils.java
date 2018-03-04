@@ -84,6 +84,14 @@ public class Utils {
                 uuid.substring(24,36);
     }
 
+    public static void updateMap(Map<String, Object> update, Map<String, Object> map) {
+        if (map == null || update == null) return;
+        if (update.size() == 0) return;
+        for (Map.Entry<String, Object> entry : update.entrySet()) {
+            map.put(entry.getKey(), entry.getValue());
+        }
+    }
+
     // loosely check if object a equals object b
     //
     public static boolean isValueEquals(Object a, Object b) {
