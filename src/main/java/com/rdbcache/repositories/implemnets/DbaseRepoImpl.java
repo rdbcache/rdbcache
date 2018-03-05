@@ -481,6 +481,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                     String primaryKey = indexes.get(0);
                     String keyValue = String.valueOf(keyHolder.getKey());
                     map.put(primaryKey, keyValue);
+                    AppCtx.getLocalCache().putData(key, map, keyInfo);
                 }
                 keyInfo.fetchPKClauseParams(context, map, key);
                 AppCtx.getKeyInfoRepo().saveOne(context, keyInfo);
@@ -548,6 +549,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         for (KvPair pair: pairs) {
 
+            String key = pair.getId();
             Map<String, Object> map = pair.getData();
 
             ArrayList<Object> queryParams = new ArrayList<Object>();
@@ -603,6 +605,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                     String primaryKey = indexes.get(0);
                     String keyValue = String.valueOf(keyHolder.getKey());
                     map.put(primaryKey, keyValue);
+                    AppCtx.getLocalCache().putData(key, map, keyInfoPer);
                 }
                 keyInfoPer.fetchPKClauseParams(context, map, pair.getId());
             }

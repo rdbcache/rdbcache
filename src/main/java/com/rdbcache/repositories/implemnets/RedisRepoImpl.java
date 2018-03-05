@@ -106,15 +106,17 @@ public class RedisRepoImpl implements RedisRepo {
 
         String hashKey = Cfg.getHdataKey(key);
         Map<String, Object> map = pair.getData();
+        AppCtx.getLocalCache().putData(key, map, keyInfo);
 
         StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
         try {
             hashOps.putAll(hashKey, map);
             if (stopWatch != null) stopWatch.stopNow();
-            AppCtx.getLocalCache().putData(key, map, keyInfo);
             return true;
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
+
+            AppCtx.getLocalCache().removeData(key);
 
             String msg = e.getCause().getMessage();
             LOGGER.error(msg);
@@ -216,15 +218,17 @@ public class RedisRepoImpl implements RedisRepo {
             String key = pair.getId();
             String hashKey = Cfg.getHdataKey(key);
             Map<String, Object> map = pair.getData();
+            AppCtx.getLocalCache().putData(key, map, keyInfo);
 
             StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
             try {
                 hashOps.putAll(hashKey, map);
                 if (stopWatch != null) stopWatch.stopNow();
-                AppCtx.getLocalCache().putData(key, map, keyInfo);
 
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
+
+                AppCtx.getLocalCache().removeData(key);
 
                 savedAll = false;
                 String msg = e.getCause().getMessage();
@@ -250,32 +254,46 @@ public class RedisRepoImpl implements RedisRepo {
         Map<String, Object> fmap = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
 
         StopWatch stopWatch = null;
-        try {
-            if (fmap == null) {
+
+        if (fmap == null) {
+            try {
                 stopWatch = context.startStopWatch("redis", "hashOps.entries");
                 fmap = hashOps.entries(hashKey);
                 if (stopWatch != null) stopWatch.stopNow();
+            } catch (Exception e) {
+                if (stopWatch != null) stopWatch.stopNow();
+
+                String msg = e.getCause().getMessage();
+                LOGGER.error(msg);
+                e.printStackTrace();
+                throw new ServerErrorException(context, msg);
             }
+        }
+
+        try {
+            AppCtx.getLocalCache().putData(key, map, keyInfo);
 
             stopWatch = context.startStopWatch("redis", "hashOps.putAll");
             hashOps.putAll(hashKey, map);
             if (stopWatch != null) stopWatch.stopNow();
-            AppCtx.getLocalCache().putData(key, map, keyInfo);
 
-            if (fmap != null && fmap.size() > 0) {
-                pair.setData(fmap);
-                return true;
-            } else {
-                LOGGER.debug(hashKey + " not found from redis");
-                return false;
-            }
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
+
+            AppCtx.getLocalCache().removeData(key);
 
             String msg = e.getCause().getMessage();
             LOGGER.error(msg);
             e.printStackTrace();
             throw new ServerErrorException(context, msg);
+        }
+
+        if (fmap != null && fmap.size() > 0) {
+            pair.setData(fmap);
+            return true;
+        } else {
+            LOGGER.debug(hashKey + " not found from redis");
+            return false;
         }
     }
 

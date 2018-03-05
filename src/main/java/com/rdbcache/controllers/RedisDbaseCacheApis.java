@@ -131,7 +131,8 @@ public class RedisDbaseCacheApis {
         Context context = new Context(key, value, false);
         KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
 
-        //todo save key value to cache
+        KvPair pair = context.getPair();
+        AppCtx.getLocalCache().putData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
 
@@ -170,7 +171,8 @@ public class RedisDbaseCacheApis {
         Context context = new Context(key, value, false);
         KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
 
-        //todo save key value to cache
+        KvPair pair = context.getPair();
+        AppCtx.getLocalCache().putData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
 
@@ -214,7 +216,8 @@ public class RedisDbaseCacheApis {
 
         } else {
 
-            //todo update key value to cache
+            KvPair pair = context.getPair();
+            AppCtx.getLocalCache().updateData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
 
             AppCtx.getAsyncOps().doPutOperation(context, keyInfo);
 
