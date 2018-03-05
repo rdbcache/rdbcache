@@ -233,7 +233,7 @@ public class AsyncOps {
 
                         Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
 
-                        if (!Utils.MapChangesAfterUpdate(map, dbMap, todoMap)) {
+                        if (!Utils.mapChangesAfterUpdate(map, dbMap, todoMap)) {
                             LOGGER.error("field found in input, but not found in database");
                             continue;
                         }

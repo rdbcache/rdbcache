@@ -150,8 +150,8 @@ public class LocalCache extends Thread {
         cache.put("datamap::" + key, cached);
     }
 
-    public void updateData(String key, Map update, KeyInfo keyInfo) {
-        if (Cfg.getDataMaxCacheTLL() <= 0L) {
+    public void updateData(String key, Map<String, Object> update, KeyInfo keyInfo) {
+        if (update == null || update.size() == 0 || Cfg.getDataMaxCacheTLL() <= 0L) {
             return;
         }
         Cached cached = cache.get("datamap::" + key);
@@ -162,9 +162,13 @@ public class LocalCache extends Thread {
             cache.remove(key);
             return;
         }
-
         Map<String, Object> map = (Map<String, Object>) cached.getObject();
-        Utils.updateMap(update, map);
+        if (map == null) {
+            return;
+        }
+        for (Map.Entry<String, Object> entry : update.entrySet()) {
+            map.put(entry.getKey(), entry.getValue());
+        }
     }
 
     public Map<String, Object> getData(String key) {

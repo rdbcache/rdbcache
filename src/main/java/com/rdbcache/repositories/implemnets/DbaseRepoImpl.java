@@ -282,7 +282,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             if (table != null) {
 
                 Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
-                if (!Utils.MapChangesAfterUpdate(map, dbMap, todoMap)) {
+                if (!Utils.mapChangesAfterUpdate(map, dbMap, todoMap)) {
                     String msg = "switch to default table, unknown field found in input";
                     LOGGER.error(msg);
                     context.logTraceMessage(msg);
@@ -378,7 +378,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 if (table != null) {
 
                     Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
-                    if (!Utils.MapChangesAfterUpdate(map, dbMap, todoMap)) {
+                    if (!Utils.mapChangesAfterUpdate(map, dbMap, todoMap)) {
                         String msg = "unknown field found in input";
                         LOGGER.error(msg);
                         throw new BadRequestException(context, msg);

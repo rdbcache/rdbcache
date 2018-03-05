@@ -56,16 +56,34 @@ public class Utils {
     public static String toJson(Object object) {
         if (null == object) return null;
         try {
-            return getObjectMapper().writeValueAsString(object);
+            if (object instanceof List) {
+                Map<String, Object> map = new LinkedHashMap<String, Object>();
+                int i = 0;
+                for (Object obj : (List) object) {
+                    map.put(String.valueOf(i++), obj);
+                }
+                return getObjectMapper().writeValueAsString(map);
+            } else {
+                return getObjectMapper().writeValueAsString(object);
+            }
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static String toPrettyJson(Object o) {
+    public static String toPrettyJson(Object object) {
         try {
-            return getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(o);
+            if (object instanceof List) {
+                Map<String, Object> map = new LinkedHashMap<String, Object>();
+                int i = 0;
+                for (Object obj : (List) object) {
+                    map.put(String.valueOf(i++), obj);
+                }
+                return getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(map);
+            } else {
+                return getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(object);
+            }
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
@@ -82,14 +100,6 @@ public class Utils {
                 uuid.substring(14,18) +
                 uuid.substring(19,23) +
                 uuid.substring(24,36);
-    }
-
-    public static void updateMap(Map<String, Object> update, Map<String, Object> map) {
-        if (map == null || update == null) return;
-        if (update.size() == 0) return;
-        for (Map.Entry<String, Object> entry : update.entrySet()) {
-            map.put(entry.getKey(), entry.getValue());
-        }
     }
 
     // loosely check if object a equals object b
@@ -132,7 +142,7 @@ public class Utils {
                 ab = false;
             }
             Boolean bb = null;
-            if (bcn.equals("java.lang.Boolean")) {
+            if (bcn.equals("Boolean")) {
                 bb = (Boolean) b;
             } else if (Arrays.asList("1", "true", "TRUE").contains(bs)) {
                 bb = true;
@@ -151,14 +161,15 @@ public class Utils {
             try {
                 ad = Double.valueOf(as);
             } catch (Exception e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
             Double bd = null;
             try {
                 bd = Double.valueOf(bs);
             } catch (Exception e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
+            System.out.println("a = "+ad.toString()+" b = "+bd.toString());
             if (ad != null && bd != null && ad.equals(bd)) {
                 return true;
             }
@@ -171,13 +182,13 @@ public class Utils {
             try {
                 al = Long.valueOf(as);
             } catch (Exception e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
             Long bl = null;
             try {
                 bl = Long.valueOf(bs);
             } catch (Exception e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
             if (al != null && bl != null && al.equals(bl)) {
                 return true;
@@ -187,31 +198,26 @@ public class Utils {
         return false;
     }
 
-    // get changes of dbMap after use inputMap to update dbMap, but dbMap keeps untouched
-    // return true if inputMap is a subset of dbMap and work done
+    // get changes of map after use update to update map, but map keeps untouched
+    // return true if key set of update is a subset of key set of map
     //
-    public static boolean MapChangesAfterUpdate(Map<String, Object> inputMap, Map<String, Object> dbMap, Map<String, Object> changes) {
+    public static boolean mapChangesAfterUpdate(Map<String, Object> update, Map<String, Object> map, Map<String, Object> changes) {
 
-        if (inputMap == null || dbMap == null) {
+        if (update == null || map == null) {
             return false;
         }
 
         Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
         changes.clear();
-        for (Map.Entry<String, Object> entry : inputMap.entrySet()) {
+        for (Map.Entry<String, Object> entry : update.entrySet()) {
 
             String key = entry.getKey();
-            if (!dbMap.containsKey(key)) {
+            if (!map.containsKey(key)) {
                 return false;
             }
-            Object aval = entry.getValue();
-            Object bval = dbMap.get(key);
-            if (aval == null && bval == null) {
-                continue;
-            } else if (aval == null || bval == null) {
-                changes.put(key, aval);
-            } else if (!isValueEquals(aval, bval)) {
-                changes.put(key, aval);
+            Object value = entry.getValue();
+            if (!isValueEquals(value, map.get(key))) {
+                changes.put(key, value);
             }
         }
         return true;
@@ -225,18 +231,13 @@ public class Utils {
             return true;
         } else if (a == null || b == null) {
             return false;
+        } else if (a.size() != b.size()) {
+            return false;
         }
 
         for (Map.Entry<String, Object> entry : a.entrySet()) {
-
             String key = entry.getKey();
-            Object aval = entry.getValue();
-            Object bval = b.get(key);
-            if (aval == null && bval == null) {
-                continue;
-            } else if (aval == null || bval == null) {
-                return false;
-            } else if (!isValueEquals(aval, bval)) {
+            if (!isValueEquals(entry.getValue(), b.get(key))) {
                 return false;
             }
         }
