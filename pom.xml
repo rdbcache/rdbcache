@@ -43,6 +43,7 @@
     <junit.jupiter.version>5.1.0</junit.jupiter.version>
     <junit.vintage.version>5.1.0</junit.vintage.version>
     <junit.platform.version>1.1.0</junit.platform.version>
+    <mockito-all.version>2.0.2-beta</mockito-all.version>
 
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
     <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
@@ -113,15 +114,6 @@
       <version>${commons-lang.version}</version>
     </dependency>
 
-    <!--
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    -->
-
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -155,6 +147,14 @@
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-launcher</artifactId>
       <version>${junit.platform.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-all -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <version>${mockito-all.version}</version>
       <scope>test</scope>
     </dependency>
 
