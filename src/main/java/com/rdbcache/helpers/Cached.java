@@ -6,6 +6,8 @@
 
 package com.rdbcache.helpers;
 
+import com.rdbcache.exceptions.ServerErrorException;
+
 import java.util.concurrent.Callable;
 
 public class Cached {
@@ -72,12 +74,12 @@ public class Cached {
     }
 
     public Cached clone() {
-        Cached newCached = new Cached(object);
-        newCached.createdAt = createdAt;
-        newCached.timeToLive = timeToLive;
-        newCached.lastAccessAt = lastAccessAt;
-        newCached.refreshable = refreshable;
-        return newCached;
+        try {
+            return (Cached) super.clone();
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            throw new ServerErrorException(e.getCause().getMessage());
+        }
     }
 
     public Long getCreatedAt() {

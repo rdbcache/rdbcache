@@ -12,6 +12,7 @@ import com.rdbcache.models.Monitor;
 import com.rdbcache.models.StopWatch;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -133,7 +134,7 @@ public class Context {
     }
 
     // for monitoring purpose
-    public Context getCloneWith(String id) {
+    public Context getCopyWith(String id) {
         KvPair pair = new KvPair(id);
         List<KvPair> ppairs = new ArrayList<KvPair>();
         ppairs.add(pair);
@@ -141,7 +142,7 @@ public class Context {
     }
 
     // for monitoring purpose
-    public Context getCloneWith(String id, String vaule) {
+    public Context getCopyWith(String id, String vaule) {
         KvPair pair = new KvPair(id, "data", vaule);
         List<KvPair> ppairs = new ArrayList<KvPair>();
         ppairs.add(pair);
@@ -149,14 +150,14 @@ public class Context {
     }
 
     // for monitoring purpose
-    public Context getCloneWith(KvPair pair) {
+    public Context getCopyWith(KvPair pair) {
         List<KvPair> ppairs = new ArrayList<KvPair>();
         ppairs.add(pair);
         return new Context(monitor, ppairs);
     }
 
     // for monitoring purpose
-    public Context getCloneWith(List<KvPair> pairs) {
+    public Context getCopyWith(List<KvPair> pairs) {
         return new Context(monitor, pairs);
     }
 

@@ -263,7 +263,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         }
 
         // get it from database
-        Context dbCtx = context.getCloneWith(key);
+        Context dbCtx = context.getCopyWith(key);
         if (!findOne(dbCtx, keyInfo)) {
             return insertOne(context, keyInfo);
         }
@@ -357,9 +357,9 @@ public class DbaseRepoImpl implements DbaseRepo {
             }
 
             // get it from database
-            Context dbCtx = context.getCloneWith(key);
+            Context dbCtx = context.getCopyWith(key);
             if (!findOne(dbCtx, keyInfoPer)) {
-                insertOne(context.getCloneWith(pair), keyInfoPer);
+                insertOne(context.getCopyWith(pair), keyInfoPer);
                 continue;
             }
 

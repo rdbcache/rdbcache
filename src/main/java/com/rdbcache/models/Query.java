@@ -6,6 +6,7 @@
 
 package com.rdbcache.models;
 
+import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Condition;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
@@ -17,9 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.rmi.ServerError;
 import java.util.*;
 
-public class Query implements Serializable {
+public class Query implements Serializable, Cloneable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Query.class);
 
@@ -117,8 +119,13 @@ public class Query implements Serializable {
     }
 
     public Query clone() {
-        Query query = new Query(table);
-        query.limit = limit;
+        Query query = null; //new Query(table);
+        try {
+            query = (Query) super.clone();
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            throw new ServerErrorException(e.getCause().getMessage());
+        }
         if (conditions != null) query.conditions = cloneConditions();
         return query;
     }

@@ -6,6 +6,7 @@
 
 package com.rdbcache.models;
 
+import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Condition;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
@@ -19,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.*;
 
-public class KeyInfo implements Serializable {
+public class KeyInfo implements Serializable, Cloneable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyInfo.class);
 
@@ -239,13 +240,16 @@ public class KeyInfo implements Serializable {
     }
 
     public KeyInfo clone() {
-        KeyInfo keyInfo = new KeyInfo(expire, table);
+        KeyInfo keyInfo = null;
+        try {
+            keyInfo = (KeyInfo) super.clone();
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            throw new ServerErrorException(e.getCause().getMessage());
+        }
         if (indexes != null) keyInfo.indexes = cloneIndexes();
-        keyInfo.clause = clause;
         if (params != null) keyInfo.params = cloneParams();
-        keyInfo.queryKey = queryKey;
-        if (query == null) keyInfo.query = null;
-        else keyInfo.query = query.clone();
+        if (query != null) keyInfo.query = query.clone();
         return keyInfo;
     }
 

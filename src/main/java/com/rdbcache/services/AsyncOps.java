@@ -55,7 +55,7 @@ public class AsyncOps {
                 AppCtx.getExpireOps().setExpireKey(context, keyInfo);
             } else {
                 for (KvPair pair : pairs) {
-                    Context ctx = context.getCloneWith(pair);
+                    Context ctx = context.getCopyWith(pair);
                     AppCtx.getExpireOps().setExpireKey(ctx, keyInfo);
                 }
             }
@@ -82,7 +82,7 @@ public class AsyncOps {
             } else {
                 AppCtx.getRedisRepo().saveAll(context, keyInfo);
                 for (KvPair pair : pairs) {
-                    Context ctx = context.getCloneWith(pair);
+                    Context ctx = context.getCopyWith(pair);
                     AppCtx.getExpireOps().setExpireKey(ctx, keyInfo);
                 }
             }
@@ -109,7 +109,7 @@ public class AsyncOps {
             } else {
                 AppCtx.getDbaseRepo().saveAll(context, keyInfo);
                 for (KvPair pair : pairs) {
-                    Context ctx = context.getCloneWith(pair);
+                    Context ctx = context.getCopyWith(pair);
                     AppCtx.getExpireOps().setExpireKey(ctx, keyInfo);
                 }
             }
@@ -133,7 +133,7 @@ public class AsyncOps {
             List<KeyInfo> keyInfos = AppCtx.getKeyInfoRepo().findAll(context);
             int i = 0;
             for (KvPair pair : pairs) {
-                Context ctx = context.getCloneWith(pair);
+                Context ctx = context.getCopyWith(pair);
                 KeyInfo keyInfoPer = keyInfos.get(i++);
                 AppCtx.getDbaseRepo().updateOne(ctx, keyInfoPer);
                 AppCtx.getRedisRepo().saveOne(ctx, keyInfoPer);
@@ -159,7 +159,7 @@ public class AsyncOps {
             AppCtx.getDbaseRepo().insertAll(context, keyInfo);
             AppCtx.getRedisRepo().saveAll(context, keyInfo);
             for (KvPair pair : pairs) {
-                Context ctx = context.getCloneWith(pair);
+                Context ctx = context.getCopyWith(pair);
                 AppCtx.getExpireOps().setExpireKey(ctx, keyInfo);
             }
             context.closeMonitor();
@@ -187,7 +187,7 @@ public class AsyncOps {
                 AppCtx.getDbaseRepo().saveAll(context, keyInfo);
                 AppCtx.getRedisRepo().saveAll(context, keyInfo);
                 for (KvPair pair : pairs) {
-                    Context ctx = context.getCloneWith(pair);
+                    Context ctx = context.getCopyWith(pair);
                     AppCtx.getExpireOps().setExpireKey(ctx, keyInfo);
                 }
             }
@@ -210,14 +210,14 @@ public class AsyncOps {
 
             for (KvPair pair : pairs) {
 
-                Context ctx = context.getCloneWith(pair);
+                Context ctx = context.getCopyWith(pair);
                 if (AppCtx.getRedisRepo().updateIfExists(ctx, keyInfo)) {
                     AppCtx.getDbaseRepo().saveOne(ctx, keyInfo);
                     AppCtx.getExpireOps().setExpireKey(ctx, keyInfo);
                     continue;
                 }
 
-                Context dbCtx = ctx.getCloneWith(pair.getId());
+                Context dbCtx = ctx.getCopyWith(pair.getId());
                 if (!AppCtx.getDbaseRepo().findOne(dbCtx, keyInfo)) {
 
                     AppCtx.getRedisRepo().saveOne(ctx, keyInfo);
@@ -288,7 +288,7 @@ public class AsyncOps {
                 }
             } else {
                 for (KvPair pair : pairs) {
-                    Context ctx = context.getCloneWith(pair);
+                    Context ctx = context.getCopyWith(pair);
                     KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(ctx);
                     if (keyInfo == null) {
                         context.logTraceMessage("key (" + pair.getId() + ") not found");
@@ -323,7 +323,7 @@ public class AsyncOps {
                 }
             } else {
                 for (KvPair pair : pairs) {
-                    Context ctx = context.getCloneWith(pair);
+                    Context ctx = context.getCopyWith(pair);
                     KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(ctx);
                     if (keyInfo == null) {
                         context.logTraceMessage("key (" + pair.getId() + ") not found");

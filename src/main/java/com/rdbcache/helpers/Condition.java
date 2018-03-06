@@ -142,14 +142,7 @@ public class Condition extends HashMap<String, List<String>> {
     }
 
     public Condition clone() {
-        Condition condition = new Condition();
-        for(Map.Entry<String, List<String>> entry: entrySet()) {
-            List<String> values = entry.getValue();
-            for (String value: values) {
-                condition.push(entry.getKey(), value);
-            }
-        }
-        return condition;
+        return (Condition) super.clone();
     }
 
     public Map<String, Object> toMap() {

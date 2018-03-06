@@ -57,7 +57,6 @@ public class RedisDbaseCacheApis {
      * @param opt1 String, can be expire or table
      * @param opt2 String, can be expire or table, but not otp1
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/get/{key}",
@@ -68,7 +67,7 @@ public class RedisDbaseCacheApis {
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
-            @PathVariable Optional<String> opt2) throws NotFoundException {
+            @PathVariable Optional<String> opt2) {
 
         Context context = new Context(key, true);
         KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
@@ -150,7 +149,6 @@ public class RedisDbaseCacheApis {
      * @param opt1 String, can be expire or table
      * @param opt2 String, can be expire or table, but not otp1
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/set/{key}",
@@ -162,7 +160,7 @@ public class RedisDbaseCacheApis {
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
-            @RequestBody String value) throws BadRequestException {
+            @RequestBody String value) {
 
         if (value == null || value.length() == 0) {
             throw new BadRequestException("missing request body");
@@ -190,7 +188,6 @@ public class RedisDbaseCacheApis {
      * @param opt1 String, can be expire or table
      * @param opt2 String, can be expire or table, but not otp1
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/put/{key}",
@@ -202,7 +199,7 @@ public class RedisDbaseCacheApis {
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
-            @RequestBody String value) throws BadRequestException {
+            @RequestBody String value) {
 
         if (value == null || value.length() == 0) {
             throw new BadRequestException("missing request body");
@@ -237,7 +234,6 @@ public class RedisDbaseCacheApis {
      * @param opt1 String, can be expire or table
      * @param opt2 String, can be expire or table, but not otp1
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/getset/{key}/{value}",
@@ -249,7 +245,7 @@ public class RedisDbaseCacheApis {
             @PathVariable("key") String key,
             @PathVariable("value") String value,
             @PathVariable Optional<String> opt1,
-            @PathVariable Optional<String> opt2) throws BadRequestException {
+            @PathVariable Optional<String> opt2) {
 
         if (value == null || value.length() == 0) {
             throw new BadRequestException("missing value");
@@ -257,7 +253,7 @@ public class RedisDbaseCacheApis {
         Context context = new Context(key, value, true);
         KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
 
-        Context ctx = context.getCloneWith(key, value);
+        Context ctx = context.getCopyWith(key, value);
 
         if (key.equals("*")) {
 
@@ -288,7 +284,6 @@ public class RedisDbaseCacheApis {
      * @param opt1 String, can be expire or table
      * @param opt2 String, can be expire or table, but not otp1
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/getset/{key}",
@@ -300,7 +295,7 @@ public class RedisDbaseCacheApis {
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
-            @RequestBody String value) throws BadRequestException {
+            @RequestBody String value) {
 
         if (value == null || value.length() == 0) {
             throw new BadRequestException("missing request body");
@@ -309,7 +304,7 @@ public class RedisDbaseCacheApis {
         Context context = new Context(key, value, true);
         KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
 
-        Context ctx = context.getCloneWith(key, value);
+        Context ctx = context.getCopyWith(key, value);
 
         if (key.equals("*")) {
 
@@ -339,7 +334,6 @@ public class RedisDbaseCacheApis {
      * @param opt1 String, can be expire or table
      * @param opt2 String, can be expire or table, but not otp1
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/pull",
@@ -350,7 +344,7 @@ public class RedisDbaseCacheApis {
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
-            @RequestBody ArrayList<String> keys) throws BadRequestException {
+            @RequestBody ArrayList<String> keys) {
 
         if (keys == null || keys.size() == 0) {
             throw new BadRequestException("missing keys");
@@ -381,8 +375,9 @@ public class RedisDbaseCacheApis {
 
             if (!pair.hasContent()) {
 
-                Context ctx = context.getCloneWith(pair);
+                Context ctx = context.getCopyWith(pair);
                 KeyInfo dbKeyInfo = AppCtx.getKeyInfoRepo().findOne(ctx);
+
                 if (dbKeyInfo != null && AppCtx.getDbaseRepo().findOne(ctx, dbKeyInfo)) {
                     dbPairs.add(pair);
                 }
@@ -394,14 +389,14 @@ public class RedisDbaseCacheApis {
 
         if (redisPairs.size() > 0) {
 
-            Context ctx = context.getCloneWith(redisPairs);
+            Context ctx = context.getCopyWith(redisPairs);
             AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
 
         }
 
         if (dbPairs.size() > 0) {
 
-            Context ctx = context.getCloneWith(dbPairs);
+            Context ctx = context.getCopyWith(dbPairs);
             AppCtx.getAsyncOps().doSaveToRedis(ctx, keyInfo);
 
         }
@@ -420,7 +415,6 @@ public class RedisDbaseCacheApis {
      * @param opt2 String, can be expire or table, but not otp1
      * @param map Map, a map of key and value pairs
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/push",
@@ -431,7 +425,7 @@ public class RedisDbaseCacheApis {
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
-            @RequestBody Map<String, Object> map) throws BadRequestException {
+            @RequestBody Map<String, Object> map) {
 
         if (map == null || map.size() == 0) {
             throw new BadRequestException("missing request body");
@@ -488,14 +482,13 @@ public class RedisDbaseCacheApis {
      * @param request HttpServletRequest
      * @param key String, hash key
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/delkey/{key}"
     }, method = RequestMethod.GET)
     public ResponseEntity<?> delkey(
             HttpServletRequest request,
-            @PathVariable("key") String key) throws BadRequestException {
+            @PathVariable("key") String key) {
 
         if (key.equals("*")) {
             throw new BadRequestException("no * allowed as key");
@@ -518,14 +511,13 @@ public class RedisDbaseCacheApis {
      * @param request HttpServletRequest
      * @param keys List, list of keys for returned entries
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/delkey"
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delkeypost(
             HttpServletRequest request,
-            @RequestBody ArrayList<String> keys) throws BadRequestException {
+            @RequestBody ArrayList<String> keys) {
 
         if (keys.contains("*")) {
             throw new BadRequestException("no * allowed as key");
@@ -554,14 +546,13 @@ public class RedisDbaseCacheApis {
      * @param request HttpServletRequest
      * @param key String, hash key
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/delall/{key}"
     }, method = RequestMethod.GET)
     public ResponseEntity<?> delall(
             HttpServletRequest request,
-            @PathVariable("key") String key) throws BadRequestException {
+            @PathVariable("key") String key) {
 
         if (key.equals("*")) {
             throw new BadRequestException("no * allowed as key");
@@ -584,14 +575,13 @@ public class RedisDbaseCacheApis {
      * @param request HttpServletRequest
      * @param keys List, list of keys for returned entries
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/delall"
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delallpost(
             HttpServletRequest request,
-            @RequestBody ArrayList<String> keys) throws BadRequestException {
+            @RequestBody ArrayList<String> keys) {
 
         if (keys.contains("*")) {
             throw new BadRequestException("no * allowed as key");
@@ -621,7 +611,6 @@ public class RedisDbaseCacheApis {
      * @param opt1 String, can be expire or table
      * @param opt2 String, can be expire or table, but not otp1
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/select",
@@ -631,7 +620,7 @@ public class RedisDbaseCacheApis {
     public ResponseEntity<?> select(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
-            @PathVariable Optional<String> opt2) throws BadRequestException {
+            @PathVariable Optional<String> opt2) {
 
         if (request.getParameterMap().size() == 0) {
             throw  new BadRequestException("query string is missing");
@@ -664,7 +653,6 @@ public class RedisDbaseCacheApis {
      * @param opt2 String, can be expire or table, but not otp1
      * @param keys List, list of keys for returned entries
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/select",
@@ -675,7 +663,7 @@ public class RedisDbaseCacheApis {
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
-            @RequestBody ArrayList<String> keys) throws BadRequestException {
+            @RequestBody ArrayList<String> keys) {
 
         if (request.getParameterMap().size() == 0) {
             throw  new BadRequestException("query string is missing");
@@ -719,7 +707,6 @@ public class RedisDbaseCacheApis {
      * @param opt2 String, can be expire or table, but not otp1
      * @param list List, a list of map, than contains key and other fields
      * @return ResponseEntity
-     * @throws BadRequestException
      */
     @RequestMapping(value = {
             "/v1/insert",
@@ -730,7 +717,7 @@ public class RedisDbaseCacheApis {
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
-            @RequestBody List<Map<String, Object>> list) throws BadRequestException {
+            @RequestBody List<Map<String, Object>> list){
 
         if (request.getParameterMap().size() != 0) {
             throw  new BadRequestException("no query string is needed");
@@ -770,12 +757,22 @@ public class RedisDbaseCacheApis {
         return response(context, true);
     }
 
+    /**
+     * trace
+     *
+     * get error messages by trace id
+     *
+     * @param request HttpServletRequest
+     * @param traceId the trace id return by API call
+     * @return ResponseEntity
+     *
+     */
     @RequestMapping(value = {
             "/v1/trace/{traceId}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> trace(
             HttpServletRequest request,
-            @PathVariable("traceId") String traceId) throws BadRequestException {
+            @PathVariable("traceId") String traceId){
 
         if (request.getParameterMap().size() != 0) {
             throw  new BadRequestException("no query string is needed");
@@ -792,12 +789,21 @@ public class RedisDbaseCacheApis {
         return response(context);
     }
 
+    /**
+     * tracepost
+     *
+     * get error messages by trace id list
+     *
+     * @param request HttpServletRequest
+     * @param traceIds List trace id list
+     * @return ResponseEntity
+     */
     @RequestMapping(value = {
             "/v1/trace"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> tracepost(
             HttpServletRequest request,
-            @RequestBody ArrayList<String> traceIds) throws BadRequestException {
+            @RequestBody List<String> traceIds){
 
         if (traceIds == null || traceIds.size() == 0) {
             throw new BadRequestException("missing trace ids");
@@ -825,13 +831,22 @@ public class RedisDbaseCacheApis {
         return response(context, true);
     }
 
+    /**
+     * flushCache
+     *
+     * flush local cache
+     *
+     * @param request HttpServletRequest
+     * @param opt optional, all, table, key and data
+     * @return ResponseEntity
+     */
     @RequestMapping(value = {
             "/v1/flush-cache",
             "/v1/flush-cache/{opt}"
     }, method = RequestMethod.GET)
-    public ResponseEntity<?> flashCache(
+    public ResponseEntity<?> flushCache(
             HttpServletRequest request,
-            @PathVariable Optional<String> opt) throws BadRequestException {
+            @PathVariable Optional<String> opt) {
 
         Context context = new Context( true);
         if (Cfg.getEnableMonitor()) context.enableMonitor(request);
@@ -859,7 +874,7 @@ public class RedisDbaseCacheApis {
             Context context,
             HttpServletRequest request,
             String key,
-            Optional<String> opt1, Optional<String> opt2) throws BadRequestException {
+            Optional<String> opt1, Optional<String> opt2) {
 
         if (Cfg.getEnableMonitor()) context.enableMonitor(request);
 
@@ -920,7 +935,7 @@ public class RedisDbaseCacheApis {
         return keyInfo;
     }
 
-    private void assignOption(Context context, String opt, String[] opts) throws BadRequestException {
+    private void assignOption(Context context, String opt, String[] opts) {
 
         opt = opt.trim();
         if (opts[0] == null && expPattern.matcher(opt).matches()) {
@@ -938,13 +953,13 @@ public class RedisDbaseCacheApis {
     }
 
     private ResponseEntity<Map<String, Object>> response(
-            Context context) throws BadRequestException {
+            Context context) {
         return response(context, false);
     }
 
     private ResponseEntity<Map<String, Object>> response(
             Context context,
-            Boolean batch) throws BadRequestException {
+            Boolean batch) {
 
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         Long now = System.currentTimeMillis();
