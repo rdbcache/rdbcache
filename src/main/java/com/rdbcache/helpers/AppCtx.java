@@ -6,6 +6,7 @@
 
 package com.rdbcache.helpers;
 
+import com.rdbcache.controllers.RdbcacheApis;
 import com.rdbcache.repositories.*;
 import com.rdbcache.services.*;
 import org.springframework.context.ApplicationContext;
@@ -15,6 +16,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class AppCtx {
 
     private static ApplicationContext ctx;
+
+    private static RdbcacheApis rdbcacheApis;
 
     private static AsyncOps asyncOps;
 
@@ -50,6 +53,17 @@ public class AppCtx {
 
     public static ApplicationContext getApplicationContext() {
         return ctx;
+    }
+
+    public static RdbcacheApis getRdbcacheApis() {
+        if (rdbcacheApis == null) {
+            try {
+                rdbcacheApis = ctx.getBean(RdbcacheApis.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return rdbcacheApis;
     }
 
     public static AsyncOps getAsyncOps() {

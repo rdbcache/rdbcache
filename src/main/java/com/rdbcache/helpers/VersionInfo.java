@@ -40,6 +40,79 @@ public class VersionInfo {
 
     private String briefInfo;
 
+    public String getJdkVersion() {
+        return jdkVersion;
+    }
+
+    public String getBootVersion() {
+        return bootVersion;
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public String getAppVersion() {
+        return appVersion;
+    }
+
+    public String getAppDescription() {
+        return appDescription;
+    }
+
+    public String getAppUrl() {
+        return appUrl;
+    }
+
+    public String getAppAuthors() {
+        return appAuthors;
+    }
+
+    public String getAppProfile() {
+        return appProfile;
+    }
+
+    public String getAppBuildNumber() {
+        return appBuildNumber;
+    }
+
+    public String getAppBuildTime() {
+        return appBuildTime;
+    }
+
+    public String getAppBuiltBy() {
+        return appBuiltBy;
+    }
+
+    public String getBriefInfo() {
+
+        if (briefInfo != null) return briefInfo;
+
+        if (appName.equals("default")) {
+            return "rdbcache";
+        }
+
+        briefInfo = appName + " " +
+                appVersion + " rev." + appBuildNumber + " " + appProfile + " @ " +
+                appBuildTime + " built by " + appBuiltBy;
+
+        return briefInfo;
+    }
+
+    public String getFullInfo() {
+
+        if (appName == null) {
+            return "rdbcache";
+        }
+
+        String info = getBriefInfo() + "\n";
+        info += appDescription + "\n";
+        info += "Website: " + appUrl + "\n";
+        int year = Calendar.getInstance().get(Calendar.YEAR);
+        info += "Copyright (c) 2017-" + year + " " + appAuthors;
+        return info;
+    }
+
     public VersionInfo() {
 
         boolean loaded = false;
@@ -53,7 +126,7 @@ public class VersionInfo {
         }
 
         if (loaded) {
-            
+
             jdkVersion = properties.getProperty("jdk.version");
             bootVersion = properties.getProperty("boot.version");
             appName = properties.getProperty("app.name");
@@ -105,78 +178,5 @@ public class VersionInfo {
         if (appBuildNumber == null) appBuildNumber = attributes.getValue("Implementation-Build");
         if (appBuildTime == null) appBuildTime = attributes.getValue("Build-Time");
         if (appBuiltBy == null) appBuiltBy = attributes.getValue("Built-By");
-    }
-
-    public String getBriefInfo() {
-
-        if (briefInfo != null) return briefInfo;
-
-        if (appName.equals("default")) {
-            return "rdbcache";
-        }
-
-        briefInfo = appName + " " +
-                appVersion + " rev." + appBuildNumber + " " + appProfile + " @ " +
-                appBuildTime + " built by " + appBuiltBy;
-
-        return briefInfo;
-    }
-
-    public String getFullInfo() {
-
-        if (appName == null) {
-            return "rdbcache";
-        }
-
-        String info = getBriefInfo() + "\n";
-        info += appDescription + "\n";
-        info += "Website: " + appUrl + "\n";
-        int year = Calendar.getInstance().get(Calendar.YEAR);
-        info += "Copyright (c) 2017-" + year + " " + appAuthors;
-        return info;
-    }
-
-    public String getJdkVersion() {
-        return jdkVersion;
-    }
-
-    public String getBootVersion() {
-        return bootVersion;
-    }
-
-    public String getAppName() {
-        return appName;
-    }
-
-    public String getAppVersion() {
-        return appVersion;
-    }
-
-    public String getAppDescription() {
-        return appDescription;
-    }
-
-    public String getAppUrl() {
-        return appUrl;
-    }
-
-    public String getAppAuthors() {
-        return appAuthors;
-    }
-
-    public String getAppProfile() {
-        return appProfile;
-    }
-
-    public String getAppBuildNumber() {
-        return appBuildNumber;
-    }
-
-    public String getAppBuildTime() {
-        return appBuildTime;
-    }
-
-    public String getAppBuiltBy() {
-        return appBuiltBy;
     }
 }

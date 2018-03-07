@@ -57,10 +57,6 @@ public class Query implements Serializable, Cloneable {
         return key;
     }
 
-    public String getClause(List<Object> params, String defaultValue) {
-        return generateClauseAndParams(params, defaultValue);
-    }
-
     public String getTable() {
         return table;
     }
@@ -337,7 +333,7 @@ public class Query implements Serializable, Cloneable {
 
     private static String opsSingleList[] = { "IS NOT NULL", "IS NULL", "IS NOT FALSE", "IS NOT TRUE", "IS TRUE", "IS FALSE"};
 
-    private String generateClauseAndParams(List<Object> params, String defaultValue) {
+    public String getClause(List<Object> params, String defaultValue) {
 
         if (conditions == null || conditions.size() == 0) {
             return null;

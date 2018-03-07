@@ -10,6 +10,7 @@ import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
 import com.rdbcache.helpers.Utils;
+
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
@@ -32,16 +33,16 @@ import java.util.regex.Pattern;
 import java.util.*;
 
 @RestController
-public class RedisDbaseCacheApis {
+public class RdbcacheApis {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RedisDbaseCacheApis.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RdbcacheApis.class);
 
     private Pattern expPattern;
 
     private DecimalFormat durationFormat;
 
     @PostConstruct
-    private void init() {
+    public void init() {
         expPattern = Pattern.compile("([0-9]+|-[0-9]+|\\+[0-9]+)");
         durationFormat = new DecimalFormat("#.######");
     }

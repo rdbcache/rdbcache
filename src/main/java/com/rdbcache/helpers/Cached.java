@@ -10,13 +10,13 @@ import com.rdbcache.exceptions.ServerErrorException;
 
 import java.util.concurrent.Callable;
 
-public class Cached {
+public class Cached implements Cloneable {
 
     private Object object;
 
     private Long createdAt;
 
-    private Long timeToLive = 3600000L;  // default 1 hour
+    private Long timeToLive = 900000L;  // default 15 minutes
 
     private Long lastAccessAt;
 
@@ -33,12 +33,12 @@ public class Cached {
         this.timeToLive = timeToLive;
     }
 
-    public Object getObject() {
+    public synchronized Object getObject() {
         lastAccessAt = System.currentTimeMillis();
         return object;
     }
 
-    public void setObject(Object object) {
+    public synchronized void setObject(Object object) {
         lastAccessAt = System.currentTimeMillis();
         this.object = object;
     }

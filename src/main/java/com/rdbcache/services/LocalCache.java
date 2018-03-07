@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import javafx.util.Pair;
 
+import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,15 +28,24 @@ public class LocalCache extends Thread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalCache.class);
 
+    private Long recycleMills = Cfg.getRecycleSchedule() * 1000L;
+
     private final Map<String, Cached> cache = new ConcurrentHashMap<String, Cached>();
+
+    public Long getRecycleMills() {
+        return recycleMills;
+    }
+
+    public void setRecycleMills(Long recycleMills) {
+        this.recycleMills = recycleMills;
+    }
 
     public void put(String key, Cached cached) {
         cache.put(key, cached);
     }
 
     public void put(String key, Object object) {
-        Cached cached = new Cached(object);
-        cache.put(key, cached);
+        cache.put(key, new Cached(object));
     }
 
     public void put(String key, Object object, Long timeToLive) {
@@ -43,20 +53,18 @@ public class LocalCache extends Thread {
         cache.put(key, cached);
     }
 
-    public Object put(String key, Long timeToLive, Callable<Object> refreshable) {
-        if (refreshable == null) return null;
-        Object object = null;
+    public Object put(String key, Long timeToLive, @NotNull Callable<Object> refreshable) {
         try {
-            object = refreshable.call();
+            Object object = refreshable.call();
+            Cached cached = new Cached(object, timeToLive);
+            cached.setRefreshable(refreshable);
+            cache.put(key, cached);
+            return object;
         } catch (Exception e) {
             String msg = e.getCause().getMessage();
             LOGGER.error(msg);
             throw new ServerErrorException(msg);
         }
-        Cached cached = new Cached(object, timeToLive);
-        cached.setRefreshable(refreshable);
-        cache.put(key, cached);
-        return object;
     }
 
     public Object get(String key) {
@@ -65,8 +73,21 @@ public class LocalCache extends Thread {
             return null;
         }
         if (cached.isTimeout()) {
-            cache.remove(key);
-            return null;
+            if (!cached.isRefreshable()) {
+                cache.remove(key);
+                return null;
+            } else {
+                try {
+                    Object object = cached.getRefreshable().call();
+                    cached.setObject(object);
+                    cached.renew();
+                    return object;
+                } catch (Exception e) {
+                    String msg = e.getCause().getMessage();
+                    LOGGER.error(msg);
+                    throw new ServerErrorException(msg);
+                }
+            }
         } else {
             return cached.getObject();
         }
@@ -77,7 +98,7 @@ public class LocalCache extends Thread {
             return false;
         }
         Cached cached = cache.get(key);
-        if (cached.isTimeout()) {
+        if (cached.isTimeout() && !cached.isRefreshable()) {
             cache.remove(key);
             return false;
         } else {
@@ -89,18 +110,12 @@ public class LocalCache extends Thread {
         cache.remove(key);
     }
 
-    public void putKeyInfo(String key, KeyInfo keyInfo) {
-        KeyInfo clone = null;
-        if (keyInfo != null) {
-            clone = keyInfo.clone();
-            keyInfo.setIsNew(false);
-        }
-
+    public void putKeyInfo(String key, @NotNull KeyInfo keyInfo) {
         Long ttl = Cfg.getKeyInfoCacheTTL();
-        if (ttl > keyInfo.getTTL()) ttl = keyInfo.getTTL();
-
-        Cached cached = new Cached(clone, ttl * 1000l);
-        cache.put("keyinfo::" + key, cached);
+        Long ttl2 = keyInfo.getTTL();
+        if (ttl > ttl2) ttl = ttl2;
+        keyInfo.setIsNew(false);
+        put("keyinfo::" + key, keyInfo, ttl * 1000);
     }
 
     public KeyInfo getKeyInfo(String key) {
@@ -145,34 +160,31 @@ public class LocalCache extends Thread {
             return;
         }
         Long ttl = Cfg.getDataMaxCacheTLL();
-        if (ttl > keyInfo.getTTL()) ttl = keyInfo.getTTL();
-        Cached cached = new Cached(map, ttl * 1000l);
-        cache.put("datamap::" + key, cached);
+        Long ttl2 = keyInfo.getTTL();
+        if (ttl > ttl2) ttl = ttl2;
+        put("datamap::" + key, map, ttl * 1000);
     }
 
-    public void updateData(String key, Map<String, Object> update, KeyInfo keyInfo) {
-        if (update == null || update.size() == 0 || Cfg.getDataMaxCacheTLL() <= 0L) {
+    public void updateData(String key, @NotNull Map<String, Object> update, KeyInfo keyInfo) {
+        if (update.size() == 0 || Cfg.getDataMaxCacheTLL() <= 0L) {
             return;
         }
-        Cached cached = cache.get("datamap::" + key);
-        if (cached == null) {
-            return;
-        }
-        if (cached.isTimeout()) {
-            cache.remove(key);
-            return;
-        }
-        Map<String, Object> map = (Map<String, Object>) cached.getObject();
+        Map<String, Object> map = (Map<String, Object>) get("datamap::" + key);
         if (map == null) {
             return;
         }
         for (Map.Entry<String, Object> entry : update.entrySet()) {
             map.put(entry.getKey(), entry.getValue());
         }
+        putData(key, map, keyInfo);
     }
 
     public Map<String, Object> getData(String key) {
-        return (Map<String, Object>) get("datamap::" + key);
+        Map<String, Object> map = (Map<String, Object>) get("datamap::" + key);
+        if (map == null) {
+            return null;
+        }
+        return new LinkedHashMap<String, Object>(map);
     }
 
     public void removeData(String key) {
@@ -224,7 +236,7 @@ public class LocalCache extends Thread {
                 timeoutKeys.clear();
                 lastAccessSortedKeys.clear();
                 
-                Thread.sleep(Cfg.getRecycleSchedule() * 1000L);
+                Thread.sleep(recycleMills);
 
                 for (Map.Entry<String, Cached> entry: cache.entrySet()) {
                     Cached cached = entry.getValue();
@@ -245,24 +257,17 @@ public class LocalCache extends Thread {
                     if (cached == null) {
                         continue;
                     }
-                    Cached cachedClone = cached.clone();
-
-                    Callable<Object> refreshable = cachedClone.getRefreshable();
-                    if (refreshable == null) {
-                        continue;
-                    }
+                    Cached clone = cached.clone();
+                    Callable<Object> refreshable = clone.getRefreshable();
                     try {
                         Object object = refreshable.call();
-                        if (object == null) {
-                            continue;
-                        }
-                        cachedClone.setObject(object);
-                        put(key, cachedClone);
+                        clone.setObject(object);
                     } catch (Exception e) {
                         String msg = e.getCause().getMessage();
                         LOGGER.error(msg);
                         e.printStackTrace();
                     }
+                    cache.put(key, clone);
                 }
 
                 if (cache.size() < Cfg.getMaxCacheSize() * 3 / 4) {

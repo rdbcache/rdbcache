@@ -210,10 +210,11 @@ public class Context {
     }
 
     public void logTraceMessage(String message) {
-        if (traceId != null) {
-            StackTraceElement[] trace = Thread.currentThread().getStackTrace();
-            AppCtx.getDbaseOps().logTraceMessage(traceId, message, trace);
+        if (traceId == null) {
+            return;
         }
+        StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        AppCtx.getDbaseOps().logTraceMessage(traceId, message, trace);
     }
 
     @Override
