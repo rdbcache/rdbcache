@@ -38,7 +38,7 @@ public class KeyInfo implements Serializable, Cloneable {
     private String queryKey = "";
 
     @JsonIgnore
-    private Boolean isNew = true;
+    private Boolean isNew = false;
 
     @JsonIgnore
     private Map<String, Object> columns;
@@ -60,6 +60,7 @@ public class KeyInfo implements Serializable, Cloneable {
     }
 
     public KeyInfo() {
+        isNew = true;
     }
 
     public String getExpire() {

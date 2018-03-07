@@ -1,5 +1,6 @@
 package com.rdbcache;
 
+import com.rdbcache.helpers.Utils;
 import com.rdbcache.services.LocalCache;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -8,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,30 +32,33 @@ public class LocalCacheTests {
 
     @Test
     void timeToLiveTest() {
-        localCache.put("key1", "value1", 900L);
+        localCache.put("key", Utils.toMap("{\"k\":\"v\"}"), 900L);
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
         }
-        String value = (String) localCache.get("key1");
-        assertEquals(value, "value1");
+        Map<String, Object> map = localCache.get("key");
+        assertEquals(Utils.toJson(map), "{\"k\":\"v\"}");
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
         }
-        value = (String) localCache.get("key1");
-        assertNull(value);
+        map = localCache.get("key");
+        assertNull(map);
     }
 
     @Test
     void refreshableTest() {
         long start = System.currentTimeMillis();
         localCache.put("key", 100L, () -> {
-            return Long.valueOf((System.currentTimeMillis() - start) / 100);
+            Map<String, Object> map = new HashMap<>();
+            map.put("time_lot", Long.valueOf((System.currentTimeMillis() - start) / 100));
+            return map;
         });
-        for (int i = 0; i < 10; i++) {
-            Long lvalue = (Long) localCache.get("key");
-            assertEquals(lvalue.longValue(), i);
+        for (Long i = 0L; i < 10L; i++) {
+            Map<String, Object> map = localCache.get("key");
+            Long timeLot = (Long) map.get("time_lot");
+            assertEquals(timeLot, i);
             try {
                 Thread.sleep(101);
             } catch (InterruptedException e) {

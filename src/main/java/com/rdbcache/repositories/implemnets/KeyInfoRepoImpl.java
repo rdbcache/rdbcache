@@ -132,7 +132,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 findAll = false;
                 continue;
             }
-            AppCtx.getLocalCache().put(key, redisKeyInfos.get(i));
+            AppCtx.getLocalCache().put(key, redisKeyInfos.get(i).toMap());
             int index = keys.indexOf(key);
             keyInfos.set(index, redisKeyInfos.get(index));
             i++;
@@ -162,7 +162,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             String key = dbPair.getId();
             int index= keys.indexOf(key);
             KeyInfo keyInfo = new KeyInfo(dbPair.getData());
-            AppCtx.getLocalCache().put(key, keyInfo);
+            AppCtx.getLocalCache().put(key, keyInfo.toMap());
             redisKeyInfoMap.put(key, keyInfo);
             keyInfos.set(index, keyInfo);
         }
@@ -292,7 +292,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                     }
                 }
             }
-            AppCtx.getLocalCache().put(key, keyInfo);
+            AppCtx.getLocalCache().put(key, keyInfo.toMap());
             todoKeys.add(key);
             todoKeyInfos.add(keyInfo);
         }

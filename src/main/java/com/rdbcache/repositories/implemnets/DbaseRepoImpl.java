@@ -110,53 +110,6 @@ public class DbaseRepoImpl implements DbaseRepo {
         return true;
     }
 
-    private boolean kvFindAll(Context context, KeyInfo keyInfo) {
-
-        Query query = keyInfo.getQuery();
-        if (query == null) {
-            LOGGER.debug("no query");
-            return false;
-        }
-        Map<String, Condition> conditions = query.getConditions();
-        if (conditions == null ||
-                conditions.size() != 1 ||
-                !conditions.containsKey("key")) {
-            LOGGER.debug("no conditions or not key only");
-            return false;
-        }
-        Condition condition = conditions.get("key");
-        if (condition == null ||
-                condition.size() != 1 ||
-                !condition.containsKey("=")) {
-            LOGGER.debug("only = is supported");
-            return false;
-        }
-        List<String> keys = condition.get("=");
-        if (keys == null || keys.size() == 0 ) {
-            return false;
-        }
-        List<KvIdType> idTypes = new ArrayList<KvIdType>();
-        for (String key: keys) {
-            KvIdType idType = new KvIdType(key, "data");
-            idTypes.add(idType);
-        }
-
-        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findAll");
-        Iterable<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
-        if (stopWatch != null) stopWatch.stopNow();
-
-        if (dbPairs == null && !dbPairs.iterator().hasNext()) {
-            return false;
-        }
-
-        List<KvPair> pairs = context.getPairs();
-        for (KvPair dbPair: dbPairs) {
-            pairs.add(dbPair);
-        }
-
-        return true;
-    }
-
     @Override
     public boolean findAll(Context context, KeyInfo keyInfo) {
 
@@ -482,6 +435,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                     String keyValue = String.valueOf(keyHolder.getKey());
                     map.put(primaryKey, keyValue);
                     AppCtx.getLocalCache().putData(key, map, keyInfo);
+                    AppCtx.getRedisRepo().saveOne(context, keyInfo);
                 }
                 keyInfo.fetchPKClauseParams(context, map, key);
                 AppCtx.getKeyInfoRepo().saveOne(context, keyInfo);
@@ -551,7 +505,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             String key = pair.getId();
             Map<String, Object> map = pair.getData();
-
+            Context ctx = context.getCopyWith(pair);
             ArrayList<Object> queryParams = new ArrayList<Object>();
             String fields = "", values = "";
 
@@ -606,8 +560,9 @@ public class DbaseRepoImpl implements DbaseRepo {
                     String keyValue = String.valueOf(keyHolder.getKey());
                     map.put(primaryKey, keyValue);
                     AppCtx.getLocalCache().putData(key, map, keyInfoPer);
+                    AppCtx.getRedisRepo().saveOne(ctx, keyInfoPer);
                 }
-                keyInfoPer.fetchPKClauseParams(context, map, pair.getId());
+                keyInfoPer.fetchPKClauseParams(ctx, map, pair.getId());
             }
         }
 
@@ -749,6 +704,54 @@ public class DbaseRepoImpl implements DbaseRepo {
         if (stopWatch != null) stopWatch.stopNow();
 
         setUseDefaultTable(keyInfo);
+
+        return true;
+    }
+
+    private boolean kvFindAll(Context context, KeyInfo keyInfo) {
+
+        Query query = keyInfo.getQuery();
+        if (query == null) {
+            LOGGER.debug("no query");
+            return false;
+        }
+        Map<String, Condition> conditions = query.getConditions();
+        if (conditions == null ||
+                conditions.size() != 1 ||
+                !conditions.containsKey("key")) {
+            LOGGER.debug("no conditions or not key only");
+            return false;
+        }
+        Condition condition = conditions.get("key");
+        if (condition == null ||
+                condition.size() != 1 ||
+                !condition.containsKey("=")) {
+            LOGGER.debug("only = is supported");
+            return false;
+        }
+        List<String> keys = condition.get("=");
+        if (keys == null || keys.size() == 0 ) {
+            LOGGER.debug("condition is empty");
+            return false;
+        }
+        List<KvIdType> idTypes = new ArrayList<KvIdType>();
+        for (String key: keys) {
+            KvIdType idType = new KvIdType(key, "data");
+            idTypes.add(idType);
+        }
+
+        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findAll");
+        Iterable<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
+        if (stopWatch != null) stopWatch.stopNow();
+
+        if (dbPairs == null && !dbPairs.iterator().hasNext()) {
+            return false;
+        }
+
+        List<KvPair> pairs = context.getPairs();
+        for (KvPair dbPair: dbPairs) {
+            pairs.add(dbPair);
+        }
 
         return true;
     }

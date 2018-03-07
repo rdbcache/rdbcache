@@ -156,8 +156,8 @@ public class AsyncOps {
 
             Thread.yield();
 
-            AppCtx.getDbaseRepo().insertAll(context, keyInfo);
             AppCtx.getRedisRepo().saveAll(context, keyInfo);
+            AppCtx.getDbaseRepo().insertAll(context, keyInfo);
             for (KvPair pair : pairs) {
                 Context ctx = context.getCopyWith(pair);
                 AppCtx.getExpireOps().setExpireKey(ctx, keyInfo);
@@ -180,12 +180,12 @@ public class AsyncOps {
             Thread.yield();
 
             if (pairs.size() == 1) {
-                AppCtx.getDbaseRepo().saveOne(context, keyInfo);
                 AppCtx.getRedisRepo().saveOne(context, keyInfo);
+                AppCtx.getDbaseRepo().saveOne(context, keyInfo);
                 AppCtx.getExpireOps().setExpireKey(context, keyInfo);
             } else {
-                AppCtx.getDbaseRepo().saveAll(context, keyInfo);
                 AppCtx.getRedisRepo().saveAll(context, keyInfo);
+                AppCtx.getDbaseRepo().saveAll(context, keyInfo);
                 for (KvPair pair : pairs) {
                     Context ctx = context.getCopyWith(pair);
                     AppCtx.getExpireOps().setExpireKey(ctx, keyInfo);

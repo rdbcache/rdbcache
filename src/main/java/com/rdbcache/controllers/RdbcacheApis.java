@@ -944,7 +944,8 @@ public class RdbcacheApis {
             return;
         }
         if (opts[1] == null) {
-            List<String> tables = AppCtx.getDbaseOps().getTableList(context);
+            Map<String, Object> map = AppCtx.getDbaseOps().getTableList(context);
+            List<String> tables = (List<String>) map.get("tables");
             if (tables.contains(opt)) {
                 opts[1] = opt;
                 return;

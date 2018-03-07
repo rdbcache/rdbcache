@@ -72,7 +72,7 @@ public class RedisConfig {
 
     @Bean
     public MessageListenerAdapter listenerAdapter() {
-        return new MessageListenerAdapter(expireOps(), "onMessage");
+        return new MessageListenerAdapter(expireOps(), "onExpireEvent");
     }
 
     @Bean

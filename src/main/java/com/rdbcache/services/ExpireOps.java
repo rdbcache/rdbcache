@@ -100,22 +100,22 @@ public class ExpireOps {
     }
 
     /**
-     * To process key expired message
+     * To process key expired event
      *
-     * @param message key expired message
+     * @param event key expired event
      */
-    public void onMessage(String message) {
+    public void onExpireEvent(String event) {
 
-        LOGGER.trace("Received message: " + message);
+        LOGGER.trace("Received : " + event);
 
-        if (!message.startsWith(Cfg.getEventPrefix())) {
+        if (!event.startsWith(Cfg.getEventPrefix())) {
             return;
         }
 
-        String[] parts = message.split("::");
+        String[] parts = event.split("::");
 
         if (parts.length < 3) {
-            LOGGER.error("invalid message format");
+            LOGGER.error("invalid event format");
             return;
         }
 
@@ -123,7 +123,7 @@ public class ExpireOps {
         String traceId = parts[2];
 
         Context context = new Context(key, traceId);
-        if (Cfg.getEnableMonitor()) context.enableMonitor(message, "event", key);
+        if (Cfg.getEnableMonitor()) context.enableMonitor(event, "event", key);
 
         String lockKey = "lock_" + Cfg.getEventPrefix() + "::" + key + "::" + traceId;
         String signature = Utils.generateId();

@@ -10,6 +10,7 @@ import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
+import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
@@ -75,23 +76,20 @@ public class DbaseOps {
         AppCtx.getKvPairRepo().save(pair);
     }
 
-    public List<String> getTableList(Context context) {
+    public Map<String, Object> getTableList(Context context) {
 
-        List<String> list = (List<String>) AppCtx.getLocalCache().get("table_list::");
-        if (list != null) {
-            return list;
+        Map<String, Object> map = AppCtx.getLocalCache().get("table_list::");
+        if (map != null) {
+            return map;
         }
-
-        Object object = AppCtx.getLocalCache().put("table_list::", Cfg.getTableInfoCacheTTL() * 1000L, () -> {
-            List<String> list2 = fetchTableList(context);
-            if (list2 == null) {
+        map = AppCtx.getLocalCache().put("table_list::", Cfg.getTableInfoCacheTTL() * 1000L, () -> {
+            Map<String, Object> map2 = fetchTableList(context);
+            if (map2 == null) {
                 LOGGER.error("failed to get table list");
             }
-            return list2;
+            return map2;
         });
-        list = (List<String>) object;
-
-        return list;
+        return map;
     }
 
     public Map<String, Object> getTableColumns(Context context, String table) {
@@ -142,7 +140,8 @@ public class DbaseOps {
 
     public void cacheAllTablesInfo() {
 
-        List<String> tables = getTableList(null);
+        Map<String, Object> map = getTableList(null);
+        List<String> tables = (List<String>) map.get("tables");
         for (String table: tables) {
             getTableColumns(null, table);
             getTableIndexes(null, table);
@@ -208,7 +207,7 @@ public class DbaseOps {
 
     // get list of tables
     //
-    public List<String> fetchTableList(Context context) {
+    public Map<String, Object> fetchTableList(Context context) {
 
         String sql = "SHOW TABLES";
 
@@ -218,7 +217,9 @@ public class DbaseOps {
             List<String> tables = AppCtx.getJdbcTemplate().queryForList(sql, String.class);
             if (stopWatch != null) stopWatch.stopNow();
 
-            return tables;
+            Map<String, Object> map = new HashMap<>();
+            map.put("tables", tables);
+            return map;
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
 
