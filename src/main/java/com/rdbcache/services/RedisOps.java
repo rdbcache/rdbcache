@@ -54,5 +54,7 @@ public class RedisOps {
             config += "x";
         }
         connection.setConfig("notify-keyspace-events", config);
+
+        LOGGER.trace("setConfig notify-keyspace-events " + config);
     }
 }

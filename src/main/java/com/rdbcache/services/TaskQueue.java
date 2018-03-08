@@ -43,7 +43,7 @@ public class TaskQueue extends Thread {
     @Override
     public void run() {
 
-        LOGGER.info("Event Task Queue is running on thread " + getName());
+        LOGGER.info("Task Queue is running on thread " + getName());
 
         Boolean freshConnection = true;
 

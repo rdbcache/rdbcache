@@ -33,6 +33,8 @@ public class LocalCache extends Thread {
 
     private Long keyInfoCacheTTL = Cfg.getKeyInfoCacheTTL();
 
+    private Long dataMaxCacheTLL = Cfg.getDataMaxCacheTLL();
+
     private final Map<String, Cached> cache = new ConcurrentHashMap<String, Cached>();
 
     public Long getRecycleMills() {
@@ -57,6 +59,14 @@ public class LocalCache extends Thread {
 
     public void setKeyInfoCacheTTL(Long keyInfoCacheTTL) {
         this.keyInfoCacheTTL = keyInfoCacheTTL;
+    }
+
+    public Long getDataMaxCacheTLL() {
+        return dataMaxCacheTLL;
+    }
+
+    public void setDataMaxCacheTLL(Long dataMaxCacheTLL) {
+        this.dataMaxCacheTLL = dataMaxCacheTLL;
     }
 
     public void put(String key, @NotNull Map<String, Object> map) {
@@ -165,13 +175,16 @@ public class LocalCache extends Thread {
     }
 
     public void putKeyInfo(String key, @NotNull KeyInfo keyInfo) {
+        if (keyInfoCacheTTL <= 0l) {
+            return;
+        }
         Long ttl = keyInfo.getTTL();
         if (ttl < keyInfoCacheTTL) ttl = keyInfoCacheTTL;
-        put("keyinfo::" + key, keyInfo.toMap(), ttl * 1000);
+        put("key::" + key, keyInfo.toMap(), ttl * 1000);
     }
 
     public KeyInfo getKeyInfo(String key) {
-        Map<String, Object> map = get("keyinfo::" + key);
+        Map<String, Object> map = get("key::" + key);
         if (map == null) return null;
         KeyInfo keyInfo = new KeyInfo(map);
         return keyInfo;
@@ -192,30 +205,29 @@ public class LocalCache extends Thread {
     }
 
     public void removeKeyInfo(String key) {
-        cache.remove("keyinfo::" + key);
+        cache.remove("key::" + key);
     }
 
     public void removeAllKeyInfo() {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
-            if (key.startsWith("keyinfo::")) {
+            if (key.startsWith("key::")) {
                 cache.remove(key);
             }
         }
     }
 
     public void putData(String key, Map<String, Object> map, KeyInfo keyInfo) {
-        if (Cfg.getDataMaxCacheTLL() <= 0L) {
+        if (dataMaxCacheTLL <= 0L) {
             return;
         }
-        Long ttl = Cfg.getDataMaxCacheTLL();
-        Long ttl2 = keyInfo.getTTL();
-        if (ttl > ttl2) ttl = ttl2;
+        Long ttl = keyInfo.getTTL();
+        if (ttl > dataMaxCacheTLL) ttl = dataMaxCacheTLL;
         put("data::" + key, map, ttl * 1000);
     }
 
     public void updateData(String key, @NotNull Map<String, Object> update, KeyInfo keyInfo) {
-        if (update.size() == 0 || Cfg.getDataMaxCacheTLL() <= 0L) {
+        if (dataMaxCacheTLL <= 0L || update.size() == 0) {
             return ;
         }
         update("data::" + key, update);
