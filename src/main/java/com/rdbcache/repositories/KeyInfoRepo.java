@@ -21,7 +21,7 @@ public interface KeyInfoRepo {
 
     public void saveAll(Context context, List<KeyInfo> keyInfos);
 
-    public void deleteOne(Context context);
+    public void deleteOne(Context context, boolean dbOps);
 
-    public void deleteAll(Context context);
+    public void deleteAll(Context context, boolean dbOps);
 }

@@ -8,9 +8,9 @@ package com.rdbcache.helpers;
 
 import com.rdbcache.controllers.RdbcacheApis;
 import com.rdbcache.repositories.*;
-import com.rdbcache.repositories.implemnets.DbaseRepoImpl;
-import com.rdbcache.repositories.implemnets.KeyInfoRepoImpl;
-import com.rdbcache.repositories.implemnets.RedisRepoImpl;
+import com.rdbcache.repositories.impls.DbaseRepoImpl;
+import com.rdbcache.repositories.impls.KeyInfoRepoImpl;
+import com.rdbcache.repositories.impls.RedisRepoImpl;
 import com.rdbcache.services.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.StringRedisTemplate;

@@ -215,18 +215,8 @@ public class LocalCache extends Thread {
         return keyInfo;
     }
 
-    public boolean getKeyInfos(List<String> keys, List<KeyInfo> keyInfos) {
-        boolean findAll = true;
-        for (String key: keys) {
-            KeyInfo keyInfo = getKeyInfo(key);
-            if (keyInfo == null) {
-                findAll = false;
-                keyInfos.add(null);
-            } else {
-                keyInfos.add(keyInfo);
-            }
-        }
-        return findAll;
+    public boolean containsKeyInfo(String key) {
+        return containsKey("key::" + key);
     }
 
     public void removeKeyInfo(String key) {
@@ -261,6 +251,10 @@ public class LocalCache extends Thread {
 
     public Map<String, Object> getData(String key) {
         return get("data::" + key);
+    }
+
+    public boolean containsData(String key) {
+        return containsKey("data::" + key);
     }
 
     public void removeData(String key) {

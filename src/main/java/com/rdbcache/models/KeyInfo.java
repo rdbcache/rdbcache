@@ -163,6 +163,59 @@ public class KeyInfo implements Serializable, Cloneable {
                 '}';
     }
 
+    public void copyRedisInfo(KeyInfo keyInfo) {
+        this.expire = keyInfo.expire;
+        this.table = keyInfo.table;
+    }
+
+    public void copyQueryInfo(KeyInfo keyInfo) {
+        queryKey = keyInfo.queryKey;
+        table = keyInfo.table;
+        indexes = keyInfo.cloneIndexes();
+        clause = keyInfo.clause;
+        params = keyInfo.cloneParams();
+        if (keyInfo.query != null) {
+            query = keyInfo.query.clone();
+        } else {
+            query = null;
+        }
+    }
+
+    public KeyInfo clone() {
+        KeyInfo keyInfo = null;
+        try {
+            keyInfo = (KeyInfo) super.clone();
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            throw new ServerErrorException(e.getCause().getMessage());
+        }
+        if (indexes != null) keyInfo.indexes = cloneIndexes();
+        if (params != null) keyInfo.params = cloneParams();
+        if (query != null) keyInfo.query = query.clone();
+        return keyInfo;
+    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        if (expire != null) map.put("expire", expire);
+        if (table != null) map.put("table", table);
+        if (indexes != null) map.put("indexes", indexes);
+        if (clause != null) map.put("clause", clause);
+        if (params != null) map.put("params", params);
+        if (queryKey != null) map.put("query_key", queryKey);
+        return map;
+    }
+
+    public void fromMap(Map<String, Object> map) {
+        if (map == null) return;
+        if (map.containsKey("expire")) expire = (String) map.get("expire");
+        if (map.containsKey("table")) table = (String) map.get("table");
+        if (map.containsKey("indexes")) indexes = (List<String>) map.get("indexes");
+        if (map.containsKey("clause")) clause = (String) map.get("clause");
+        if (map.containsKey("params")) params = (List<Object>) map.get("params");
+        if (map.containsKey("query_key")) queryKey = (String) map.get("query_key");
+    }
+
     @JsonIgnore
     public Long getTTL() {
         Long ttl = Long.valueOf(expire);
@@ -221,87 +274,6 @@ public class KeyInfo implements Serializable, Cloneable {
         }
 
         return preparePKClauseParams(context);
-    }
-
-    public void copyRedisInfo(KeyInfo keyInfo) {
-        this.expire = keyInfo.expire;
-        this.table = keyInfo.table;
-    }
-
-    public void copyQueryInfo(KeyInfo keyInfo) {
-        queryKey = keyInfo.queryKey;
-        table = keyInfo.table;
-        indexes = keyInfo.cloneIndexes();
-        clause = keyInfo.clause;
-        params = keyInfo.cloneParams();
-        if (keyInfo.query != null) {
-            query = keyInfo.query.clone();
-        } else {
-            query = null;
-        }
-    }
-
-    public KeyInfo clone() {
-        KeyInfo keyInfo = null;
-        try {
-            keyInfo = (KeyInfo) super.clone();
-        } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
-            throw new ServerErrorException(e.getCause().getMessage());
-        }
-        if (indexes != null) keyInfo.indexes = cloneIndexes();
-        if (params != null) keyInfo.params = cloneParams();
-        if (query != null) keyInfo.query = query.clone();
-        return keyInfo;
-    }
-
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        if (expire != null) map.put("expire", expire);
-        if (table != null) map.put("table", table);
-        if (indexes != null) map.put("indexes", indexes);
-        if (clause != null) map.put("clause", clause);
-        if (params != null) map.put("params", params);
-        if (queryKey != null) map.put("query_key", queryKey);
-        return map;
-    }
-
-    public void fromMap(Map<String, Object> map) {
-        if (map == null) return;
-        if (map.containsKey("expire")) expire = (String) map.get("expire");
-        if (map.containsKey("table")) table = (String) map.get("table");
-        if (map.containsKey("indexes")) indexes = (List<String>) map.get("indexes");
-        if (map.containsKey("clause")) clause = (String) map.get("clause");
-        if (map.containsKey("params")) params = (List<Object>) map.get("params");
-        if (map.containsKey("query_key")) queryKey = (String) map.get("query_key");
-    }
-
-    private List<String> cloneIndexes() {
-        if (indexes == null) {
-            return null;
-        }
-        List<String> newindexes = new ArrayList<String>();
-        if (indexes.size() == 0) {
-            return newindexes;
-        }
-        for(String index: indexes) {
-            newindexes.add(index);
-        }
-        return newindexes;
-    }
-
-    private List<Object> cloneParams() {
-        if (params == null) {
-            return null;
-        }
-        List<Object> newParams = new ArrayList<Object>();
-        if (params.size() == 0) {
-            return newParams;
-        }
-        for(Object object: params) {
-            newParams.add(object);
-        }
-        return newParams;
     }
 
     public List<String> fetchIndexes(Context context) {
@@ -441,5 +413,33 @@ public class KeyInfo implements Serializable, Cloneable {
         }
         clause = query.getClause(params, key);
         return (clause != null);
+    }
+
+    private List<String> cloneIndexes() {
+        if (indexes == null) {
+            return null;
+        }
+        List<String> newindexes = new ArrayList<String>();
+        if (indexes.size() == 0) {
+            return newindexes;
+        }
+        for(String index: indexes) {
+            newindexes.add(index);
+        }
+        return newindexes;
+    }
+
+    private List<Object> cloneParams() {
+        if (params == null) {
+            return null;
+        }
+        List<Object> newParams = new ArrayList<Object>();
+        if (params.size() == 0) {
+            return newParams;
+        }
+        for(Object object: params) {
+            newParams.add(object);
+        }
+        return newParams;
     }
 }

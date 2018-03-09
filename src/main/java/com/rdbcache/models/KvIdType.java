@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class KvIdType  implements Serializable {
+public class KvIdType implements Serializable {
 
     private String id;
 

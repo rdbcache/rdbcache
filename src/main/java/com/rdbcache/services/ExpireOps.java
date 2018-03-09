@@ -200,7 +200,7 @@ public class ExpireOps {
 
                     AppCtx.getDbaseRepo().saveOne(context, keyInfo);
                     AppCtx.getRedisRepo().delete(context, keyInfo);
-                    AppCtx.getKeyInfoRepo().deleteOne(context);
+                    AppCtx.getKeyInfoRepo().deleteOne(context, false);
 
                 } else {
                     String msg = "failed to find key from redis for " + key;

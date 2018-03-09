@@ -73,6 +73,7 @@ public class TestServices extends Thread {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+
                 if (!isRunning) break;
 
                 LOGGER.info("TestServices thread starts to check ...");

@@ -4,7 +4,7 @@
  * @license http://rdbcache.com/license/
  */
 
-package com.rdbcache.repositories.implemnets;
+package com.rdbcache.repositories.impls;
 
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Cfg;
@@ -32,6 +32,8 @@ public class RedisRepoImpl implements RedisRepo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisRepoImpl.class);
 
+    private boolean enableLocalCache = true;
+
     private String hdataPrefix = Cfg.getHdataPrefix();
     
     private String eventPrefix = Cfg.getEventPrefix();
@@ -50,6 +52,17 @@ public class RedisRepoImpl implements RedisRepo {
     public void handleEvent(ContextRefreshedEvent event) {
         hdataPrefix = Cfg.getHdataPrefix();
         eventPrefix = Cfg.getEventPrefix();
+        if (Cfg.getDataMaxCacheTLL() <= 0l) {
+            enableLocalCache = false;
+        }
+    }
+
+    public boolean isEnableLocalCache() {
+        return enableLocalCache;
+    }
+
+    public void setEnableLocalCache(boolean enableLocalCache) {
+        this.enableLocalCache = enableLocalCache;
     }
 
     public String getHdataPrefix() {
@@ -77,6 +90,12 @@ public class RedisRepoImpl implements RedisRepo {
 
         LOGGER.trace("ifExits: " + key + " table: " + table);
 
+        if (enableLocalCache) {
+            if (AppCtx.getLocalCache().containsData(key)) {
+                return true;
+            }
+        }
+
         StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
         boolean result = AppCtx.getRedisTemplate().hasKey(hdataPrefix + "::" + key);
         if (stopWatch != null) stopWatch.stopNow();
@@ -94,7 +113,11 @@ public class RedisRepoImpl implements RedisRepo {
         LOGGER.trace("findOne: " + key + " table: " + table);
 
         String hashKey = hdataPrefix + "::" + key;
-        Map<String, Object> map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
+        Map<String, Object> map = null;
+
+        if (enableLocalCache) {
+            map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
+        }
 
         if (map == null) {
 
@@ -102,8 +125,9 @@ public class RedisRepoImpl implements RedisRepo {
             try {
                 map = hashOps.entries(hashKey);
                 if (stopWatch != null) stopWatch.stopNow();
-                AppCtx.getLocalCache().putData(key, map, keyInfo);
-
+                if (enableLocalCache) {
+                    AppCtx.getLocalCache().putData(key, map, keyInfo);
+                }
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
 
@@ -134,7 +158,10 @@ public class RedisRepoImpl implements RedisRepo {
 
         String hashKey = hdataPrefix + "::" + key;
         Map<String, Object> map = pair.getData();
-        AppCtx.getLocalCache().putData(key, map, keyInfo);
+
+        if (enableLocalCache) {
+            AppCtx.getLocalCache().putData(key, map, keyInfo);
+        }
 
         StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
         try {
@@ -144,7 +171,9 @@ public class RedisRepoImpl implements RedisRepo {
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
 
-            AppCtx.getLocalCache().removeData(key);
+            if (enableLocalCache) {
+                AppCtx.getLocalCache().removeData(key);
+            }
 
             String msg = e.getCause().getMessage();
             LOGGER.error(msg);
@@ -172,14 +201,21 @@ public class RedisRepoImpl implements RedisRepo {
 
         Map<String, Object> map = pair.getData();
 
+        if (enableLocalCache) {
+            AppCtx.getLocalCache().updateData(key, map, keyInfo);
+        }
+
         stopWatch = context.startStopWatch("redis", "hashOps.putAll");
         try {
             hashOps.putAll(hashKey, map);
             if (stopWatch != null) stopWatch.stopNow();
-            AppCtx.getLocalCache().updateData(key, map, keyInfo);
             return true;
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
+
+            if (enableLocalCache) {
+                AppCtx.getLocalCache().removeData(key);
+            }
 
             String msg = e.getCause().getMessage();
             LOGGER.error(msg);
@@ -201,7 +237,11 @@ public class RedisRepoImpl implements RedisRepo {
 
             String key = pair.getId();
             String hashKey = hdataPrefix + "::" + key;
-            Map<String, Object> map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
+            Map<String, Object> map = null;
+
+            if (enableLocalCache) {
+                map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
+            }
 
             if (map == null) {
 
@@ -209,7 +249,9 @@ public class RedisRepoImpl implements RedisRepo {
                 try {
                     map = hashOps.entries(hashKey);
                     if (stopWatch != null) stopWatch.stopNow();
-                    AppCtx.getLocalCache().putData(key, map, keyInfo);
+                    if (enableLocalCache) {
+                        AppCtx.getLocalCache().putData(key, map, keyInfo);
+                    }
 
                 } catch (Exception e) {
                     if (stopWatch != null) stopWatch.stopNow();
@@ -246,7 +288,10 @@ public class RedisRepoImpl implements RedisRepo {
             String key = pair.getId();
             String hashKey = hdataPrefix + "::" + key;
             Map<String, Object> map = pair.getData();
-            AppCtx.getLocalCache().putData(key, map, keyInfo);
+
+            if (enableLocalCache) {
+                AppCtx.getLocalCache().putData(key, map, keyInfo);
+            }
 
             StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
             try {
@@ -256,7 +301,9 @@ public class RedisRepoImpl implements RedisRepo {
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
 
-                AppCtx.getLocalCache().removeData(key);
+                if (enableLocalCache) {
+                    AppCtx.getLocalCache().removeData(key);
+                }
 
                 savedAll = false;
                 String msg = e.getCause().getMessage();
@@ -279,7 +326,11 @@ public class RedisRepoImpl implements RedisRepo {
 
         String hashKey = hdataPrefix + "::" + key;
         Map<String, Object> map = pair.getData();
-        Map<String, Object> fmap = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
+        Map<String, Object> fmap = null;
+
+        if (enableLocalCache) {
+            fmap = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
+        }
 
         StopWatch stopWatch = null;
 
@@ -299,7 +350,9 @@ public class RedisRepoImpl implements RedisRepo {
         }
 
         try {
-            AppCtx.getLocalCache().putData(key, map, keyInfo);
+            if (enableLocalCache) {
+                AppCtx.getLocalCache().putData(key, map, keyInfo);
+            }
 
             stopWatch = context.startStopWatch("redis", "hashOps.putAll");
             hashOps.putAll(hashKey, map);
@@ -308,7 +361,9 @@ public class RedisRepoImpl implements RedisRepo {
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
 
-            AppCtx.getLocalCache().removeData(key);
+            if (enableLocalCache) {
+                AppCtx.getLocalCache().removeData(key);
+            }
 
             String msg = e.getCause().getMessage();
             LOGGER.error(msg);
@@ -336,9 +391,11 @@ public class RedisRepoImpl implements RedisRepo {
 
         deleteExpireEvents(context, keyInfo);
 
-        AppCtx.getKeyInfoRepo().deleteOne(context);
+        AppCtx.getKeyInfoRepo().deleteOne(context, false);
 
-        AppCtx.getLocalCache().removeData(key);
+        if (enableLocalCache) {
+            AppCtx.getLocalCache().removeData(key);
+        }
 
         String hashKey = hdataPrefix + "::" + key;
 

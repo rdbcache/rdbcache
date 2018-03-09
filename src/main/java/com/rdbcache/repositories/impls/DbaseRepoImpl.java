@@ -4,7 +4,7 @@
  * @license http://rdbcache.com/license/
  */
 
-package com.rdbcache.repositories.implemnets;
+package com.rdbcache.repositories.impls;
 
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.ServerErrorException;
@@ -37,6 +37,10 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DbaseRepoImpl.class);
 
+    private boolean enableLocalCache = true;
+
+    private boolean enableRedisCache = true;
+
     private Boolean enableDbFallback = Cfg.getEnableDbFallback();
 
     @Autowired
@@ -49,6 +53,25 @@ public class DbaseRepoImpl implements DbaseRepo {
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
         enableDbFallback = Cfg.getEnableDbFallback();
+        if (Cfg.getDataMaxCacheTLL() <= 0l) {
+            enableLocalCache = false;
+        }
+    }
+
+    public boolean isEnableLocalCache() {
+        return enableLocalCache;
+    }
+
+    public void setEnableLocalCache(boolean enableLocalCache) {
+        this.enableLocalCache = enableLocalCache;
+    }
+
+    public boolean isEnableRedisCache() {
+        return enableRedisCache;
+    }
+
+    public void setEnableRedisCache(boolean enableRedisCache) {
+        this.enableRedisCache = enableRedisCache;
     }
 
     public Boolean getEnableDbFallback() {
@@ -456,8 +479,12 @@ public class DbaseRepoImpl implements DbaseRepo {
                     String primaryKey = indexes.get(0);
                     String keyValue = String.valueOf(keyHolder.getKey());
                     map.put(primaryKey, keyValue);
-                    AppCtx.getLocalCache().putData(key, map, keyInfo);
-                    AppCtx.getRedisRepo().saveOne(context, keyInfo);
+                    if (enableLocalCache) {
+                        AppCtx.getLocalCache().putData(key, map, keyInfo);
+                    }
+                    if (enableRedisCache) {
+                        AppCtx.getRedisRepo().saveOne(context, keyInfo);
+                    }
                 }
                 keyInfo.fetchPKClauseParams(context, map, key);
                 AppCtx.getKeyInfoRepo().saveOne(context, keyInfo);
@@ -581,8 +608,12 @@ public class DbaseRepoImpl implements DbaseRepo {
                     String primaryKey = indexes.get(0);
                     String keyValue = String.valueOf(keyHolder.getKey());
                     map.put(primaryKey, keyValue);
-                    AppCtx.getLocalCache().putData(key, map, keyInfoPer);
-                    AppCtx.getRedisRepo().saveOne(ctx, keyInfoPer);
+                    if (enableRedisCache) {
+                        AppCtx.getLocalCache().putData(key, map, keyInfoPer);
+                    }
+                    if (enableRedisCache) {
+                        AppCtx.getRedisRepo().saveOne(ctx, keyInfoPer);
+                    }
                 }
                 keyInfoPer.fetchPKClauseParams(ctx, map, pair.getId());
             }

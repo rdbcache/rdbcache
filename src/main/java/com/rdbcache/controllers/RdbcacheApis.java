@@ -42,6 +42,8 @@ public class RdbcacheApis {
 
     private Boolean enableMonitor = Cfg.getEnableMonitor();
 
+    private boolean enableLocalCache = true;
+
     private Pattern expPattern;
 
     private DecimalFormat durationFormat;
@@ -55,6 +57,17 @@ public class RdbcacheApis {
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
         enableMonitor = Cfg.getEnableMonitor();
+        if (Cfg.getDataMaxCacheTLL() <= 0l) {
+            enableLocalCache = false;
+        }
+    }
+
+    public boolean isEnableLocalCache() {
+        return enableLocalCache;
+    }
+
+    public void setEnableLocalCache(boolean enableLocalCache) {
+        this.enableLocalCache = enableLocalCache;
     }
 
     public Boolean getEnableMonitor() {
@@ -149,8 +162,10 @@ public class RdbcacheApis {
         Context context = new Context(key, value, false);
         KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
 
-        KvPair pair = context.getPair();
-        AppCtx.getLocalCache().putData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
+        if (enableLocalCache) {
+            KvPair pair = context.getPair();
+            AppCtx.getLocalCache().putData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
+        }
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
 
@@ -188,8 +203,10 @@ public class RdbcacheApis {
         Context context = new Context(key, value, false);
         KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
 
-        KvPair pair = context.getPair();
-        AppCtx.getLocalCache().putData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
+        if (enableLocalCache) {
+            KvPair pair = context.getPair();
+            AppCtx.getLocalCache().putData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
+        }
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
 
@@ -232,8 +249,10 @@ public class RdbcacheApis {
 
         } else {
 
-            KvPair pair = context.getPair();
-            AppCtx.getLocalCache().updateData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
+            if (enableLocalCache) {
+                KvPair pair = context.getPair();
+                AppCtx.getLocalCache().updateData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
+            }
 
             AppCtx.getAsyncOps().doPutOperation(context, keyInfo);
 
@@ -867,7 +886,10 @@ public class RdbcacheApis {
             HttpServletRequest request,
             @PathVariable Optional<String> opt) {
 
-        Context context = new Context( true);
+        if (!enableLocalCache) {
+            throw new BadRequestException("LocalCache is disabled");
+        }
+        Context context = new Context(false);
         if (enableMonitor) context.enableMonitor(request);
 
         if (!opt.isPresent()) {
