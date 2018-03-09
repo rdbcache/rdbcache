@@ -71,15 +71,15 @@ public class TaskQueue extends Thread {
         this.queueName = queueName;
     }
 
-    private boolean isRunnning = true;
+    private boolean isRunning = true;
 
-    public boolean isRunnning() {
-        return isRunnning;
+    public boolean isRunning() {
+        return isRunning;
     }
 
     @Override
     public void interrupt() {
-        isRunnning = false;
+        isRunning = false;
         super.interrupt();
     }
 
@@ -90,7 +90,7 @@ public class TaskQueue extends Thread {
 
         LOGGER.info("Task Queue is running on thread " + getName());
 
-        while (isRunnning) {
+        while (isRunning) {
 
             try {
 
@@ -101,7 +101,7 @@ public class TaskQueue extends Thread {
 
                 String task = (String) listOps.leftPop(queueName, 0, TimeUnit.SECONDS);
 
-                if (!isRunnning) break;
+                if (!isRunning) break;
 
                 LOGGER.info("Received Task: " + task);
 
@@ -153,7 +153,7 @@ public class TaskQueue extends Thread {
             }
         }
 
-        isRunnning = false;
+        isRunning = false;
 
     }
 }

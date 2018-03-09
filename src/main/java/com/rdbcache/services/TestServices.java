@@ -47,12 +47,24 @@ public class TestServices extends Thread {
         start();
     }
 
+    private boolean isRunning = true;
+
+    public boolean isRunning() {
+        return isRunning;
+    }
+
+    @Override
+    public void interrupt() {
+        isRunning = false;
+        super.interrupt();
+    }
+
     @Override
     public void run() {
 
         LOGGER.info("TestServices is running on thread " + getName());
 
-        while (true) {
+        while (isRunning) {
 
             try {
 
@@ -61,16 +73,17 @@ public class TestServices extends Thread {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                if (!isRunning) break;
 
                 LOGGER.info("TestServices thread starts to check ...");
 
                 Assert.isTrue(AppCtx.getLocalCache().isAlive(), "LocalCache is not alive");
                 Assert.isTrue(!AppCtx.getLocalCache().getState().name().equals("TERMINATED"), "LocalCache is terminated");
-                Assert.isTrue(AppCtx.getLocalCache().isRunnning(), "LocalCache is not running");
+                Assert.isTrue(AppCtx.getLocalCache().isRunning(), "LocalCache is not running");
 
                 Assert.isTrue(AppCtx.getTaskQueue().isAlive(), "TaskQueue is not alive");
                 Assert.isTrue(!AppCtx.getTaskQueue().getState().name().equals("TERMINATED"), "TaskQueue is terminated");
-                Assert.isTrue(AppCtx.getTaskQueue().isRunnning(), "TaskQueue is not running");
+                Assert.isTrue(AppCtx.getTaskQueue().isRunning(), "TaskQueue is not running");
 
             } catch (Exception e) {
                 String msg = e.getCause().getMessage();
@@ -78,6 +91,8 @@ public class TestServices extends Thread {
                 e.printStackTrace();
             }
         }
+
+        isRunning = false;
     }
 
     private void assertCfgProperties() {

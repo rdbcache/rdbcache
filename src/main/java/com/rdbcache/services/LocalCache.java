@@ -301,15 +301,15 @@ public class LocalCache extends Thread {
         }
     });
 
-    private boolean isRunnning = true;
+    private boolean isRunning = true;
 
-    public boolean isRunnning() {
-        return isRunnning;
+    public boolean isRunning() {
+        return isRunning;
     }
 
     @Override
     public void interrupt() {
-        isRunnning = false;
+        isRunning = false;
         super.interrupt();
     }
 
@@ -318,7 +318,7 @@ public class LocalCache extends Thread {
 
         LOGGER.info("LocalCache is running on thread " + getName());
 
-        while (isRunnning) {
+        while (isRunning) {
 
             try {
 
@@ -328,7 +328,7 @@ public class LocalCache extends Thread {
                     e.printStackTrace();
                 }
 
-                if (!isRunnning) break;
+                if (!isRunning) break;
 
                 timeoutKeys.clear();
                 refreshKeys.clear();
@@ -410,7 +410,7 @@ public class LocalCache extends Thread {
             }
         }
 
-        isRunnning = false;
+        isRunning = false;
     }
 
     class KeyLastAccess {
