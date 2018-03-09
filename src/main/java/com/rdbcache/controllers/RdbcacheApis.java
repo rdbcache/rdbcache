@@ -22,6 +22,9 @@ import com.rdbcache.exceptions.NotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +40,8 @@ public class RdbcacheApis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RdbcacheApis.class);
 
+    private Boolean enableMonitor = Cfg.getEnableMonitor();
+
     private Pattern expPattern;
 
     private DecimalFormat durationFormat;
@@ -45,6 +50,19 @@ public class RdbcacheApis {
     public void init() {
         expPattern = Pattern.compile("([0-9]+|-[0-9]+|\\+[0-9]+)");
         durationFormat = new DecimalFormat("#.######");
+    }
+
+    @EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
+        enableMonitor = Cfg.getEnableMonitor();
+    }
+
+    public Boolean getEnableMonitor() {
+        return enableMonitor;
+    }
+
+    public void setEnableMonitor(Boolean enableMonitor) {
+        this.enableMonitor = enableMonitor;
     }
 
     /**
@@ -496,7 +514,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(key, false);
-        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
+        if (enableMonitor) context.enableMonitor(request);
 
         AppCtx.getAsyncOps().doDeleteFromRedis(context);
 
@@ -525,7 +543,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(false);
-        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
+        if (enableMonitor) context.enableMonitor(request);
 
         List<KvPair> pairs = context.getPairs();
 
@@ -560,7 +578,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(key, false);
-        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
+        if (enableMonitor) context.enableMonitor(request);
 
         AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context);
 
@@ -589,7 +607,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(false);
-        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
+        if (enableMonitor) context.enableMonitor(request);
 
         List<KvPair> pairs = context.getPairs();
 
@@ -780,7 +798,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(true);
-        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
+        if (enableMonitor) context.enableMonitor(request);
 
         KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(traceId, "trace"));
         if (dbPair != null) {
@@ -817,7 +835,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context( true);
-        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
+        if (enableMonitor) context.enableMonitor(request);
         List<KvPair> pairs = context.getPairs();
 
         for (String referenced_id: traceIds) {
@@ -850,7 +868,7 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt) {
 
         Context context = new Context( true);
-        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
+        if (enableMonitor) context.enableMonitor(request);
 
         if (!opt.isPresent()) {
             AppCtx.getLocalCache().removeAllKeyInfo();
@@ -877,7 +895,7 @@ public class RdbcacheApis {
             String key,
             Optional<String> opt1, Optional<String> opt2) {
 
-        if (Cfg.getEnableMonitor()) context.enableMonitor(request);
+        if (enableMonitor) context.enableMonitor(request);
 
         KeyInfo keyInfo = null;
         if (key != null && !key.equals("*")) {
@@ -902,8 +920,6 @@ public class RdbcacheApis {
             }
             if (opts[0] != null) {
                 keyInfo.setExpire(opts[0]);
-            } else {
-                keyInfo.setExpire(Cfg.getDefaultExpire());
             }
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {

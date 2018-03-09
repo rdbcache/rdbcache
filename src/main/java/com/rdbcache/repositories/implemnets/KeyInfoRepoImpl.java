@@ -13,6 +13,8 @@ import com.rdbcache.models.*;
 import com.rdbcache.repositories.KeyInfoRepo;
 import com.rdbcache.services.AsyncOps;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -28,18 +30,33 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyInfoRepoImpl.class);
 
+    private String hkeyPrefix = Cfg.getHkeyPrefix();
+
+    @Autowired
     private RedisTemplate<String, KeyInfo> keyInfoTemplate;
 
     private HashOperations<String, String, KeyInfo> keyInfoOps;
 
-    @Autowired
-    public KeyInfoRepoImpl(RedisTemplate keyInfoTemplate) {
-        this.keyInfoTemplate = keyInfoTemplate;
-    }
+    //    public KeyInfoRepoImpl(RedisTemplate keyInfoTemplate) {
+//        this.keyInfoTemplate = keyInfoTemplate;
+//    }
 
     @PostConstruct
     public void init() {
         keyInfoOps = keyInfoTemplate.opsForHash();
+    }
+
+    @EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
+        hkeyPrefix = Cfg.getHkeyPrefix();
+    }
+
+    public String getHkeyPrefix() {
+        return hkeyPrefix;
+    }
+
+    public void setHkeyPrefix(String hkeyPrefix) {
+        this.hkeyPrefix = hkeyPrefix;
     }
 
     @Override
@@ -60,7 +77,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.get");
-        keyInfo = keyInfoOps.get(Cfg.getHkeyPrefix() + "::keyinfo", key);
+        keyInfo = keyInfoOps.get(hkeyPrefix + "::keyinfo", key);
         if (stopWatch != null) stopWatch.stopNow();
 
         if (keyInfo != null) {
@@ -86,7 +103,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         AsyncOps.getExecutor().submit(() -> {
             Thread.yield();
             StopWatch stopWatch2 = context.startStopWatch("redis", "keyInfoOps.put");
-            keyInfoOps.put(Cfg.getHkeyPrefix() + "::keyinfo", key, finalKeyInfo);
+            keyInfoOps.put(hkeyPrefix + "::keyinfo", key, finalKeyInfo);
             if (stopWatch2 != null) stopWatch2.stopNow();
         });
 
@@ -122,7 +139,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.multiGet");
-        List<KeyInfo> redisKeyInfos = keyInfoOps.multiGet(Cfg.getHkeyPrefix() + "::keyinfo", redisKeys);
+        List<KeyInfo> redisKeyInfos = keyInfoOps.multiGet(hkeyPrefix + "::keyinfo", redisKeys);
         if (stopWatch != null) stopWatch.stopNow();
 
         i = 0;
@@ -172,7 +189,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             Thread.yield();
 
             StopWatch stopWatch2 = context.startStopWatch("dbase", "finalQuery.save");
-            keyInfoOps.putAll(Cfg.getHkeyPrefix() + "::keyinfo", redisKeyInfoMap);
+            keyInfoOps.putAll(hkeyPrefix + "::keyinfo", redisKeyInfoMap);
             if (stopWatch2 != null) stopWatch2.stopNow();
 
         });
@@ -229,7 +246,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             Thread.yield();
 
             StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.put");
-            keyInfoOps.put(Cfg.getHkeyPrefix() + "::keyinfo", key, finalKeyInfo);
+            keyInfoOps.put(hkeyPrefix + "::keyinfo", key, finalKeyInfo);
             if (stopWatch != null) stopWatch.stopNow();
 
             KvPair dbPair = new KvPair(key, "info", finalKeyInfo.toMap());
@@ -311,7 +328,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 KeyInfo keyInfoPer = finalKeyInfos.get(index++);
 
                 StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.putAll");
-                keyInfoOps.put(Cfg.getHkeyPrefix() + "::keyinfo", key, keyInfoPer);
+                keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfoPer);
                 if (stopWatch != null) stopWatch.stopNow();
             }
 
@@ -336,7 +353,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         AppCtx.getLocalCache().removeKeyInfo(key);
 
         StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.delete");
-        keyInfoOps.delete(Cfg.getHkeyPrefix() + "::keyinfo", key);
+        keyInfoOps.delete(hkeyPrefix + "::keyinfo", key);
         if (stopWatch != null) stopWatch.stopNow();
     }
 
@@ -359,7 +376,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.delete");
-        keyInfoOps.delete(Cfg.getHkeyPrefix() + "::keyinfo", keys);
+        keyInfoOps.delete(hkeyPrefix + "::keyinfo", keys);
         if (stopWatch != null) stopWatch.stopNow();
 
     }

@@ -11,6 +11,9 @@ import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
 import com.rdbcache.models.KeyInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -27,27 +30,67 @@ public class TaskQueue extends Thread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskQueue.class);
 
+    private Boolean enableMonitor = Cfg.getEnableMonitor();
+
+    private String queueName = Cfg.getQueueName();
+
     private ListOperations listOps;
 
     @Autowired
     StringRedisTemplate redisTemplate;
 
-    private String taskQueue;
-
     @PostConstruct
     public void init() {
-        taskQueue = Cfg.getHkeyPrefix() + ":queue";
         listOps = redisTemplate.opsForList();
     }
+
+    @EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
+        enableMonitor = Cfg.getEnableMonitor();
+        queueName = Cfg.getQueueName();
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
+        start();
+    }
+
+    public Boolean getEnableMonitor() {
+        return enableMonitor;
+    }
+
+    public void setEnableMonitor(Boolean enableMonitor) {
+        this.enableMonitor = enableMonitor;
+    }
+
+    public String getQueueName() {
+        return queueName;
+    }
+
+    public void setQueueName(String queueName) {
+        this.queueName = queueName;
+    }
+
+    private boolean isRunnning = true;
+
+    public boolean isRunnning() {
+        return isRunnning;
+    }
+
+    @Override
+    public void interrupt() {
+        isRunnning = false;
+        super.interrupt();
+    }
+
+    private boolean freshConnection = true;
 
     @Override
     public void run() {
 
         LOGGER.info("Task Queue is running on thread " + getName());
 
-        Boolean freshConnection = true;
-
-        while (true) {
+        while (isRunnning) {
 
             try {
 
@@ -56,7 +99,9 @@ public class TaskQueue extends Thread {
                     freshConnection = false;
                 }
 
-                String task = (String) listOps.leftPop(taskQueue, 0, TimeUnit.SECONDS);
+                String task = (String) listOps.leftPop(queueName, 0, TimeUnit.SECONDS);
+
+                if (!isRunnning) break;
 
                 LOGGER.info("Received Task: " + task);
 
@@ -73,7 +118,7 @@ public class TaskQueue extends Thread {
 
                 Context context = new Context(key, traceId);
 
-                if (Cfg.getEnableMonitor()) context.enableMonitor(task, "queue", action);
+                if (enableMonitor) context.enableMonitor(task, "queue", action);
 
                 KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
                 if (keyInfo == null) {
@@ -107,5 +152,8 @@ public class TaskQueue extends Thread {
                 e.printStackTrace();
             }
         }
+
+        isRunnning = false;
+
     }
 }

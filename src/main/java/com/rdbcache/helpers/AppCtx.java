@@ -8,6 +8,9 @@ package com.rdbcache.helpers;
 
 import com.rdbcache.controllers.RdbcacheApis;
 import com.rdbcache.repositories.*;
+import com.rdbcache.repositories.implemnets.DbaseRepoImpl;
+import com.rdbcache.repositories.implemnets.KeyInfoRepoImpl;
+import com.rdbcache.repositories.implemnets.RedisRepoImpl;
 import com.rdbcache.services.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -143,6 +146,15 @@ public class AppCtx {
         return dbaseRepo;
     }
 
+    public static DbaseRepoImpl getDbaseRepoImpl() {
+        try {
+            return ctx.getBean(DbaseRepoImpl.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static KeyInfoRepo getKeyInfoRepo() {
         if (keyInfoRepo == null) {
             try {
@@ -152,6 +164,15 @@ public class AppCtx {
             }
         }
         return keyInfoRepo;
+    }
+
+    public static KeyInfoRepoImpl getKeyInfoRepoImpl() {
+        try {
+            return ctx.getBean(KeyInfoRepoImpl.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static KvPairRepo getKvPairRepo() {
@@ -185,6 +206,15 @@ public class AppCtx {
             }
         }
         return redisRepo;
+    }
+
+    public static RedisRepoImpl getRedisRepoImpl() {
+        try {
+            return ctx.getBean(RedisRepoImpl.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static StopWatchRepo getStopWatchRepo() {

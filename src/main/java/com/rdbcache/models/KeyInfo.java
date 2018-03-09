@@ -7,6 +7,7 @@
 package com.rdbcache.models;
 
 import com.rdbcache.exceptions.ServerErrorException;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Condition;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
@@ -24,7 +25,7 @@ public class KeyInfo implements Serializable, Cloneable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyInfo.class);
 
-    private String expire;
+    private String expire = Cfg.getDefaultExpire();
 
     private String table;
 

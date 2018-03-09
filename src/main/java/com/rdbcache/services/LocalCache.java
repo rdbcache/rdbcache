@@ -7,27 +7,30 @@
 package com.rdbcache.services;
 
 import com.rdbcache.exceptions.ServerErrorException;
+import com.rdbcache.helpers.AppCtx;
 import com.rdbcache.helpers.Cfg;
-import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import javafx.util.Pair;
-
+import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class LocalCache extends Thread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalCache.class);
 
-    private Long recycleMills = Cfg.getRecycleSchedule() * 1000L;
+    private Long recycleSecs = Cfg.getCacheRecycleSecs();
 
     private Long maxCacheSize = Cfg.getMaxCacheSize();
 
@@ -35,14 +38,36 @@ public class LocalCache extends Thread {
 
     private Long dataMaxCacheTLL = Cfg.getDataMaxCacheTLL();
 
-    private final Map<String, Cached> cache = new ConcurrentHashMap<String, Cached>();
+    private ConcurrentHashMap<String, Cached> cache = null;
 
-    public Long getRecycleMills() {
-        return recycleMills;
+    @PostConstruct
+    public void init() {
     }
 
-    public void setRecycleMills(Long recycleMills) {
-        this.recycleMills = recycleMills;
+    @EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
+        recycleSecs = Cfg.getCacheRecycleSecs();
+        maxCacheSize = Cfg.getMaxCacheSize();
+        keyInfoCacheTTL = Cfg.getKeyInfoCacheTTL();
+        dataMaxCacheTLL = Cfg.getDataMaxCacheTLL();
+
+        if (cache == null) {
+            cache = new ConcurrentHashMap<String, Cached>(
+                    Cfg.getMaxCacheSize().intValue(), 0.75f, 32);
+        }
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
+        start();
+    }
+
+    public Long getRecycleSecs() {
+        return recycleSecs;
+    }
+
+    public void setRecycleSecs(Long recycleSecs) {
+        this.recycleSecs = recycleSecs;
     }
 
     public Long getMaxCacheSize() {
@@ -84,7 +109,7 @@ public class LocalCache extends Thread {
                 return null;
             }
             Cached cached = new Cached(map, timeToLive);
-            cached.setRefreshable(refreshable);
+            cached.refreshable = refreshable;
             cache.put(key, cached);
             return map;
         } catch (Exception e) {
@@ -105,7 +130,7 @@ public class LocalCache extends Thread {
                 return null;
             } else {
                 try {
-                    Map<String, Object> map = cached.getRefreshable().call();
+                    Map<String, Object> map = cached.refreshable.call();
                     if (map == null) {
                         cache.remove(key);
                         return null;
@@ -142,7 +167,7 @@ public class LocalCache extends Thread {
                 return null;
             } else {
                 try {
-                    Map<String, Object> map = cached.getRefreshable().call();
+                    Map<String, Object> map = cached.refreshable.call();
                     cached.setMap(map);
                     cached.renew();
                     return map;
@@ -211,6 +236,7 @@ public class LocalCache extends Thread {
     public void removeAllKeyInfo() {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
+            if (key == null) continue;
             if (key.startsWith("key::")) {
                 cache.remove(key);
             }
@@ -244,6 +270,7 @@ public class LocalCache extends Thread {
     public void removeAllData() {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
+            if (key == null) continue;
             if (key.startsWith("data::")) {
                 cache.remove(key);
             }
@@ -253,6 +280,7 @@ public class LocalCache extends Thread {
     public void removeAllTable() {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
+            if (key == null) continue;
             if (key.startsWith("table_")) {
                 cache.remove(key);
             }
@@ -263,134 +291,179 @@ public class LocalCache extends Thread {
         cache.clear();
     }
 
+    private List<String> refreshKeys = new ArrayList<String>();
+    private List<String> timeoutKeys = new ArrayList<String>();
+
+    private SortedSet<KeyLastAccess> lastAccessSortedKeys = new TreeSet<>(new Comparator<KeyLastAccess>(){
+        @Override
+        public int compare(KeyLastAccess o1, KeyLastAccess o2) {
+            return (int) (o1.lastAccess - o2.lastAccess);
+        }
+    });
+
+    private boolean isRunnning = true;
+
+    public boolean isRunnning() {
+        return isRunnning;
+    }
+
+    @Override
+    public void interrupt() {
+        isRunnning = false;
+        super.interrupt();
+    }
+
     @Override
     public void run() {
 
         LOGGER.info("LocalCache is running on thread " + getName());
 
-        List<String> refreshKeys = new ArrayList<String>();
-        List<String> timeoutKeys = new ArrayList<String>();
-
-        SortedSet<Pair<String, Long>> lastAccessSortedKeys = new TreeSet<>(new Comparator<Pair<String, Long>>(){
-            @Override
-            public int compare(Pair<String, Long> o1, Pair<String, Long> o2) {
-                return (int) (o1.getValue() - o2.getValue());
-            }
-        });
-
-        while (true) {
+        while (isRunnning) {
 
             try {
 
-                refreshKeys.clear();
-                timeoutKeys.clear();
-                lastAccessSortedKeys.clear();
-                
-                Thread.sleep(recycleMills);
-
-                for (Map.Entry<String, Cached> entry: cache.entrySet()) {
-                    Cached cached = entry.getValue();
-                    if (cached.isRefreshable() && cached.isAlmostTimeout()) {
-                        refreshKeys.add(entry.getKey());
-                    } else if (cached.isTimeout()) {
-                        timeoutKeys.add(entry.getKey());
-                    }
+                try {
+                    Thread.sleep(recycleSecs * 1000L);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
+
+                if (!isRunnning) break;
+
+                timeoutKeys.clear();
+                refreshKeys.clear();
+                lastAccessSortedKeys.clear();
+
+                final AtomicInteger atomicInteger = new AtomicInteger(0);
+                cache.forEach(1, (key, cached) -> {
+                    if (key == null || cached == null) return;
+                    atomicInteger.incrementAndGet();
+                    if (cached.isRefreshable()) {
+                        if (cached.isAlmostTimeout()) refreshKeys.add(key);
+                    } else if (cached.isTimeout()) {
+                        timeoutKeys.add(key);
+                    } else {
+                        lastAccessSortedKeys.add(new KeyLastAccess(key, cached.lastAccessAt));
+                    }
+                });
+
+                int size = atomicInteger.intValue();
+                long almostMax = 3 * maxCacheSize / 4;
+
+                LOGGER.trace("recycle start -> cache size: " + size + ", max: " + maxCacheSize  + ", almostMax: " + almostMax);
+
+                LOGGER.trace("timeoutKeys size: " + timeoutKeys.size());
 
                 for (String key: timeoutKeys) {
+                    size--;
+                    if (key == null) continue;
                     cache.remove(key);
+                    LOGGER.trace("timeout key: " + key);
                 }
+                timeoutKeys.clear();
+
+                LOGGER.trace("refreshKeys size: " + refreshKeys.size());
 
                 for (String key: refreshKeys) {
+                    if (key == null) continue;
                     Cached cached = cache.get(key);
-                    if (cached == null) {
-                        continue;
-                    }
+                    if (cached == null) continue;
                     Cached clone = cached.clone();
-                    Callable<Map<String, Object>> refreshable = clone.getRefreshable();
-                    try {
-                        Map<String, Object> map = refreshable.call();
-                        clone.setMap(map);
-                    } catch (Exception e) {
-                        String msg = e.getCause().getMessage();
-                        LOGGER.error(msg);
-                        e.printStackTrace();
-                    }
-                    cache.put(key, clone);
+                    AppCtx.getAsyncOps().getExecutor().submit(() -> {
+                        try {
+                            Map<String, Object> map = clone.refreshable.call();
+                            clone.setMap(map);
+                        } catch (Exception e) {
+                            String msg = e.getCause().getMessage();
+                            LOGGER.error(msg);
+                            e.printStackTrace();
+                        }
+                        cache.put(key, clone);
+                        LOGGER.trace("refresh key: " + key);
+                    });
                 }
+                refreshKeys.clear();
 
-                if (cache.size() < maxCacheSize * 3 / 4) {
+                if (size <= almostMax) {
                     continue;
                 }
 
-                for (Map.Entry<String, Cached> entry: cache.entrySet()) {
-                    Cached cached = entry.getValue();
-                    Pair<String, Long> context = new Pair<>(entry.getKey(), cached.getLastAccessAt());
-                    lastAccessSortedKeys.add(context);
-                }
+                LOGGER.trace("reduce cache size");
 
-                for (Pair<String, Long> context: lastAccessSortedKeys) {
-                    cache.remove(context.getKey());
-                    if (cache.size() < maxCacheSize * 3 / 4) {
+                LOGGER.trace("lastAccessSortedKeys size: " + lastAccessSortedKeys.size());
+
+                for (KeyLastAccess keyLastAccess: lastAccessSortedKeys) {
+                    size--;
+                    if (keyLastAccess == null || keyLastAccess.key == null) continue;
+                    cache.remove(keyLastAccess.key);
+                    LOGGER.trace("remove key (" + keyLastAccess.lastAccess + "): " + keyLastAccess.key);
+                    if (size <= almostMax) {
                         break;
                     }
                 }
+                lastAccessSortedKeys.clear();
 
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
                 String msg = e.getCause().getMessage();
                 LOGGER.error(msg);
                 e.printStackTrace();
             }
         }
 
+        isRunnning = false;
+    }
+
+    class KeyLastAccess {
+
+        String key;
+        long lastAccess;
+
+        KeyLastAccess(String key, long lastAccess) {
+            this.key = key;
+            this.lastAccess = lastAccess;
+        }
     }
 
     class Cached implements Cloneable {
 
         private Map<String, Object> map;
 
-        private Long createdAt;
+        long createdAt;
 
-        private Long timeToLive = 900000L;  // default 15 minutes
+        long timeToLive = 900000L;  // default 15 minutes
 
-        private Long lastAccessAt;
+        long lastAccessAt;
 
-        private Callable<Map<String, Object>> refreshable;
+        Callable<Map<String, Object>> refreshable;
 
-        public Cached(@NotNull Map<String, Object> map) {
-            lastAccessAt = createdAt = System.currentTimeMillis();
+        Cached(@NotNull Map<String, Object> map) {
+            createdAt = System.currentTimeMillis();
+            lastAccessAt = System.nanoTime();
             this.map = map;
         }
 
-        public Cached(@NotNull Map<String, Object> map, Long timeToLive) {
-            lastAccessAt = createdAt = System.currentTimeMillis();
+        Cached(@NotNull Map<String, Object> map, long timeToLive) {
+            createdAt = System.currentTimeMillis();
+            lastAccessAt = System.nanoTime();
             this.map = map;
             this.timeToLive = timeToLive;
         }
 
-        public synchronized Map<String, Object> getMap() {
-            lastAccessAt = System.currentTimeMillis();
+        synchronized Map<String, Object> getMap() {
+            lastAccessAt = System.nanoTime();
             return map;
         }
 
-        public synchronized void setMap(@NotNull Map<String, Object> map) {
-            lastAccessAt = System.currentTimeMillis();
+        synchronized void setMap(@NotNull Map<String, Object> map) {
+            lastAccessAt = System.nanoTime();
             this.map = map;
         }
 
-        public boolean isRefreshable() {
+        boolean isRefreshable() {
             return (refreshable != null);
         }
 
-        public Callable<Map<String, Object>> getRefreshable() {
-            return refreshable;
-        }
-
-        public void setRefreshable(Callable<Map<String, Object>> refreshable) {
-            this.refreshable = refreshable;
-        }
-
-        public Boolean isTimeout() {
+        boolean isTimeout() {
             long now = System.currentTimeMillis();
             if (now > createdAt + timeToLive) {
                 return true;
@@ -399,7 +472,7 @@ public class LocalCache extends Thread {
             }
         }
 
-        public Boolean isAlmostTimeout() {
+        boolean isAlmostTimeout() {
             long now = System.currentTimeMillis();
             if (now > createdAt + timeToLive * 3 / 4) {
                 return true;
@@ -408,47 +481,18 @@ public class LocalCache extends Thread {
             }
         }
 
-        public Cached clone() {
+        void renew() {
+            lastAccessAt = System.nanoTime();
+            createdAt = System.currentTimeMillis();
+        }
+
+        protected Cached clone() {
             try {
-                Cached clone = (Cached) super.clone();
-                clone.setMap(new LinkedHashMap<>(map));
-                return clone;
+                return (Cached) super.clone();
             } catch (CloneNotSupportedException e) {
                 e.printStackTrace();
                 throw new ServerErrorException(e.getCause().getMessage());
             }
-        }
-
-        public Long getCreatedAt() {
-            return createdAt;
-        }
-
-        public void setCreatedAt(Long createdAt) {
-            this.createdAt = createdAt;
-        }
-
-        public Long getTimeToLive() {
-            return timeToLive;
-        }
-
-        public void setTimeToLive(Long timeToLive) {
-            this.timeToLive = timeToLive;
-        }
-
-        public Long getLastAccessAt() {
-            return lastAccessAt;
-        }
-
-        public void setLastAccessAt(Long lastAccessAt) {
-            this.lastAccessAt = lastAccessAt;
-        }
-
-        public void updateLastAccessAt() {
-            this.lastAccessAt = System.currentTimeMillis();
-        }
-
-        public void renew() {
-            lastAccessAt = createdAt = System.currentTimeMillis();
         }
     }
 }

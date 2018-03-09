@@ -16,6 +16,8 @@ import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
 import com.rdbcache.repositories.RedisRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Repository;
 
@@ -30,6 +32,10 @@ public class RedisRepoImpl implements RedisRepo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisRepoImpl.class);
 
+    private String hdataPrefix = Cfg.getHdataPrefix();
+    
+    private String eventPrefix = Cfg.getEventPrefix();
+    
     @Autowired
     private StringRedisTemplate redisTemplate;
 
@@ -38,6 +44,28 @@ public class RedisRepoImpl implements RedisRepo {
     @PostConstruct
     public void init() {
         hashOps = redisTemplate.opsForHash();
+    }
+
+    @EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
+        hdataPrefix = Cfg.getHdataPrefix();
+        eventPrefix = Cfg.getEventPrefix();
+    }
+
+    public String getHdataPrefix() {
+        return hdataPrefix;
+    }
+
+    public void setHdataPrefix(String hdataPrefix) {
+        this.hdataPrefix = hdataPrefix;
+    }
+
+    public String getEventPrefix() {
+        return eventPrefix;
+    }
+
+    public void setEventPrefix(String eventPrefix) {
+        this.eventPrefix = eventPrefix;
     }
 
     @Override
@@ -50,7 +78,7 @@ public class RedisRepoImpl implements RedisRepo {
         LOGGER.trace("ifExits: " + key + " table: " + table);
 
         StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
-        boolean result = AppCtx.getRedisTemplate().hasKey(Cfg.getHdataKey(key));
+        boolean result = AppCtx.getRedisTemplate().hasKey(hdataPrefix + "::" + key);
         if (stopWatch != null) stopWatch.stopNow();
 
         return result;
@@ -65,7 +93,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         LOGGER.trace("findOne: " + key + " table: " + table);
 
-        String hashKey = Cfg.getHdataKey(key);
+        String hashKey = hdataPrefix + "::" + key;
         Map<String, Object> map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
 
         if (map == null) {
@@ -104,7 +132,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         LOGGER.trace("saveOne: " + key + " table: " + table);
 
-        String hashKey = Cfg.getHdataKey(key);
+        String hashKey = hdataPrefix + "::" + key;
         Map<String, Object> map = pair.getData();
         AppCtx.getLocalCache().putData(key, map, keyInfo);
 
@@ -134,7 +162,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         LOGGER.trace("updateIfExists: " + key + " table: " + table);
 
-        String hashKey = Cfg.getHdataKey(key);
+        String hashKey = hdataPrefix + "::" + key;
 
         StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
         boolean result = AppCtx.getRedisTemplate().hasKey(hashKey);
@@ -172,7 +200,7 @@ public class RedisRepoImpl implements RedisRepo {
         for (KvPair pair: pairs) {
 
             String key = pair.getId();
-            String hashKey = Cfg.getHdataKey(key);
+            String hashKey = hdataPrefix + "::" + key;
             Map<String, Object> map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
 
             if (map == null) {
@@ -216,7 +244,7 @@ public class RedisRepoImpl implements RedisRepo {
         for (KvPair pair: pairs) {
 
             String key = pair.getId();
-            String hashKey = Cfg.getHdataKey(key);
+            String hashKey = hdataPrefix + "::" + key;
             Map<String, Object> map = pair.getData();
             AppCtx.getLocalCache().putData(key, map, keyInfo);
 
@@ -249,7 +277,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         LOGGER.trace("findAndSave: " + key + " table: " + table);
 
-        String hashKey = Cfg.getHdataKey(key);
+        String hashKey = hdataPrefix + "::" + key;
         Map<String, Object> map = pair.getData();
         Map<String, Object> fmap = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
 
@@ -312,7 +340,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         AppCtx.getLocalCache().removeData(key);
 
-        String hashKey = Cfg.getHdataKey(key);
+        String hashKey = hdataPrefix + "::" + key;
 
         StopWatch stopWatch = context.startStopWatch("redis", "hashOps.delete");
         AppCtx.getRedisTemplate().delete(hashKey);
@@ -343,7 +371,7 @@ public class RedisRepoImpl implements RedisRepo {
         String table = keyInfo.getTable();
 
         // get existing expire key
-        String expKey = Cfg.getEventPrefix() + "::" + key;
+        String expKey = eventPrefix + "::" + key;
 
         StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
         Set<String> expKeys = AppCtx.getRedisTemplate().keys(expKey + "::*");

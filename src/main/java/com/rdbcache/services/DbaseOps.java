@@ -14,11 +14,15 @@ import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -27,9 +31,29 @@ public class DbaseOps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DbaseOps.class);
 
-    public void setup() {
+    private Long tableInfoCacheTTL = Cfg.getTableInfoCacheTTL();
+
+    @PostConstruct
+    public void init() {
+    }
+
+    @EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
+        tableInfoCacheTTL = Cfg.getTableInfoCacheTTL();
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
         setDefaultToDbTimeZone();
         cacheAllTablesInfo();
+    }
+
+    public Long getTableInfoCacheTTL() {
+        return tableInfoCacheTTL;
+    }
+
+    public void setTableInfoCacheTTL(Long tableInfoCacheTTL) {
+        this.tableInfoCacheTTL = tableInfoCacheTTL;
     }
 
     public void setDefaultToDbTimeZone() {
@@ -78,11 +102,11 @@ public class DbaseOps {
 
     public Map<String, Object> getTableList(Context context) {
 
-        Map<String, Object> map = AppCtx.getLocalCache().get("table_list::");
+        Map<String, Object> map = AppCtx.getLocalCache().get("table_list");
         if (map != null) {
             return map;
         }
-        map = AppCtx.getLocalCache().put("table_list::", Cfg.getTableInfoCacheTTL() * 1000L, () -> {
+        map = AppCtx.getLocalCache().put("table_list", tableInfoCacheTTL * 1000L, () -> {
             Map<String, Object> map2 = fetchTableList(context);
             if (map2 == null) {
                 LOGGER.error("failed to get table list");
@@ -99,7 +123,7 @@ public class DbaseOps {
             return map;
         }
 
-        Object object = AppCtx.getLocalCache().put("table_columns::" + table, Cfg.getTableInfoCacheTTL() * 1000L, () -> {
+        Object object = AppCtx.getLocalCache().put("table_columns::" + table, tableInfoCacheTTL * 1000L, () -> {
             Map<String, Object> map2 = fetchTableColumns(context, table);
             if (map2 == null) {
                 String msg = "failed to get table columns";
@@ -122,7 +146,7 @@ public class DbaseOps {
             return map;
         }
 
-        Object object = AppCtx.getLocalCache().put("table_indexes::" + table, Cfg.getTableInfoCacheTTL() * 1000L, () -> {
+        Object object = AppCtx.getLocalCache().put("table_indexes::" + table, tableInfoCacheTTL * 1000L, () -> {
             Map<String, Object> map2 = fetchTableIndexes(context, table);
             if (map2 == null) {
                 String msg = "failed to get table indexes";

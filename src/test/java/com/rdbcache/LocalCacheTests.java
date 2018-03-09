@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,7 +21,7 @@ public class LocalCacheTests {
     @BeforeAll
     static void initAll() {
         localCache = new LocalCache();
-        localCache.setRecycleMills(150L);
+        localCache.setRecycleSecs(1L);
         localCache.start();
     }
 
@@ -50,9 +49,9 @@ public class LocalCacheTests {
     @Test
     void refreshableTest() {
         long start = System.currentTimeMillis();
-        localCache.put("key", 100L, () -> {
+        localCache.put("key", 1000L, () -> {
             Map<String, Object> map = new HashMap<>();
-            map.put("time_lot", Long.valueOf((System.currentTimeMillis() - start) / 100));
+            map.put("time_lot", Long.valueOf((System.currentTimeMillis() - start) / 1000));
             return map;
         });
         for (Long i = 0L; i < 10L; i++) {
@@ -60,7 +59,7 @@ public class LocalCacheTests {
             Long timeLot = (Long) map.get("time_lot");
             assertEquals(timeLot, i);
             try {
-                Thread.sleep(101);
+                Thread.sleep(1001);
             } catch (InterruptedException e) {
             }
         }

@@ -14,11 +14,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class Cfg {
 
-    private static String hdataPrefix = "";
+    private static String hdataPrefix = "hdata";
 
-    private static String hkeyPrefix = "";
+    private static String hkeyPrefix = "hkey";
 
-    private static String eventPrefix = "";
+    private static String eventPrefix = "event";
+
+    private static String queueName = "queue";
 
     private static String defaultExpire = "180";
 
@@ -32,7 +34,7 @@ public class Cfg {
 
     private static Long maxCacheSize = 1024L;
 
-    private static Long recycleSchedule = 10L;  // 10 seconds
+    private static Long cacheRecycleSecs = 300L;  // 5 minutes
 
     private static Boolean enableDbFallback = false;
 
@@ -52,10 +54,6 @@ public class Cfg {
 
     public static String getHdataPrefix() {
         return hdataPrefix;
-    }
-
-    public static String getHdataKey(String key) {
-        return hdataPrefix + "::" + key;
     }
 
     @Value("${rdbcache.hkeys_prefix}")
@@ -78,6 +76,17 @@ public class Cfg {
 
     public static String getEventPrefix() {
         return eventPrefix;
+    }
+
+    @Value("${rdbcache.queue_name}")
+    public void setQueueName(String name) {
+        if (name != null && name.length() > 0) {
+            queueName = name.replace("::", "");
+        }
+    }
+
+    public static String getQueueName() {
+        return queueName;
     }
 
     @Value("${rdbcache.default_expire}")
@@ -130,13 +139,13 @@ public class Cfg {
         return maxCacheSize;
     }
 
-    @Value("${rdbcache.local_cache_recycle_schedule}")
-    public void setRecycleSchedule(Long recycleSchedule) {
-        recycleSchedule = recycleSchedule;
+    @Value("${rdbcache.cache_recycle_secs}")
+    public void setCacheRecycleSecs(Long recycleSecs) {
+        cacheRecycleSecs = recycleSecs;
     }
 
-    public static Long getRecycleSchedule() {
-        return recycleSchedule;
+    public static Long getCacheRecycleSecs() {
+        return cacheRecycleSecs;
     }
 
     @Value("${rdbcache.enable_db_fallback}")
@@ -155,5 +164,23 @@ public class Cfg {
 
     public static Long getDataMaxCacheTLL() {
         return dataMaxCacheTLL;
+    }
+
+    public static String printConfigurations() {
+        return "\nconfigurations: {"+
+          "\"hdataPrefix\": \"" + hdataPrefix + "\", " +
+          "\"hkeyPrefix\": \"" + hkeyPrefix + "\", " +
+          "\"eventPrefix\": \"" + eventPrefix + "\", " +
+          "\"queueName\": \"" + queueName + "\", " +
+          "\"defaultExpire\": \"" + defaultExpire + "\", " +
+          "\"enableMonitor\": \"" + enableMonitor.toString() + "\", " +
+          "\"eventLockTimeout\": \"" + eventLockTimeout.toString() + "\", " +
+          "\"keyInfoCacheTTL\": \"" + keyInfoCacheTTL.toString() + "\", " +
+          "\"tableInfoCacheTTL\": \"" + tableInfoCacheTTL.toString() + "\", " +
+          "\"maxCacheSize\": \"" + maxCacheSize.toString() + "\", " +
+          "\"cacheRecycleSecs\": \"" + cacheRecycleSecs.toString() + "\", " +
+          "\"enableDbFallback\": \"" + enableDbFallback.toString() + "\", " +
+          "\"dataMaxCacheTLL\": \"" + dataMaxCacheTLL.toString() + "\""+
+           "}";
     }
 }

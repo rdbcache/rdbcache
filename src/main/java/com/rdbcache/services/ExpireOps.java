@@ -6,6 +6,7 @@
 
 package com.rdbcache.services;
 
+import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
@@ -14,6 +15,8 @@ import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -33,6 +36,12 @@ public class ExpireOps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpireOps.class);
 
+    private String eventPrefix = Cfg.getEventPrefix();
+
+    private Boolean enableMonitor = Cfg.getEnableMonitor();
+    
+    private Long eventLockTimeout = Cfg.getEventLockTimeout();
+
     @Autowired
     private StringRedisTemplate redisTemplate;
 
@@ -48,7 +57,7 @@ public class ExpireOps {
 
     @PostConstruct
     public void init() {
-        
+
         valueOps = redisTemplate.opsForValue();
 
         set_expire_key_script = new DefaultRedisScript<>();
@@ -64,6 +73,37 @@ public class ExpireOps {
         expire_event_unlock_script.setResultType(Long.class);
 
         scriptExecutor = new DefaultScriptExecutor<String>(redisTemplate);
+    }
+
+    @EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
+        eventPrefix = Cfg.getEventPrefix();
+        enableMonitor = Cfg.getEnableMonitor();
+        eventLockTimeout = Cfg.getEventLockTimeout();
+    }
+
+    public String getEventPrefix() {
+        return eventPrefix;
+    }
+
+    public void setEventPrefix(String eventPrefix) {
+        this.eventPrefix = eventPrefix;
+    }
+
+    public Boolean getEnableMonitor() {
+        return enableMonitor;
+    }
+
+    public void setEnableMonitor(Boolean enableMonitor) {
+        this.enableMonitor = enableMonitor;
+    }
+
+    public Long getEventLockTimeout() {
+        return eventLockTimeout;
+    }
+
+    public void setEventLockTimeout(Long eventLockTimeout) {
+        this.eventLockTimeout = eventLockTimeout;
     }
 
     // set up expire key
@@ -87,7 +127,7 @@ public class ExpireOps {
         LOGGER.trace("setExpireKey: " + key + " expire: " +keyInfo.getExpire());
 
         String expire = keyInfo.getExpire();
-        String expKey = Cfg.getEventPrefix() + "::" + key;
+        String expKey = eventPrefix + "::" + key;
 
         StopWatch stopWatch = context.startStopWatch("redis", "scriptExecutor.execute");
         Long result = scriptExecutor.execute(set_expire_key_script,
@@ -106,9 +146,9 @@ public class ExpireOps {
      */
     public void onExpireEvent(String event) {
 
-        LOGGER.trace("Received : " + event);
+        LOGGER.trace("Received: " + event);
 
-        if (!event.startsWith(Cfg.getEventPrefix())) {
+        if (!event.startsWith(eventPrefix)) {
             return;
         }
 
@@ -123,14 +163,14 @@ public class ExpireOps {
         String traceId = parts[2];
 
         Context context = new Context(key, traceId);
-        if (Cfg.getEnableMonitor()) context.enableMonitor(event, "event", key);
+        if (enableMonitor) context.enableMonitor(event, "event", key);
 
-        String lockKey = "lock_" + Cfg.getEventPrefix() + "::" + key + "::" + traceId;
+        String lockKey = "lock_" + eventPrefix + "::" + key + "::" + traceId;
         String signature = Utils.generateId();
 
         StopWatch stopWatch = context.startStopWatch("redis", "scriptExecutor.execute");
         String result = scriptExecutor.execute(expire_event_lock_script,
-                Collections.singletonList(lockKey), signature, Cfg.getEventLockTimeout().toString());
+                Collections.singletonList(lockKey), signature, eventLockTimeout.toString());
         if (stopWatch != null) stopWatch.stopNow();
 
         if (!result.equals("OK")) {

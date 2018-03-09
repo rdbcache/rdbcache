@@ -395,8 +395,7 @@ public class Query implements Serializable, Cloneable {
             total++;
         }
 
-        LOGGER.trace("where clause: " + clause);
-        LOGGER.trace("where params: " + Utils.toJson(params));
+        LOGGER.trace("where clause: " + clause + " params: " + params.toString());
 
         return clause;
     }

@@ -7,6 +7,7 @@
 package com.rdbcache;
 
 import com.rdbcache.helpers.AppCtx;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.VersionInfo;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -64,9 +65,7 @@ public class Application implements ApplicationRunner {
 
         LOGGER.info(messsage);
 
-        AppCtx.getDbaseOps().setup();
-        AppCtx.getLocalCache().start();
-        AppCtx.getTaskQueue().start();
+        LOGGER.info(Cfg.printConfigurations());
     }
 
     public static void main(String[] args) {
