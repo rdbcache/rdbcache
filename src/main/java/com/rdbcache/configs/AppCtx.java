@@ -4,7 +4,7 @@
  * @license http://rdbcache.com/license/
  */
 
-package com.rdbcache.helpers;
+package com.rdbcache.configs;
 
 import com.rdbcache.controllers.RdbcacheApis;
 import com.rdbcache.repositories.*;

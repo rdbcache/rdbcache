@@ -6,7 +6,6 @@
 
 package com.rdbcache;
 
-import com.rdbcache.helpers.AppCtx;
 import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.VersionInfo;
 

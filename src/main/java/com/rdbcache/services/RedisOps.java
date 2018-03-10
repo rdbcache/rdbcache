@@ -6,12 +6,8 @@
 
 package com.rdbcache.services;
 
-import com.rdbcache.helpers.AppCtx;
-import org.springframework.core.io.ClassPathResource;
+import com.rdbcache.configs.AppCtx;
 import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.data.redis.core.script.DefaultScriptExecutor;
-import org.springframework.data.redis.core.script.ScriptExecutor;
 import org.springframework.stereotype.Service;
 
 import org.slf4j.Logger;

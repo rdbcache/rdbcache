@@ -6,10 +6,9 @@
 
 package com.rdbcache.services;
 
-import com.rdbcache.helpers.AppCtx;
+import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.Utils;
-import com.rdbcache.models.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

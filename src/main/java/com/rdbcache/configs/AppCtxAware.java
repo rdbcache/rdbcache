@@ -4,7 +4,7 @@
  * @license http://rdbcache.com/license/
  */
 
-package com.rdbcache.helpers;
+package com.rdbcache.configs;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;

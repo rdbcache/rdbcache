@@ -4,11 +4,16 @@
  * @license http://rdbcache.com/license/
  */
 
-package com.rdbcache.helpers;
+package com.rdbcache.queries;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class Condition extends HashMap<String, List<String>> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Condition.class);
 
     public Condition(String ops, List<String> values) {
         push(ops, values);
@@ -39,10 +44,6 @@ public class Condition extends HashMap<String, List<String>> {
     }
 
     public Condition() {
-    }
-
-    public Map<String, List<String>> getMap() {
-        return this;
     }
 
     public void push(String ops, List<String> values) {
@@ -141,10 +142,6 @@ public class Condition extends HashMap<String, List<String>> {
         }
     }
 
-    public Condition clone() {
-        return (Condition) super.clone();
-    }
-
     public Map<String, Object> toMap() {
         Map<String, Object> newMap = new LinkedHashMap<String, Object>();
         for(Map.Entry<String, List<String>> entry: entrySet()) {
@@ -169,4 +166,9 @@ public class Condition extends HashMap<String, List<String>> {
             push(entry.getKey(), list);
         }
     }
+
+    public Condition clone() {
+        return (Condition) super.clone();
+    }
+
 }

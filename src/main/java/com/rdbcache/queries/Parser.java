@@ -4,12 +4,8 @@
  * @license http://rdbcache.com/license/
  */
 
-package com.rdbcache.helpers;
+package com.rdbcache.queries;
 
-import com.rdbcache.models.KvIdType;
-import com.rdbcache.models.KvPair;
-import com.rdbcache.models.Query;
-import com.rdbcache.models.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,13 +14,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class QueryBuilder {
+public class Parser {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(QueryBuilder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Parser.class);
 
-    static String[] keyLastCharList = {"!", ">", "<"};
+    private static String[] keyLastCharList = {"!", ">", "<"};
 
-    static String[] opsList = {
+    private static String[] opsList = {
             "_IS_NOT_NULL",
             "_IS_NULL",
             "_IS_NOT_FALSE",
@@ -49,7 +45,7 @@ public class QueryBuilder {
             "="
     };
 
-    static String[] opsTranList = {
+    private static String[] opsTranList = {
             "GT",
             "GE",
             "LT",
@@ -58,7 +54,7 @@ public class QueryBuilder {
             "NE"
     };
 
-    static String[] opsTranToList = {
+    private static String[] opsTranToList = {
             ">",
             ">=",
             "<",
@@ -67,7 +63,11 @@ public class QueryBuilder {
             "!="
     };
 
-    public static void setConditionsFromParams(Query query, Map<String, String[]> params) {
+    private static String opsOrList[] = { "=" };
+
+    private static String opsSingleList[] = { "IS NOT NULL", "IS NULL", "IS NOT FALSE", "IS NOT TRUE", "IS TRUE", "IS FALSE"};
+
+    public static void setConditions(Query query, Map<String, String[]> params) {
 
         Map<String, Condition> conditions = query.getConditions();
         if (conditions == null) {
@@ -128,10 +128,6 @@ public class QueryBuilder {
         }
     }
 
-    private static String opsOrList[] = { "=" };
-
-    private static String opsSingleList[] = { "IS NOT NULL", "IS NULL", "IS NOT FALSE", "IS NOT TRUE", "IS TRUE", "IS FALSE"};
-
     public static String getClause(Query query, List<Object> params, String defaultValue) {
 
         Map<String, Condition> conditions = query.getConditions();
@@ -148,10 +144,9 @@ public class QueryBuilder {
             }
             String ckey = entry.getKey();
             Condition condition = entry.getValue();
-            Map<String, List<String>> map = condition.getMap();
             int count = 0;
             String exp = "";
-            for (Map.Entry<String, List<String>> opsEntry: map.entrySet()) {
+            for (Map.Entry<String, List<String>> opsEntry: condition.entrySet()) {
                 String ops = opsEntry.getKey();
                 if (count > 0) {
                     exp += " AND ";
@@ -198,26 +193,6 @@ public class QueryBuilder {
         LOGGER.trace("where clause: " + clause + " params: " + params.toString());
 
         return clause;
-    }
-
-    public static void save(Context context, Query query) {
-
-        KvPair queryPair = new KvPair(query.getKey(), "query", query.toMap());
-        KvIdType idType = queryPair.getIdType();
-
-        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
-        KvPair dbPair = AppCtx.getKvPairRepo().findOne(idType);
-        if (stopWatch != null) stopWatch.stopNow();
-
-        if (dbPair != null) {
-            if (queryPair.getValue().equals(dbPair.getValue())) {
-                return;
-            }
-        }
-
-        stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-        AppCtx.getKvPairRepo().save(queryPair);
-        if (stopWatch != null) stopWatch.stopNow();
     }
 
     public static boolean isConditionsEqual(Map<String, Condition> a, Map<String, Condition> b) {

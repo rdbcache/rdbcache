@@ -8,7 +8,7 @@ package com.rdbcache.services;
 
 import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
-import com.rdbcache.helpers.AppCtx;
+import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.KeyInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

@@ -9,7 +9,7 @@ package com.rdbcache.repositories.impls;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
-import com.rdbcache.helpers.AppCtx;
+import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;

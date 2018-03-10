@@ -1,6 +1,6 @@
 package com.rdbcache.services;
 
-import com.rdbcache.helpers.AppCtx;
+import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.Cfg;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Profile;

@@ -6,16 +6,19 @@
 
 package com.rdbcache.controllers;
 
+import com.rdbcache.configs.AppCtx;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.*;
 
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
-import com.rdbcache.models.Query;
+import com.rdbcache.queries.Query;
 
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.NotFoundException;
 
+import com.rdbcache.queries.Parser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -943,7 +946,7 @@ public class RdbcacheApis {
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {
                 Query query = new Query(keyInfo.getTable());
-                QueryBuilder.setConditionsFromParams(query, params);
+                Parser.setConditions(query, params);
                 keyInfo.setQuery(query);
                 keyInfo.setQueryKey(query.getKey());
             }
@@ -958,7 +961,7 @@ public class RdbcacheApis {
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {
                 Query query = new Query(keyInfo.getTable());
-                QueryBuilder.setConditionsFromParams(query, params);
+                Parser.setConditions(query, params);
                 if (keyInfo.getQueryKey() == null || !keyInfo.getQueryKey().equals(query.getKey())) {
                     throw new BadRequestException(context, "can not modify condition for an existing key");
                 }
@@ -966,7 +969,7 @@ public class RdbcacheApis {
         }
 
         LOGGER.debug("URI: "+ request.getRequestURI());
-        LOGGER.trace("key: " + key + " " + (keyInfo == null ? "null" : keyInfo.toString()));
+        LOGGER.trace("key: " + key + " " + (keyInfo == null ? "" : keyInfo.toString()));
 
         return keyInfo;
     }

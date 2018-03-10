@@ -4,17 +4,24 @@
  * @license http://rdbcache.com/license/
  */
 
-package com.rdbcache.helpers;
+package com.rdbcache.queries;
 
+import com.rdbcache.configs.AppCtx;
+import com.rdbcache.helpers.Context;
 import com.rdbcache.models.KeyInfo;
+import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
-import com.rdbcache.models.Query;
+import com.rdbcache.models.StopWatch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class QueryCheck {
+public class Prepare {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Prepare.class);
 
     public static boolean readyForQuery(Context context, KeyInfo keyInfo) {
         return readyForQuery(context, keyInfo, false, true);
@@ -43,6 +50,7 @@ public class QueryCheck {
         if (table != null && clause != null && params != null) return true;
 
         KeyInfo keyInfoFound = AppCtx.getKeyInfoRepo().findOne(context);
+
         if (keyInfoFound != null) {
             keyInfo.copyQueryInfo(keyInfoFound);
             queryKey = keyInfo.getQueryKey();
@@ -67,7 +75,27 @@ public class QueryCheck {
                 return true;
             }
         }
-        return preparePKClauseParams(context, keyInfo);
+        return prepareClauseParams(context, keyInfo);
+    }
+
+    public static void save(Context context, Query query) {
+
+        KvPair queryPair = new KvPair(query.getKey(), "query", query.toMap());
+        KvIdType idType = queryPair.getIdType();
+
+        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
+        KvPair dbPair = AppCtx.getKvPairRepo().findOne(idType);
+        if (stopWatch != null) stopWatch.stopNow();
+
+        if (dbPair != null) {
+            if (queryPair.getValue().equals(dbPair.getValue())) {
+                return;
+            }
+        }
+
+        stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
+        AppCtx.getKvPairRepo().save(queryPair);
+        if (stopWatch != null) stopWatch.stopNow();
     }
 
     public static List<String> fetchIndexes(Context context, KeyInfo keyInfo) {
@@ -101,22 +129,18 @@ public class QueryCheck {
         return columns;
     }
 
-    public static boolean fetchPKClauseParams(Context context, KeyInfo keyInfo, Map<String, Object> map, String defaultValue) {
+    public static boolean fetchClauseParams(Context context, KeyInfo keyInfo, Map<String, Object> map, String defaultValue) {
         String clause = keyInfo.getClause();
         if (clause == null) {
             return false;
         }
-        List<String> indexes = keyInfo.getIndexes();
-        if (indexes == null) {
-            fetchIndexes(context, keyInfo);
-        }
-        indexes = keyInfo.getIndexes();
+        List<String> indexes = fetchIndexes(context, keyInfo);
         if (indexes == null) {
             keyInfo.setClause(null);
             return false;
         }
         List<Object> params = keyInfo.getParams();
-        if (clause.equals(keyInfo.getStdClause(context))) {
+        if (clause.equals(fetchStdClause(context, keyInfo))) {
             if (params != null && params.size() == indexes.size()) {
                 int i = 0;
                 for(String indexKey: indexes) {
@@ -128,7 +152,7 @@ public class QueryCheck {
                 return true;
             }
         } else {
-            clause = keyInfo.getStdClause(context);
+            clause = fetchStdClause(context, keyInfo);
             keyInfo.setClause(clause);
         }
         if (params == null) {
@@ -147,30 +171,36 @@ public class QueryCheck {
         return true;
     }
 
+    public static boolean hasStdClause(Context context, KeyInfo keyInfo) {
+        String stdClause = fetchStdClause(context, keyInfo);
+        return (stdClause != null);
+    }
+
     public static String fetchStdClause(Context context, KeyInfo keyInfo) {
+        String stdClause = keyInfo.getStdClause();
+        if (stdClause != null) {
+            return stdClause;
+        }
         if (keyInfo.getClause() == null) {
             return null;
         }
-        List<String> indexes = keyInfo.getIndexes();
-        if (indexes == null) {
-            fetchIndexes(context, keyInfo);
-        }
-        indexes = keyInfo.getIndexes();
+        List<String> indexes = fetchIndexes(context, keyInfo);
         if (indexes == null) {
             keyInfo.setClause(null);
             return null;
         }
-        String stdClause = "";
+        stdClause = "";
         for (String indexKey : indexes) {
             if (stdClause.length() > 0) {
                 stdClause += " AND ";
             }
             stdClause += indexKey + " = ?";
         }
+        keyInfo.setStdClause(stdClause);
         return stdClause;
     }
     
-    public static  boolean preparePKClauseParams(Context context, KeyInfo keyInfo) {
+    private static  boolean prepareClauseParams(Context context, KeyInfo keyInfo) {
         KvPair pair = context.getPair();
         if (pair == null) {
             return false;
@@ -180,10 +210,10 @@ public class QueryCheck {
         if (map == null) {
             return false;
         }
-        return fetchPKClauseParams(context, keyInfo, map, key);
+        return fetchClauseParams(context, keyInfo, map, key);
     }
 
-    public static boolean prepareQueryClauseParams(Context context, KeyInfo keyInfo) {
+    private static boolean prepareQueryClauseParams(Context context, KeyInfo keyInfo) {
         Query query = keyInfo.getQuery();
         if (query == null) {
             return false;
@@ -199,9 +229,6 @@ public class QueryCheck {
             keyInfo.setQuery(null);
             return false;
         }
-        KvPair pair = context.getPair();
-        String key = null;
-        if (pair != null) key = pair.getId();
         List<Object> params = keyInfo.getParams();
         if (params == null) {
             params = new ArrayList<Object>();
@@ -209,7 +236,10 @@ public class QueryCheck {
         } else {
             params.clear();
         }
-        String clause = QueryBuilder.getClause(query, params, key);
+        KvPair pair = context.getPair();
+        String key = null;
+        if (pair != null) key = pair.getId();
+        String clause = Parser.getClause(query, params, key);
         keyInfo.setClause(clause);
         return (clause != null);
     }

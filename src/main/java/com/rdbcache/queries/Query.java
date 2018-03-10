@@ -4,11 +4,11 @@
  * @license http://rdbcache.com/license/
  */
 
-package com.rdbcache.models;
+package com.rdbcache.queries;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.helpers.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.rdbcache.helpers.Utils;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import org.slf4j.Logger;
@@ -32,7 +32,7 @@ public class Query implements Serializable, Cloneable {
 
     public Query(String table, Map<String, String[]> params) {
         this.table = table;
-        QueryBuilder.setConditionsFromParams(this, params);
+        Parser.setConditions(this, params);
     }
 
     public Query(String table) {
@@ -81,63 +81,6 @@ public class Query implements Serializable, Cloneable {
         this.limit = limit;
     }
 
-    @Override
-    public String toString() {
-        return "Query{" +
-                "limit=" + limit +
-                ", conditions=" + (conditions == null ? "null" : Utils.toJson(conditions)) +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Query query = (Query) o;
-
-        if (table != null ? !table.equals(query.table) : query.table != null) return false;
-        if (limit != null ? !limit.equals(query.limit) : query.limit != null) return false;
-        return QueryBuilder.isConditionsEqual(conditions, query.conditions);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = 0;
-        result = 31 * result + (table != null ? table.hashCode() : 0);
-        result = 31 * result + (limit != null ? limit.hashCode() : 0);
-        result = 31 * result + (conditions != null ? conditions.hashCode() : 0);
-        return result;
-    }
-
-    public Query clone() {
-        Query query = null; //new Query(table);
-        try {
-            query = (Query) super.clone();
-        } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
-            throw new ServerErrorException(e.getCause().getMessage());
-        }
-        if (conditions != null) query.conditions = cloneConditions();
-        return query;
-    }
-
-    public Map<String, Condition> cloneConditions() {
-        if (conditions == null) {
-            return null;
-        }
-        Map<String, Condition> cmap = new LinkedHashMap<String, Condition>();
-        if (conditions.size() == 0) {
-            return cmap;
-        }
-        for(Map.Entry<String, Condition> entry: conditions.entrySet()) {
-            Condition condition = entry.getValue();
-            cmap.put(entry.getKey(), condition.clone());
-        }
-        return cmap;
-    }
-
-
     public void fromMap(Map<String, Object> map) {
         if (map.containsKey("table")) table = (String) map.get("table");
         if (map.containsKey("limit")) limit = Integer.valueOf(map.get("limit").toString());
@@ -164,5 +107,61 @@ public class Query implements Serializable, Cloneable {
             }
         }
         return map;
+    }
+
+    @Override
+    public String toString() {
+        return "Query{" +
+                (limit == null ? "" : "limit=" + limit + ",") +
+                "conditions=" + (conditions == null ? "null" : Utils.toJson(conditions)) +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Query query = (Query) o;
+
+        if (table != null ? !table.equals(query.table) : query.table != null) return false;
+        if (limit != null ? !limit.equals(query.limit) : query.limit != null) return false;
+        return Parser.isConditionsEqual(conditions, query.conditions);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 0;
+        result = 31 * result + (table != null ? table.hashCode() : 0);
+        result = 31 * result + (limit != null ? limit.hashCode() : 0);
+        result = 31 * result + (conditions != null ? conditions.hashCode() : 0);
+        return result;
+    }
+
+    public Query clone() {
+        Query query = null; //new Query(table);
+        try {
+            query = (Query) super.clone();
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            throw new ServerErrorException(e.getCause().getMessage());
+        }
+        if (conditions != null) query.conditions = cloneConditions();
+        return query;
+    }
+
+    private Map<String, Condition> cloneConditions() {
+        if (conditions == null) {
+            return null;
+        }
+        Map<String, Condition> cmap = new LinkedHashMap<String, Condition>();
+        if (conditions.size() == 0) {
+            return cmap;
+        }
+        for(Map.Entry<String, Condition> entry: conditions.entrySet()) {
+            Condition condition = entry.getValue();
+            cmap.put(entry.getKey(), condition.clone());
+        }
+        return cmap;
     }
 }

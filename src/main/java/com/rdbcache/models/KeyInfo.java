@@ -6,12 +6,13 @@
 
 package com.rdbcache.models;
 
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.helpers.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import com.rdbcache.queries.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,6 +137,15 @@ public class KeyInfo implements Serializable, Cloneable {
         this.query = query;
     }
 
+    public void setStdClause(String stdClause) {
+        this.stdClause = stdClause;
+    }
+
+    @JsonIgnore
+    public String getStdClause() {
+        return stdClause;
+    }
+
     @JsonIgnore
     public Long getTTL() {
         Long ttl = Long.valueOf(expire);
@@ -147,22 +157,6 @@ public class KeyInfo implements Serializable, Cloneable {
     public Integer getQueryLimit() {
         if (query == null) return null;
         return query.getLimit();
-    }
-
-    @JsonIgnore
-    public String getStdClause(Context context) {
-        if (stdClause != null) {
-            return stdClause;
-        }
-        stdClause = QueryCheck.fetchStdClause(context, this);
-        return stdClause;
-    }
-
-    public boolean hasStdPKClause(Context context) {
-        if (clause == null) return false;
-        String pkClause = getStdClause(context);
-        if (pkClause == null) return false;
-        return pkClause.equals(clause);
     }
 
     public void copyRedisInfo(KeyInfo keyInfo) {
@@ -241,7 +235,7 @@ public class KeyInfo implements Serializable, Cloneable {
                 "isNew='" + isNew + '\'' +
                 ", table='" + table + '\'' +
                 ", expire='" + expire + '\'' +
-                ", " + (query == null ? "" : query.toString()) +
+                (query == null ? "" : ", " + query.toString()) +
                 '}';
     }
 

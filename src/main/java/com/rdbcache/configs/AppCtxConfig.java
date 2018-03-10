@@ -5,7 +5,6 @@
  */
 package com.rdbcache.configs;
 
-import com.rdbcache.helpers.AppCtxAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

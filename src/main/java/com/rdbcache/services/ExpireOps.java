@@ -6,10 +6,9 @@
 
 package com.rdbcache.services;
 
-import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
-import com.rdbcache.helpers.AppCtx;
+import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
