@@ -9,6 +9,7 @@ package com.rdbcache.services;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 
 import org.slf4j.Logger;
@@ -52,14 +53,25 @@ public class LocalCache extends Thread {
         dataMaxCacheTLL = Cfg.getDataMaxCacheTLL();
 
         if (cache == null) {
+            int initCapacity = Cfg.getMaxCacheSize().intValue();
+            int concurrentLevel = (initCapacity / 256 < 32 ? 32 : initCapacity / 256);
             cache = new ConcurrentHashMap<String, Cached>(
-                    Cfg.getMaxCacheSize().intValue(), 0.75f, 32);
+                    initCapacity, 0.75f, concurrentLevel);
         }
     }
 
     @EventListener
     public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
         start();
+    }
+
+    @Override
+    public synchronized void start() {
+        if (cache == null) {
+            cache = new ConcurrentHashMap<String, Cached>(
+                    Cfg.getMaxCacheSize().intValue(), 0.75f, 32);
+        }
+        super.start();
     }
 
     public Long getRecycleSecs() {
@@ -98,7 +110,7 @@ public class LocalCache extends Thread {
         cache.put(key, new Cached(map));
     }
 
-    public void put(String key, @NotNull Map<String, Object> map, long timeToLive) {
+    public void put(String key, Map<String, Object> map, long timeToLive) {
         cache.put(key, new Cached(map, timeToLive));
     }
 
@@ -295,7 +307,7 @@ public class LocalCache extends Thread {
         }
     });
 
-    private boolean isRunning = true;
+    private boolean isRunning = false;
 
     public boolean isRunning() {
         return isRunning;
@@ -309,6 +321,8 @@ public class LocalCache extends Thread {
 
     @Override
     public void run() {
+
+        isRunning = true;
 
         LOGGER.info("LocalCache is running on thread " + getName());
 
@@ -363,7 +377,7 @@ public class LocalCache extends Thread {
                     Cached cached = cache.get(key);
                     if (cached == null) continue;
                     Cached clone = cached.clone();
-                    AppCtx.getAsyncOps().getExecutor().submit(() -> {
+                    Utils.getExcutorService().submit(() -> {
                         try {
                             Map<String, Object> map = clone.refreshable.call();
                             clone.setMap(map);

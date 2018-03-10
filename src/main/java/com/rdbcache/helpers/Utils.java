@@ -12,8 +12,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Utils {
+
+    private static ExecutorService executor;
+
+    public static ExecutorService getExcutorService() {
+        if (executor == null) {
+            executor = Executors.newCachedThreadPool();
+        }
+        return executor;
+    }
 
     private static ObjectMapper mapper;
 

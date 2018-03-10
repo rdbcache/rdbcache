@@ -81,7 +81,7 @@ public class Query {
 
     public static void save(Context context, QueryInfo queryInfo) {
 
-        KvPair queryPair = new KvPair(queryInfo.getKey(), "queryInfo", queryInfo.toMap());
+        KvPair queryPair = new KvPair(queryInfo.getKey(), "query", queryInfo.toMap());
         KvIdType idType = queryPair.getIdType();
 
         StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");

@@ -22,11 +22,6 @@ public class KvIdType implements Serializable {
         this.type = type;
     }
 
-    public KvIdType(String id) {
-        this.id = id;
-        this.type = "data";
-    }
-
     public KvIdType() {
     }
 

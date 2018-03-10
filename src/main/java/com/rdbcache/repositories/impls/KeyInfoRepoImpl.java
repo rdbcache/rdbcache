@@ -133,7 +133,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (enableRedisCache) {
-            AsyncOps.getExecutor().submit(() -> {
+            Utils.getExcutorService().submit(() -> {
                 Thread.yield();
                 StopWatch stopWatch2 = context.startStopWatch("redis", "keyInfoOps.put");
                 keyInfoOps.put(hkeyPrefix + "::keyinfo", key, finalKeyInfo);
@@ -254,7 +254,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (redisKeyInfoMap.size() > 0) {
-            AsyncOps.getExecutor().submit(() -> {
+            Utils.getExcutorService().submit(() -> {
 
                 Thread.yield();
 
@@ -305,7 +305,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         if (finalQueryInfo != null) {
 
             keyInfo.setQueryInfo(null);
-            AsyncOps.getExecutor().submit(() -> {
+            Utils.getExcutorService().submit(() -> {
 
                 Thread.yield();
                 Query.save(context, finalQueryInfo);
@@ -313,7 +313,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         final KeyInfo finalKeyInfo = keyInfo;
-        AsyncOps.getExecutor().submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             Thread.yield();
 
@@ -395,7 +395,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         final List<String> finalKeys = todoKeys;
         final List<KeyInfo> finalKeyInfos = todoKeyInfos;
 
-        AsyncOps.getExecutor().submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             Thread.yield();
 

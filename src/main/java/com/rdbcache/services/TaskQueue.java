@@ -71,7 +71,7 @@ public class TaskQueue extends Thread {
         this.queueName = queueName;
     }
 
-    private boolean isRunning = true;
+    private boolean isRunning = false;
 
     public boolean isRunning() {
         return isRunning;
@@ -87,6 +87,8 @@ public class TaskQueue extends Thread {
 
     @Override
     public void run() {
+
+        isRunning = true;
 
         LOGGER.info("Task Queue is running on thread " + getName());
 

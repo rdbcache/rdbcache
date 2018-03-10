@@ -26,17 +26,11 @@ public class AsyncOps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AsyncOps.class);
 
-    private static ExecutorService executor;
-
     @PostConstruct
     public void init() {
-        executor = Executors.newCachedThreadPool();
+
     }
 
-    public static ExecutorService getExecutor() {
-        return executor;
-    }
-    
     public void doSetExpKey(Context context, KeyInfo keyInfo) {
 
         List<KvPair> pairs = context.getPairs();
@@ -46,7 +40,7 @@ public class AsyncOps {
 
         LOGGER.trace("doSetExpKey: " + pairs.size() + " table: " + keyInfo.getTable());
 
-        executor.submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             if (pairs.size() == 1) {
                 AppCtx.getExpireOps().setExpireKey(context, keyInfo);
@@ -69,7 +63,7 @@ public class AsyncOps {
 
         LOGGER.trace("doSaveToRedis: " + pairs.size() + " table: " + keyInfo.getTable());
 
-        executor.submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             if (pairs.size() == 1) {
                 AppCtx.getRedisRepo().saveOne(context, keyInfo);
@@ -94,7 +88,7 @@ public class AsyncOps {
 
         LOGGER.trace("doSaveToDbase: " + pairs.size() + " table: " + keyInfo.getTable());
 
-        executor.submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             if (pairs.size() == 1) {
                 AppCtx.getDbaseRepo().saveOne(context, keyInfo);
@@ -119,7 +113,7 @@ public class AsyncOps {
 
         LOGGER.trace("doPushOperations: " + pairs.size() + " table: " + keyInfo.getTable());
 
-        executor.submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             List<KeyInfo> keyInfos = AppCtx.getKeyInfoRepo().findAll(context);
             int i = 0;
@@ -143,7 +137,7 @@ public class AsyncOps {
 
         LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + keyInfo.getTable());
 
-        executor.submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             AppCtx.getRedisRepo().saveAll(context, keyInfo);
             AppCtx.getDbaseRepo().insertAll(context, keyInfo);
@@ -164,7 +158,7 @@ public class AsyncOps {
 
         LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + keyInfo.getTable());
 
-        executor.submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             if (pairs.size() == 1) {
                 AppCtx.getRedisRepo().saveOne(context, keyInfo);
@@ -191,7 +185,7 @@ public class AsyncOps {
 
         LOGGER.trace("doPutOperation: " + pairs.size() + " table: " + keyInfo.getTable());
 
-        executor.submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             for (KvPair pair : pairs) {
 
@@ -260,7 +254,7 @@ public class AsyncOps {
 
         LOGGER.trace("doDeleteFromRedis: " + pairs.size());
 
-        executor.submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             if (pairs.size() == 1) {
                 KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
@@ -292,7 +286,7 @@ public class AsyncOps {
 
         LOGGER.trace("doDeleteFromRedisAndDbase: " + pairs.size());
 
-        executor.submit(() -> {
+        Utils.getExcutorService().submit(() -> {
 
             if (pairs.size() == 1) {
                 KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);

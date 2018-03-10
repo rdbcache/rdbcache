@@ -125,6 +125,7 @@ public class RedisRepoImpl implements RedisRepo {
             try {
                 map = hashOps.entries(hashKey);
                 if (stopWatch != null) stopWatch.stopNow();
+
                 if (enableLocalCache) {
                     AppCtx.getLocalCache().putData(key, map, keyInfo);
                 }
@@ -249,6 +250,7 @@ public class RedisRepoImpl implements RedisRepo {
                 try {
                     map = hashOps.entries(hashKey);
                     if (stopWatch != null) stopWatch.stopNow();
+
                     if (enableLocalCache) {
                         AppCtx.getLocalCache().putData(key, map, keyInfo);
                     }

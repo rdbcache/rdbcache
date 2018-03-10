@@ -7,6 +7,7 @@
 package com.rdbcache.configs;
 
 import com.rdbcache.controllers.RdbcacheApis;
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.repositories.*;
 import com.rdbcache.repositories.impls.DbaseRepoImpl;
 import com.rdbcache.repositories.impls.KeyInfoRepoImpl;

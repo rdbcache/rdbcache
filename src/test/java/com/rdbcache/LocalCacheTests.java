@@ -1,6 +1,8 @@
 package com.rdbcache;
 
+import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Utils;
+import com.rdbcache.services.AsyncOps;
 import com.rdbcache.services.LocalCache;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -16,22 +18,31 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class LocalCacheTests {
 
-    static private LocalCache localCache;
+    private static LocalCache localCache;
 
     @BeforeAll
     static void initAll() {
+
         localCache = new LocalCache();
         localCache.setRecycleSecs(1L);
-        localCache.start();
+
     }
 
     @BeforeEach
     void init() {
+        if (!localCache.isRunning()) {
+            localCache.start();
+        }
     }
 
     @Test
     void timeToLiveTest() {
-        localCache.put("key", Utils.toMap("{\"k\":\"v\"}"), 900L);
+        assertNotNull(localCache);
+        try {
+            localCache.put("key", Utils.toMap("{\"k\":\"v\"}"), 900L);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
@@ -48,6 +59,7 @@ public class LocalCacheTests {
 
     @Test
     void refreshableTest() {
+        assertNotNull(localCache);
         long start = System.currentTimeMillis();
         localCache.put("key", 1000L, () -> {
             Map<String, Object> map = new HashMap<>();
@@ -82,6 +94,7 @@ public class LocalCacheTests {
 
     @AfterAll
     static void tearDownAll() {
+        //localCache.interrupt();
     }
 
 }

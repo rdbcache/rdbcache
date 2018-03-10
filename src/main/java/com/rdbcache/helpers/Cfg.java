@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class Cfg {
 
+    private static String activeProfile = "prod";
+
     private static String hdataPrefix = "hdata";
 
     private static String hkeyPrefix = "hkey";
@@ -43,6 +45,17 @@ public class Cfg {
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertyConfig() {
         return new PropertySourcesPlaceholderConfigurer();
+    }
+
+    @Value("${spring.profiles.active}")
+    public void setActiveProfile(String name) {
+        if (name != null && name.length() > 0) {
+            activeProfile = name;
+        }
+    }
+
+    public static String getActiveProfile() {
+        return activeProfile;
     }
 
     @Value("${rdbcache.hdata_prefix}")

@@ -62,7 +62,7 @@ public class KvPair implements Serializable {
         if (id.equals("*")) {
             throw new ServerErrorException("* id should be replaced by generated id");
         } else {
-            idType = new KvIdType(id);
+            idType = new KvIdType(id, "data");
         }
         data = new LinkedHashMap<String, Object>();
     }

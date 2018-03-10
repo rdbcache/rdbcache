@@ -29,6 +29,7 @@ import org.springframework.stereotype.Repository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import javax.annotation.PostConstruct;
 import java.sql.Connection;
@@ -36,6 +37,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
 public class DbaseRepoImpl implements DbaseRepo {
@@ -100,7 +102,6 @@ public class DbaseRepoImpl implements DbaseRepo {
             String clause = keyInfo.getClause();
             List<Object> params = keyInfo.getParams();
             Map<String, Object> columns = Query.fetchColumns(context, keyInfo);
-            List<String> indexes = Query.fetchIndexes(context, keyInfo);
 
             String sql = "select * from " + table + " where " + clause + " limit 1";
 
@@ -123,13 +124,16 @@ public class DbaseRepoImpl implements DbaseRepo {
                     final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
                     if (finalQueryInfo != null) {
                         keyInfo.setQueryInfo(null);
-                        AsyncOps.getExecutor().submit(() -> {
+                        Utils.getExcutorService().submit(() -> {
                             Thread.yield();
                             Query.save(context, finalQueryInfo);
                         });
                     }
 
                     return true;
+
+                } else {
+                    LOGGER.debug("not found from " + table + " for " + key);
                 }
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
@@ -147,15 +151,18 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         // otherwise find it from default table
         StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
-        KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(key));
+        KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(key, "data"));
         if (stopWatch != null) stopWatch.stopNow();
 
         if (dbPair == null) {
+            LOGGER.debug("not found from default table for " + key);
             return false;
         }
 
         setUseDefaultTable(keyInfo);
         pair.setData(dbPair.getData());
+
+        LOGGER.debug("found from default table for " + key);
 
         return true;
     }
@@ -231,13 +238,17 @@ public class DbaseRepoImpl implements DbaseRepo {
                 final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
                 if (finalQueryInfo != null) {
                     keyInfo.setQueryInfo(null);
-                    AsyncOps.getExecutor().submit(() -> {
+                    Utils.getExcutorService().submit(() -> {
                         Thread.yield();
                         Query.save(context, finalQueryInfo);
                     });
                 }
                 return true;
+
+            } else {
+                LOGGER.debug("not found any record from " + table);
             }
+
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
 
@@ -284,6 +295,17 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             if (table != null) {
 
+                String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
+                if (autoIncKey != null && !map.containsKey(autoIncKey)) {
+                    map.put(autoIncKey, dbMap.get(autoIncKey));
+                    if (enableLocalCache) {
+                        AppCtx.getLocalCache().updateData(key, map, keyInfo);
+                    }
+                    if (enableRedisCache) {
+                        AppCtx.getRedisRepo().updateIfExists(context, keyInfo);
+                    }
+                }
+
                 Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
                 if (!Utils.mapChangesAfterUpdate(map, dbMap, todoMap)) {
                     String msg = "switch to default table, unknown field found in input";
@@ -316,7 +338,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
                 final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
                 if (finalQueryInfo != null) {
-                    AsyncOps.getExecutor().submit(() -> {
+                    Utils.getExcutorService().submit(() -> {
                         Thread.yield();
                         Query.save(context, finalQueryInfo);
                     });
@@ -340,7 +362,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
         if (finalQueryInfo != null) {
             keyInfo.setQueryInfo(null);
-            AsyncOps.getExecutor().submit(() -> {
+            Utils.getExcutorService().submit(() -> {
                 Thread.yield();
                 Query.save(context, finalQueryInfo);
             });
@@ -350,6 +372,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             String key = pair.getId();
             KeyInfo keyInfoPer = keyInfo.clone();
+            Context contextPer = context.getCopyWith(pair);
 
             Map<String, Object> map = pair.getData();
             if (map == null || map.size() == 0) {
@@ -362,7 +385,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             // get it from database
             Context dbCtx = context.getCopyWith(key);
             if (!findOne(dbCtx, keyInfoPer)) {
-                insertOne(context.getCopyWith(pair), keyInfoPer);
+                insertOne(contextPer, keyInfoPer);
                 continue;
             }
 
@@ -380,11 +403,22 @@ public class DbaseRepoImpl implements DbaseRepo {
 
                 if (table != null) {
 
+                    String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
+                    if (autoIncKey != null && !map.containsKey(autoIncKey)) {
+                        map.put(autoIncKey, dbMap.get(autoIncKey));
+                        if (enableLocalCache) {
+                            AppCtx.getLocalCache().updateData(key, map, keyInfoPer);
+                        }
+                        if (enableRedisCache) {
+                            AppCtx.getRedisRepo().updateIfExists(contextPer, keyInfoPer);
+                        }
+                    }
+
                     Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
                     if (!Utils.mapChangesAfterUpdate(map, dbMap, todoMap)) {
                         String msg = "unknown field found in input";
                         LOGGER.error(msg);
-                        throw new BadRequestException(context, msg);
+                        throw new BadRequestException(contextPer, msg);
                     }
 
                     // identical map
@@ -402,9 +436,12 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             keyInfoPer.setIndexes(indexes);
 
-            if (!Query.hasStdClause(context, keyInfoPer)) {
-                Query.fetchClauseParams(context, keyInfoPer, dbMap, key);
-                AppCtx.getKeyInfoRepo().saveOne(context, keyInfoPer);
+            if (table != null) {
+
+                if (!Query.hasStdClause(context, keyInfoPer)) {
+                    Query.fetchClauseParams(contextPer, keyInfoPer, dbMap, key);
+                    AppCtx.getKeyInfoRepo().saveOne(contextPer, keyInfoPer);
+                }
             }
 
             updateOne(context, keyInfoPer);
@@ -479,11 +516,13 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             if (rowCount > 0) {
 
-                List<String> indexes = Query.fetchIndexes(context, keyInfo);
-                if (keyHolder.getKey() != null) {
-                    String primaryKey = indexes.get(0);
+                String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
+                if (autoIncKey != null && keyHolder.getKey() == null) {
+                    LOGGER.error("failed to get auto increment id from query");
+                }
+                if (autoIncKey != null && keyHolder.getKey() != null) {
                     String keyValue = String.valueOf(keyHolder.getKey());
-                    map.put(primaryKey, keyValue);
+                    map.put(autoIncKey, keyValue);
                     if (enableLocalCache) {
                         AppCtx.getLocalCache().putData(key, map, keyInfo);
                     }
@@ -555,6 +594,8 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         List<KeyInfo> keyInfos = new ArrayList<KeyInfo>();
 
+        String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
+
         for (KvPair pair: pairs) {
 
             String key = pair.getId();
@@ -608,11 +649,12 @@ public class DbaseRepoImpl implements DbaseRepo {
                 keyInfos.add(keyInfoPer);
                 keyInfoPer.setIndexes(indexes);
 
-                keyInfo.setIsNew(false);
-                if (keyHolder.getKey() != null) {
-                    String primaryKey = indexes.get(0);
+                if (autoIncKey != null && keyHolder.getKey() == null) {
+                    LOGGER.error("failed to get auto increment id from query");
+                }
+                if (autoIncKey != null & keyHolder.getKey() != null) {
                     String keyValue = String.valueOf(keyHolder.getKey());
-                    map.put(primaryKey, keyValue);
+                    map.put(autoIncKey, keyValue);
                     if (enableRedisCache) {
                         AppCtx.getLocalCache().putData(key, map, keyInfoPer);
                     }

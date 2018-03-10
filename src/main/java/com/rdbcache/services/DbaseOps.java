@@ -10,6 +10,7 @@ import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
@@ -112,6 +113,10 @@ public class DbaseOps {
             }
             return map2;
         });
+        if (map == null) {
+            throw new ServerErrorException("failed to get table list");
+        }
+
         return map;
     }
 
@@ -133,10 +138,66 @@ public class DbaseOps {
             }
             return map2;
         });
+        if (object == null) {
+            throw new ServerErrorException("failed to get table columns");
+        }
+
         map = (Map<String, Object>) object;
 
         return map;
     }
+
+    public String getTableAutoIncColumn(Context context, String table) {
+
+        if (table == null) return null;
+
+        Map<String, Object> map = map = (Map<String, Object>) AppCtx.getLocalCache().get("table_auto_inc_column");
+        if (map != null) {
+            return (String) map.get(table);
+        }
+
+        Object object = AppCtx.getLocalCache().put("table_auto_inc_column", tableInfoCacheTTL * 1000L, () -> {
+            Map<String, Object> map2 = fetchTableAutoIncrementColumn(context);
+            if (map2 == null) {
+                String msg = "failed to get table auto increment column map";
+                LOGGER.error(msg);
+                if (context != null) {
+                    context.logTraceMessage(msg);
+                }
+            }
+            return map2;
+        });
+        if (object == null) {
+            throw new ServerErrorException("failed to get table auto increment column map");
+        }
+
+        map = (Map<String, Object>) object;
+
+        return (String) map.get(table);
+    }
+
+    public void cacheTableAutoIncColumn(Context context) {
+
+        Map<String, Object> map = map = (Map<String, Object>) AppCtx.getLocalCache().get("table_auto_inc_column");
+        if (map != null) {
+            return;
+        }
+
+        Object object = AppCtx.getLocalCache().put("table_auto_inc_column", tableInfoCacheTTL * 1000L, () -> {
+            Map<String, Object> map2 = fetchTableAutoIncrementColumn(context);
+            if (map2 == null) {
+                String msg = "failed to get table auto increment column map";
+                LOGGER.error(msg);
+                if (context != null) {
+                    context.logTraceMessage(msg);
+                }
+            }
+            return map2;
+        });
+        if (object == null) {
+            throw new ServerErrorException("failed to get table auto increment column map");
+        }
+   }
 
     public Map<String, Object> getTableIndexes(Context context, String table) {
 
@@ -156,6 +217,10 @@ public class DbaseOps {
             }
             return map2;
         });
+        if (object == null) {
+            throw new ServerErrorException("failed to get table indexes");
+        }
+
         map = (Map<String, Object>) object;
 
         return map;
@@ -169,6 +234,7 @@ public class DbaseOps {
             getTableColumns(null, table);
             getTableIndexes(null, table);
         }
+        cacheTableAutoIncColumn(null);
     }
 
     public String getFieldType(Context context, Map<String, Object> tableInfo, String field) {
@@ -270,7 +336,6 @@ public class DbaseOps {
             try {
                 List<Map<String, Object>> columns = AppCtx.getJdbcTemplate().queryForList(sql);
                 if (stopWatch != null) stopWatch.stopNow();
-
                 for (int i = 0; i < columns.size(); i++) {
                     Map<String, Object> column = columns.get(i);
                     String field = (String) column.get("Field");
@@ -290,6 +355,25 @@ public class DbaseOps {
             }
         }
         throw new ServerErrorException("failed to get database table columns");
+    }
+
+    // get auto increment column per table
+    //
+    public Map<String, Object> fetchTableAutoIncrementColumn(Context context) {
+
+        Map<String, Object> autoIncMap = new LinkedHashMap<>();
+        List<String> tables = (List<String>) getTableList(context).get("tables");
+        for (String table: tables) {
+            Map<String, Object> map = getTableColumns(context, table);
+            for (Map.Entry<String, Object> entry: map.entrySet()) {
+                Map<String, Object> cmap = (Map<String, Object>) entry.getValue();
+                String extra = (String) cmap.get("Extra");
+                if (extra.equals("auto_increment")) {
+                    autoIncMap.put(table, entry.getKey());
+                }
+            }
+        }
+        return autoIncMap;
     }
 
     // get table indexes info
