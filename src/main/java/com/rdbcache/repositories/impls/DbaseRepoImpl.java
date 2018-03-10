@@ -12,12 +12,12 @@ import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.*;
+import com.rdbcache.queries.QueryInfo;
 import com.rdbcache.repositories.DbaseRepo;
 import com.rdbcache.services.AsyncOps;
 
 import com.rdbcache.queries.Condition;
 import com.rdbcache.queries.Query;
-import com.rdbcache.queries.Prepare;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -96,11 +96,11 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         LOGGER.trace("findOne: " + key + " table: " + table);
 
-        if (Prepare.readyForQuery(context, keyInfo)) {
+        if (Query.readyForQuery(context, keyInfo)) {
             String clause = keyInfo.getClause();
             List<Object> params = keyInfo.getParams();
-            Map<String, Object> columns = Prepare.fetchColumns(context, keyInfo);
-            List<String> indexes = Prepare.fetchIndexes(context, keyInfo);
+            Map<String, Object> columns = Query.fetchColumns(context, keyInfo);
+            List<String> indexes = Query.fetchIndexes(context, keyInfo);
 
             String sql = "select * from " + table + " where " + clause + " limit 1";
 
@@ -116,16 +116,16 @@ public class DbaseRepoImpl implements DbaseRepo {
                     Map<String, Object> map = convertDbMap(columns, list.get(0));
                     pair.setData(map);
 
-                    Prepare.fetchClauseParams(context, keyInfo, map, key);
+                    Query.fetchClauseParams(context, keyInfo, map, key);
 
                     AppCtx.getKeyInfoRepo().saveOne(context, keyInfo);
 
-                    final Query finalQuery = keyInfo.getQuery();
-                    if (finalQuery != null) {
-                        keyInfo.setQuery(null);
+                    final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
+                    if (finalQueryInfo != null) {
+                        keyInfo.setQueryInfo(null);
                         AsyncOps.getExecutor().submit(() -> {
                             Thread.yield();
-                            Prepare.save(context, finalQuery);
+                            Query.save(context, finalQueryInfo);
                         });
                     }
 
@@ -172,10 +172,10 @@ public class DbaseRepoImpl implements DbaseRepo {
             return kvFindAll(context, keyInfo);
         }
 
-        Map<String, Object> columns = Prepare.fetchColumns(context, keyInfo);
-        List<String> indexes = Prepare.fetchIndexes(context, keyInfo);
+        Map<String, Object> columns = Query.fetchColumns(context, keyInfo);
+        List<String> indexes = Query.fetchIndexes(context, keyInfo);
 
-        if (!Prepare.readyForQuery(context, keyInfo)) {
+        if (!Query.readyForQuery(context, keyInfo)) {
             return false;
         }
 
@@ -222,18 +222,18 @@ public class DbaseRepoImpl implements DbaseRepo {
 
                     keyInfoPer.setIndexes(indexes);
                     keyInfoPer.setColumns(columns);
-                    Prepare.fetchClauseParams(context, keyInfoPer, map, pair.getId());
-                    keyInfoPer.setQuery(null);
+                    Query.fetchClauseParams(context, keyInfoPer, map, pair.getId());
+                    keyInfoPer.setQueryInfo(null);
                 }
                 AppCtx.getKeyInfoRepo().saveAll(context, keyInfos);
 
                 keyInfo.setIsNew(false);
-                final Query finalQuery = keyInfo.getQuery();
-                if (finalQuery!= null) {
-                    keyInfo.setQuery(null);
+                final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
+                if (finalQueryInfo != null) {
+                    keyInfo.setQueryInfo(null);
                     AsyncOps.getExecutor().submit(() -> {
                         Thread.yield();
-                        Prepare.save(context, finalQuery);
+                        Query.save(context, finalQueryInfo);
                     });
                 }
                 return true;
@@ -309,16 +309,16 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         if (table != null) {
 
-            if (!Prepare.hasStdClause(context, keyInfo)) {
+            if (!Query.hasStdClause(context, keyInfo)) {
 
-                Prepare.fetchClauseParams(context, keyInfo, dbMap, key);
+                Query.fetchClauseParams(context, keyInfo, dbMap, key);
                 AppCtx.getKeyInfoRepo().saveOne(context, keyInfo);
 
-                final Query finalQuery = keyInfo.getQuery();
-                if (finalQuery != null) {
+                final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
+                if (finalQueryInfo != null) {
                     AsyncOps.getExecutor().submit(() -> {
                         Thread.yield();
-                        Prepare.save(context, finalQuery);
+                        Query.save(context, finalQueryInfo);
                     });
                 }
             }
@@ -335,14 +335,14 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         LOGGER.trace("saveAll: #pairs = " + pairs.size() + " table: " + table);
 
-        List<String> indexes = Prepare.fetchIndexes(context, keyInfo);
+        List<String> indexes = Query.fetchIndexes(context, keyInfo);
 
-        final Query finalQuery = keyInfo.getQuery();
-        if (finalQuery != null) {
-            keyInfo.setQuery(null);
+        final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
+        if (finalQueryInfo != null) {
+            keyInfo.setQueryInfo(null);
             AsyncOps.getExecutor().submit(() -> {
                 Thread.yield();
-                Prepare.save(context, finalQuery);
+                Query.save(context, finalQueryInfo);
             });
         }
 
@@ -402,8 +402,8 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             keyInfoPer.setIndexes(indexes);
 
-            if (!Prepare.hasStdClause(context, keyInfoPer)) {
-                Prepare.fetchClauseParams(context, keyInfoPer, dbMap, key);
+            if (!Query.hasStdClause(context, keyInfoPer)) {
+                Query.fetchClauseParams(context, keyInfoPer, dbMap, key);
                 AppCtx.getKeyInfoRepo().saveOne(context, keyInfoPer);
             }
 
@@ -428,7 +428,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             throw new ServerErrorException(context, msg);
         }
 
-        if (Prepare.readyForInsert(context, keyInfo)) {
+        if (Query.readyForInsert(context, keyInfo)) {
 
             ArrayList<Object> queryParams = new ArrayList<Object>();
             String fields = "", values = "";
@@ -479,7 +479,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             if (rowCount > 0) {
 
-                List<String> indexes = Prepare.fetchIndexes(context, keyInfo);
+                List<String> indexes = Query.fetchIndexes(context, keyInfo);
                 if (keyHolder.getKey() != null) {
                     String primaryKey = indexes.get(0);
                     String keyValue = String.valueOf(keyHolder.getKey());
@@ -491,10 +491,10 @@ public class DbaseRepoImpl implements DbaseRepo {
                         AppCtx.getRedisRepo().saveOne(context, keyInfo);
                     }
                 }
-                Prepare.fetchClauseParams(context, keyInfo, map, key);
+                Query.fetchClauseParams(context, keyInfo, map, key);
                 AppCtx.getKeyInfoRepo().saveOne(context, keyInfo);
 
-                keyInfo.setQuery(null);
+                keyInfo.setQueryInfo(null);
                 LOGGER.debug("insert ok: " + table + " for " + pair.getId());
                 return true;
             }
@@ -547,11 +547,11 @@ public class DbaseRepoImpl implements DbaseRepo {
             return true;
         }
 
-        if (!Prepare.readyForInsert(context, keyInfo)) {
+        if (!Query.readyForInsert(context, keyInfo)) {
             return false;
         }
 
-        List<String> indexes = Prepare.fetchIndexes(context, keyInfo);
+        List<String> indexes = Query.fetchIndexes(context, keyInfo);
 
         List<KeyInfo> keyInfos = new ArrayList<KeyInfo>();
 
@@ -620,7 +620,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                         AppCtx.getRedisRepo().saveOne(ctx, keyInfoPer);
                     }
                 }
-                Prepare.fetchClauseParams(ctx, keyInfoPer, map, pair.getId());
+                Query.fetchClauseParams(ctx, keyInfoPer, map, pair.getId());
             }
         }
 
@@ -645,11 +645,11 @@ public class DbaseRepoImpl implements DbaseRepo {
             throw new ServerErrorException(context, msg);
         }
 
-        if (Prepare.readyForUpdate(context, keyInfo)) {
+        if (Query.readyForUpdate(context, keyInfo)) {
 
-            List<String> indexes = Prepare.fetchIndexes(context, keyInfo);
+            List<String> indexes = Query.fetchIndexes(context, keyInfo);
 
-            if (Prepare.fetchClauseParams(context, keyInfo, map, key)) {
+            if (Query.fetchClauseParams(context, keyInfo, map, key)) {
 
                 String clause = keyInfo.getClause();
                 List<Object> params = keyInfo.getParams();
@@ -717,7 +717,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         LOGGER.trace("deleteOne: " + key + " table: " + table);
 
-        if (Prepare.readyForDelete(context, keyInfo)) {
+        if (Query.readyForDelete(context, keyInfo)) {
 
             String clause = keyInfo.getClause();
             List<Object> params = keyInfo.getParams();
@@ -768,12 +768,12 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     private boolean kvFindAll(Context context, KeyInfo keyInfo) {
 
-        Query query = keyInfo.getQuery();
-        if (query == null) {
-            LOGGER.debug("no query");
+        QueryInfo queryInfo = keyInfo.getQueryInfo();
+        if (queryInfo == null) {
+            LOGGER.debug("no queryInfo");
             return false;
         }
-        Map<String, Condition> conditions = query.getConditions();
+        Map<String, Condition> conditions = queryInfo.getConditions();
         if (conditions == null ||
                 conditions.size() != 1 ||
                 !conditions.containsKey("key")) {
@@ -819,7 +819,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         keyInfo.setTable(null);
         keyInfo.setClause(null);
         keyInfo.setParams(null);
-        keyInfo.setQuery(null);
+        keyInfo.setQueryInfo(null);
     }
 
     private Map<String, Object> convertDbMap(Map<String, Object> columns, Map<String, Object> dbMap) {

@@ -10,9 +10,9 @@ import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.*;
+import com.rdbcache.queries.QueryInfo;
 import com.rdbcache.repositories.KeyInfoRepo;
 import com.rdbcache.services.AsyncOps;
-import com.rdbcache.queries.Prepare;
 import com.rdbcache.queries.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -288,7 +288,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 if (keyInfo.getParams() == null && cachedKeyInfo.getParams() != null) {
                     keyInfo.setParams(cachedKeyInfo.getParams());
                 }
-                if (!Prepare.hasStdClause(context, keyInfo) && Prepare.hasStdClause(context, cachedKeyInfo)) {
+                if (!Query.hasStdClause(context, keyInfo) && Query.hasStdClause(context, cachedKeyInfo)) {
                     keyInfo.setClause(cachedKeyInfo.getClause());
                     keyInfo.setParams(cachedKeyInfo.getParams());
                 }
@@ -300,15 +300,15 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
         }
 
-        final Query finalQuery = keyInfo.getQuery();
+        final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
 
-        if (finalQuery != null) {
+        if (finalQueryInfo != null) {
 
-            keyInfo.setQuery(null);
+            keyInfo.setQueryInfo(null);
             AsyncOps.getExecutor().submit(() -> {
 
                 Thread.yield();
-                Prepare.save(context, finalQuery);
+                Query.save(context, finalQueryInfo);
             });
         }
 
@@ -375,7 +375,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                         keyInfo.setIsNew(false);
                         continue;
                     }
-                    if (Prepare.hasStdClause(context, cachedKeyInfo)) {
+                    if (Query.hasStdClause(context, cachedKeyInfo)) {
                         if (cachedKeyInfo.getClause().equals(keyInfo.getClause()) &&
                                 keyInfo.getParams().equals(cachedKeyInfo.getParams())) {
                             keyInfo.setIsNew(false);

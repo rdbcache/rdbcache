@@ -67,12 +67,12 @@ public class Parser {
 
     private static String opsSingleList[] = { "IS NOT NULL", "IS NULL", "IS NOT FALSE", "IS NOT TRUE", "IS TRUE", "IS FALSE"};
 
-    public static void setConditions(Query query, Map<String, String[]> params) {
+    public static void setConditions(QueryInfo queryInfo, Map<String, String[]> params) {
 
-        Map<String, Condition> conditions = query.getConditions();
+        Map<String, Condition> conditions = queryInfo.getConditions();
         if (conditions == null) {
             conditions = new LinkedHashMap<String, Condition>();
-            query.setConditions(conditions);
+            queryInfo.setConditions(conditions);
         }
         for(Map.Entry<String, String[]> entry: params.entrySet()) {
 
@@ -81,7 +81,7 @@ public class Parser {
 
             if (key.equalsIgnoreCase("limit")) {
                 if (values != null && values.length > 0) {
-                    query.setLimit(Integer.valueOf(values[0]));
+                    queryInfo.setLimit(Integer.valueOf(values[0]));
                 }
                 continue;
             }
@@ -128,9 +128,9 @@ public class Parser {
         }
     }
 
-    public static String getClause(Query query, List<Object> params, String defaultValue) {
+    public static String getClause(QueryInfo queryInfo, List<Object> params, String defaultValue) {
 
-        Map<String, Condition> conditions = query.getConditions();
+        Map<String, Condition> conditions = queryInfo.getConditions();
         if (conditions == null || conditions.size() == 0) {
             return null;
         }

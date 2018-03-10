@@ -13,7 +13,7 @@ import com.rdbcache.helpers.*;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
-import com.rdbcache.queries.Query;
+import com.rdbcache.queries.QueryInfo;
 
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.NotFoundException;
@@ -945,10 +945,10 @@ public class RdbcacheApis {
             }
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {
-                Query query = new Query(keyInfo.getTable());
-                Parser.setConditions(query, params);
-                keyInfo.setQuery(query);
-                keyInfo.setQueryKey(query.getKey());
+                QueryInfo queryInfo = new QueryInfo(keyInfo.getTable());
+                Parser.setConditions(queryInfo, params);
+                keyInfo.setQueryInfo(queryInfo);
+                keyInfo.setQueryKey(queryInfo.getKey());
             }
         } else {
             if (opts[0] != null && !opts[0].equals(keyInfo.getExpire())) {
@@ -960,9 +960,9 @@ public class RdbcacheApis {
             }
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {
-                Query query = new Query(keyInfo.getTable());
-                Parser.setConditions(query, params);
-                if (keyInfo.getQueryKey() == null || !keyInfo.getQueryKey().equals(query.getKey())) {
+                QueryInfo queryInfo = new QueryInfo(keyInfo.getTable());
+                Parser.setConditions(queryInfo, params);
+                if (keyInfo.getQueryKey() == null || !keyInfo.getQueryKey().equals(queryInfo.getKey())) {
                     throw new BadRequestException(context, "can not modify condition for an existing key");
                 }
             }

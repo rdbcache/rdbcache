@@ -12,7 +12,7 @@ import com.rdbcache.exceptions.ServerErrorException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.rdbcache.queries.Query;
+import com.rdbcache.queries.QueryInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ public class KeyInfo implements Serializable, Cloneable {
     private Map<String, Object> columns;
 
     @JsonIgnore
-    private Query query;
+    private QueryInfo query;
 
     @JsonIgnore
     private String stdClause;
@@ -129,11 +129,11 @@ public class KeyInfo implements Serializable, Cloneable {
         this.columns = columns;
     }
 
-    public Query getQuery() {
+    public QueryInfo getQueryInfo() {
         return query;
     }
 
-    public void setQuery(Query query) {
+    public void setQueryInfo(QueryInfo query) {
         this.query = query;
     }
 

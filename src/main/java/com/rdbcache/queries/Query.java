@@ -6,162 +6,242 @@
 
 package com.rdbcache.queries;
 
-import com.rdbcache.exceptions.ServerErrorException;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.rdbcache.helpers.Utils;
-import org.apache.commons.codec.digest.DigestUtils;
+import com.rdbcache.configs.AppCtx;
+import com.rdbcache.helpers.Context;
+import com.rdbcache.models.KeyInfo;
+import com.rdbcache.models.KvIdType;
+import com.rdbcache.models.KvPair;
+import com.rdbcache.models.StopWatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-public class Query implements Serializable, Cloneable {
+public class Query {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Query.class);
 
-    private String table;
-
-    private Map<String, Condition> conditions = new LinkedHashMap<String, Condition>();
-
-    private Integer limit;
-
-    @JsonIgnore
-    private String key;
-
-    public Query(String table, Map<String, String[]> params) {
-        this.table = table;
-        Parser.setConditions(this, params);
+    public static boolean readyForQuery(Context context, KeyInfo keyInfo) {
+        return readyForQuery(context, keyInfo, false, true);
     }
 
-    public Query(String table) {
-        this.table = table;
+    public static boolean readyForUpdate(Context context, KeyInfo keyInfo) {
+        return readyForQuery(context, keyInfo, false, false);
     }
 
-    public Query(Map<String, Object> map) {
-        fromMap(map);
+    public static boolean readyForDelete(Context context, KeyInfo keyInfo) {
+        return readyForQuery(context, keyInfo, false, false);
     }
 
-    public Query() {
+    public static boolean readyForInsert(Context context, KeyInfo keyInfo) {
+        return readyForQuery(context, keyInfo, true, false);
     }
 
-    public String getKey() {
-        if (key == null) {
-            key = DigestUtils.md5Hex(table + Utils.toJson(conditions) + (limit == null ? "" : limit.toString()));
+    public static boolean readyForQuery(Context context, KeyInfo keyInfo, boolean insertOnly, boolean forQuery) {
+
+        String queryKey = keyInfo.getQueryKey();
+        if (queryKey == null) return false;
+        String table = keyInfo.getTable();
+        if (table != null && insertOnly) return true;
+        String clause = keyInfo.getClause();
+        List<Object> params = keyInfo.getParams();
+        if (table != null && clause != null && params != null) return true;
+
+        KeyInfo keyInfoFound = AppCtx.getKeyInfoRepo().findOne(context);
+
+        if (keyInfoFound != null) {
+            keyInfo.copyQueryInfo(keyInfoFound);
+            queryKey = keyInfo.getQueryKey();
+            if (queryKey == null) return false;
+            table = keyInfo.getTable();
+            if (table == null) return false;
+            if (insertOnly) return true;
+            clause = keyInfo.getClause();
+            params = keyInfo.getParams();
+            if (table != null && clause != null && params != null) return true;
+            if (keyInfo.getQueryInfo() == null) return false;
         }
-        return key;
-    }
 
-    public String getTable() {
-        return table;
-    }
+        if (insertOnly) return false;
 
-    public void setTable(String table) {
-        this.table = table;
-    }
+        if (table == null) return false;
 
-    public Map<String, Condition> getConditions() {
-        return conditions;
-    }
-
-    public void setConditions(Map<String, Condition> conditions) {
-        this.conditions = conditions;
-    }
-
-    public void setConditions(String key, String value) {
-        conditions.put(key, new Condition(value));
-    }
-
-    public Integer getLimit() {
-        return limit;
-    }
-
-    public void setLimit(Integer limit) {
-        this.limit = limit;
-    }
-
-    public void fromMap(Map<String, Object> map) {
-        if (map.containsKey("table")) table = (String) map.get("table");
-        if (map.containsKey("limit")) limit = Integer.valueOf(map.get("limit").toString());
-        if (map.containsKey("conditions")) {
-            Map<String, Object> cmap = (Map<String, Object>) map.get("conditions");
-            if (conditions == null) conditions = new LinkedHashMap<>();
-            for(Map.Entry<String, Object> entry: cmap.entrySet()) {
-                conditions.put(entry.getKey(), new Condition((Map<String, Object>) entry.getValue()));
+        if (forQuery) {
+            if (prepareQueryClauseParams(context, keyInfo)) {
+                return true;
+            } else if (keyInfo.getQueryLimit() != null) {
+                return true;
             }
         }
+        return prepareClauseParams(context, keyInfo);
     }
 
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        if (table != null) map.put("table", table);
-        if (limit != null) map.put("limit", limit);
-        if (conditions != null) {
-            Map<String, Object> cmap = new LinkedHashMap<String, Object>();
-            map.put("conditions", cmap);
-            for (Map.Entry<String, Condition> entry: conditions.entrySet()) {
-                Condition condition = entry.getValue();
-                Map<String, Object> tmap = condition.toMap();
-                cmap.put(entry.getKey(), tmap);
+    public static void save(Context context, QueryInfo queryInfo) {
+
+        KvPair queryPair = new KvPair(queryInfo.getKey(), "queryInfo", queryInfo.toMap());
+        KvIdType idType = queryPair.getIdType();
+
+        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
+        KvPair dbPair = AppCtx.getKvPairRepo().findOne(idType);
+        if (stopWatch != null) stopWatch.stopNow();
+
+        if (dbPair != null) {
+            if (queryPair.getValue().equals(dbPair.getValue())) {
+                return;
             }
         }
-        return map;
+
+        stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
+        AppCtx.getKvPairRepo().save(queryPair);
+        if (stopWatch != null) stopWatch.stopNow();
     }
 
-    @Override
-    public String toString() {
-        return "Query{" +
-                (limit == null ? "" : "limit=" + limit + ",") +
-                "conditions=" + (conditions == null ? "null" : Utils.toJson(conditions)) +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Query query = (Query) o;
-
-        if (table != null ? !table.equals(query.table) : query.table != null) return false;
-        if (limit != null ? !limit.equals(query.limit) : query.limit != null) return false;
-        return Parser.isConditionsEqual(conditions, query.conditions);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = 0;
-        result = 31 * result + (table != null ? table.hashCode() : 0);
-        result = 31 * result + (limit != null ? limit.hashCode() : 0);
-        result = 31 * result + (conditions != null ? conditions.hashCode() : 0);
-        return result;
-    }
-
-    public Query clone() {
-        Query query = null; //new Query(table);
-        try {
-            query = (Query) super.clone();
-        } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
-            throw new ServerErrorException(e.getCause().getMessage());
+    public static List<String> fetchIndexes(Context context, KeyInfo keyInfo) {
+        List<String> indexes = keyInfo.getIndexes();
+        if ( indexes != null) {
+            return indexes;
         }
-        if (conditions != null) query.conditions = cloneConditions();
-        return query;
-    }
-
-    private Map<String, Condition> cloneConditions() {
-        if (conditions == null) {
+        Map<String, Object> map = AppCtx.getDbaseOps().getTableIndexes(context, keyInfo.getTable());
+        if (map == null || map.size() == 0) {
             return null;
         }
-        Map<String, Condition> cmap = new LinkedHashMap<String, Condition>();
-        if (conditions.size() == 0) {
-            return cmap;
+        if (map.containsKey("PRIMARY")) {
+            indexes = (List<String>) map.get("PRIMARY");
+        } else {
+            for (Map.Entry<String, Object> entry: map.entrySet()) {
+                indexes = (List<String>) entry.getValue();
+                break;
+            }
         }
-        for(Map.Entry<String, Condition> entry: conditions.entrySet()) {
-            Condition condition = entry.getValue();
-            cmap.put(entry.getKey(), condition.clone());
+        keyInfo.setIndexes(indexes);
+        return indexes;
+    }
+
+    public static Map<String, Object> fetchColumns(Context context, KeyInfo keyInfo) {
+        Map<String, Object> columns = keyInfo.getColumns();
+        if (columns != null) {
+            return columns;
         }
-        return cmap;
+        columns = AppCtx.getDbaseOps().getTableColumns(context, keyInfo.getTable());
+        keyInfo.setColumns(columns);
+        return columns;
+    }
+
+    public static boolean fetchClauseParams(Context context, KeyInfo keyInfo, Map<String, Object> map, String defaultValue) {
+        String clause = keyInfo.getClause();
+        if (clause == null) {
+            return false;
+        }
+        List<String> indexes = fetchIndexes(context, keyInfo);
+        if (indexes == null) {
+            keyInfo.setClause(null);
+            return false;
+        }
+        List<Object> params = keyInfo.getParams();
+        if (clause.equals(fetchStdClause(context, keyInfo))) {
+            if (params != null && params.size() == indexes.size()) {
+                int i = 0;
+                for(String indexKey: indexes) {
+                    if (map.containsKey(indexKey)) {
+                        params.set(i, map.get(indexKey));
+                    }
+                    i++;
+                }
+                return true;
+            }
+        } else {
+            clause = fetchStdClause(context, keyInfo);
+            keyInfo.setClause(clause);
+        }
+        if (params == null) {
+            params = new ArrayList<Object>();
+            keyInfo.setParams(params);
+        } else {
+            params.clear();
+        }
+        for(String indexKey: indexes) {
+            if (map.containsKey(indexKey)) {
+                params.add(map.get(indexKey));
+            } else {
+                params.add(defaultValue);
+            }
+        }
+        return true;
+    }
+
+    public static boolean hasStdClause(Context context, KeyInfo keyInfo) {
+        String stdClause = fetchStdClause(context, keyInfo);
+        return (stdClause != null);
+    }
+
+    public static String fetchStdClause(Context context, KeyInfo keyInfo) {
+        String stdClause = keyInfo.getStdClause();
+        if (stdClause != null) {
+            return stdClause;
+        }
+        if (keyInfo.getClause() == null) {
+            return null;
+        }
+        List<String> indexes = fetchIndexes(context, keyInfo);
+        if (indexes == null) {
+            keyInfo.setClause(null);
+            return null;
+        }
+        stdClause = "";
+        for (String indexKey : indexes) {
+            if (stdClause.length() > 0) {
+                stdClause += " AND ";
+            }
+            stdClause += indexKey + " = ?";
+        }
+        keyInfo.setStdClause(stdClause);
+        return stdClause;
+    }
+    
+    private static  boolean prepareClauseParams(Context context, KeyInfo keyInfo) {
+        KvPair pair = context.getPair();
+        if (pair == null) {
+            return false;
+        }
+        String key = pair.getId();
+        Map<String, Object> map = pair.getData();
+        if (map == null) {
+            return false;
+        }
+        return fetchClauseParams(context, keyInfo, map, key);
+    }
+
+    private static boolean prepareQueryClauseParams(Context context, KeyInfo keyInfo) {
+        QueryInfo queryInfo = keyInfo.getQueryInfo();
+        if (queryInfo == null) {
+            return false;
+        }
+        String queryKey = keyInfo.getQueryKey();
+        if (queryKey == null) {
+            return false;
+        }
+        Integer limit = queryInfo.getLimit();
+        Map<String, Condition> conditions = queryInfo.getConditions();
+        if (limit == null && (conditions == null || conditions.size() == 0)) {
+            keyInfo.setQueryKey(null);
+            keyInfo.setQueryInfo(null);
+            return false;
+        }
+        List<Object> params = keyInfo.getParams();
+        if (params == null) {
+            params = new ArrayList<Object>();
+            keyInfo.setParams(params);
+        } else {
+            params.clear();
+        }
+        KvPair pair = context.getPair();
+        String key = null;
+        if (pair != null) key = pair.getId();
+        String clause = Parser.getClause(queryInfo, params, key);
+        keyInfo.setClause(clause);
+        return (clause != null);
     }
 }
