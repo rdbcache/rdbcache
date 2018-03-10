@@ -49,8 +49,6 @@ public class AsyncOps {
 
         executor.submit(() -> {
 
-            Thread.yield();
-
             if (pairs.size() == 1) {
                 AppCtx.getExpireOps().setExpireKey(context, keyInfo);
             } else {
@@ -73,8 +71,6 @@ public class AsyncOps {
         LOGGER.trace("doSaveToRedis: " + pairs.size() + " table: " + keyInfo.getTable());
 
         executor.submit(() -> {
-
-            Thread.yield();
 
             if (pairs.size() == 1) {
                 AppCtx.getRedisRepo().saveOne(context, keyInfo);
@@ -101,8 +97,6 @@ public class AsyncOps {
 
         executor.submit(() -> {
 
-            Thread.yield();
-
             if (pairs.size() == 1) {
                 AppCtx.getDbaseRepo().saveOne(context, keyInfo);
                 AppCtx.getExpireOps().setExpireKey(context, keyInfo);
@@ -128,8 +122,6 @@ public class AsyncOps {
 
         executor.submit(() -> {
 
-            Thread.yield();
-
             List<KeyInfo> keyInfos = AppCtx.getKeyInfoRepo().findAll(context);
             int i = 0;
             for (KvPair pair : pairs) {
@@ -154,8 +146,6 @@ public class AsyncOps {
 
         executor.submit(() -> {
 
-            Thread.yield();
-
             AppCtx.getRedisRepo().saveAll(context, keyInfo);
             AppCtx.getDbaseRepo().insertAll(context, keyInfo);
             for (KvPair pair : pairs) {
@@ -176,8 +166,6 @@ public class AsyncOps {
         LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + keyInfo.getTable());
 
         executor.submit(() -> {
-
-            Thread.yield();
 
             if (pairs.size() == 1) {
                 AppCtx.getRedisRepo().saveOne(context, keyInfo);
@@ -205,8 +193,6 @@ public class AsyncOps {
         LOGGER.trace("doPutOperation: " + pairs.size() + " table: " + keyInfo.getTable());
 
         executor.submit(() -> {
-
-            Thread.yield();
 
             for (KvPair pair : pairs) {
 
@@ -277,8 +263,6 @@ public class AsyncOps {
 
         executor.submit(() -> {
 
-            Thread.yield();
-
             if (pairs.size() == 1) {
                 KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
                 if (keyInfo == null) {
@@ -310,8 +294,6 @@ public class AsyncOps {
         LOGGER.trace("doDeleteFromRedisAndDbase: " + pairs.size());
 
         executor.submit(() -> {
-
-            Thread.yield();
 
             if (pairs.size() == 1) {
                 KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);

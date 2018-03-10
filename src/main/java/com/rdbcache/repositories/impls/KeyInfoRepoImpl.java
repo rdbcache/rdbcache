@@ -6,6 +6,7 @@
 
 package com.rdbcache.repositories.impls;
 
+import com.rdbcache.helpers.QueryBuilder;
 import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.AppCtx;
@@ -308,7 +309,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 Thread.yield();
 
                 StopWatch stopWatch = context.startStopWatch("dbase", "finalQuery.save");
-                finalQuery.save(context);
+                QueryBuilder.save(context, finalQuery);
                 if (stopWatch != null) stopWatch.stopNow();
             });
         }

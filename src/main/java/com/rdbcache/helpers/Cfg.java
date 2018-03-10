@@ -167,7 +167,7 @@ public class Cfg {
     }
 
     public static String printConfigurations() {
-        return "\nconfigurations: {"+
+        return "configurations: {"+
           "\"hdataPrefix\": \"" + hdataPrefix + "\", " +
           "\"hkeyPrefix\": \"" + hkeyPrefix + "\", " +
           "\"eventPrefix\": \"" + eventPrefix + "\", " +

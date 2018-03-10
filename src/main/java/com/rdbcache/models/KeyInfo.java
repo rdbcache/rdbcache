@@ -7,10 +7,7 @@
 package com.rdbcache.models;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.helpers.Cfg;
-import com.rdbcache.helpers.Condition;
-import com.rdbcache.helpers.Context;
-import com.rdbcache.helpers.AppCtx;
+import com.rdbcache.helpers.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,6 +43,9 @@ public class KeyInfo implements Serializable, Cloneable {
 
     @JsonIgnore
     private Query query;
+
+    @JsonIgnore
+    private String stdClause;
 
     public KeyInfo(String expire, String table) {
         this.expire = expire;
@@ -136,31 +136,33 @@ public class KeyInfo implements Serializable, Cloneable {
         this.query = query;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        KeyInfo keyInfo = (KeyInfo) o;
-        return Objects.equals(expire, keyInfo.expire) &&
-                Objects.equals(table, keyInfo.table) &&
-                Objects.equals(indexes, keyInfo.indexes) &&
-                Objects.equals(clause, keyInfo.clause) &&
-                Objects.equals(params, keyInfo.params);
+    @JsonIgnore
+    public Long getTTL() {
+        Long ttl = Long.valueOf(expire);
+        if (ttl < 0l) return -ttl;
+        return ttl;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(expire, table, indexes, clause, params);
+    @JsonIgnore
+    public Integer getQueryLimit() {
+        if (query == null) return null;
+        return query.getLimit();
     }
 
-    @Override
-    public String toString() {
-        return "KeyInfo{" +
-                "isNew='" + isNew + '\'' +
-                ", table='" + table + '\'' +
-                ", expire='" + expire + '\'' +
-                ", " + (query == null ? "null" : query.toString()) +
-                '}';
+    @JsonIgnore
+    public String getStdClause(Context context) {
+        if (stdClause != null) {
+            return stdClause;
+        }
+        stdClause = QueryCheck.fetchStdClause(context, this);
+        return stdClause;
+    }
+
+    public boolean hasStdPKClause(Context context) {
+        if (clause == null) return false;
+        String pkClause = getStdClause(context);
+        if (pkClause == null) return false;
+        return pkClause.equals(clause);
     }
 
     public void copyRedisInfo(KeyInfo keyInfo) {
@@ -215,204 +217,32 @@ public class KeyInfo implements Serializable, Cloneable {
         if (map.containsKey("params")) params = (List<Object>) map.get("params");
         if (map.containsKey("query_key")) queryKey = (String) map.get("query_key");
     }
-
-    @JsonIgnore
-    public Long getTTL() {
-        Long ttl = Long.valueOf(expire);
-        if (ttl < 0l) return -ttl;
-        return ttl;
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KeyInfo keyInfo = (KeyInfo) o;
+        return Objects.equals(expire, keyInfo.expire) &&
+                Objects.equals(table, keyInfo.table) &&
+                Objects.equals(indexes, keyInfo.indexes) &&
+                Objects.equals(clause, keyInfo.clause) &&
+                Objects.equals(params, keyInfo.params);
     }
 
-    @JsonIgnore
-    public Integer getQueryLimit() {
-        if (query == null) return null;
-        return query.getLimit();
+    @Override
+    public int hashCode() {
+        return Objects.hash(expire, table, indexes, clause, params);
     }
 
-    public boolean readyForQuery(Context context) {
-        return readyForQuery(context, false, true);
-    }
-
-    public boolean readyForUpdate(Context context) {
-        return readyForQuery(context, false, false);
-    }
-
-    public boolean readyForDelete(Context context) {
-        return readyForQuery(context, false, false);
-    }
-
-    public boolean readyForInsert(Context context) {
-        return readyForQuery(context, true, false);
-    }
-
-    public boolean readyForQuery(Context context, boolean insertOnly, boolean forQuery) {
-
-        if (queryKey == null) return false;
-        if (table != null && insertOnly) return true;
-        if (table != null && clause != null && params != null) return true;
-
-        KeyInfo keyInfoFound = AppCtx.getKeyInfoRepo().findOne(context);
-        if (keyInfoFound != null) {
-            copyQueryInfo(keyInfoFound);
-            if (queryKey == null) return false;
-            if (table == null) return false;
-            if (insertOnly) return true;
-            if (table != null && clause != null && params != null) return true;
-            if (query == null) return false;
-        }
-
-        if (insertOnly) return false;
-
-        if (table == null) return false;
-
-        if (forQuery) {
-            if (prepareQueryClauseParams(context)) {
-                return true;
-            } else if (getQueryLimit() != null) {
-                return true;
-            }
-        }
-
-        return preparePKClauseParams(context);
-    }
-
-    public List<String> fetchIndexes(Context context) {
-        if (indexes != null) {
-            return indexes;
-        }
-        Map<String, Object> map = AppCtx.getDbaseOps().getTableIndexes(context, table);
-        if (map == null || map.size() == 0) {
-            return null;
-        }
-        if (map.containsKey("PRIMARY")) {
-            indexes = (List<String>) map.get("PRIMARY");
-        } else {
-            for (Map.Entry<String, Object> entry: map.entrySet()) {
-                indexes = (List<String>) entry.getValue();
-                break;
-            }
-        }
-        return indexes;
-    }
-
-    public Map<String, Object> fetchColumns(Context context) {
-        if (columns != null) {
-            return columns;
-        }
-        columns = AppCtx.getDbaseOps().getTableColumns(context, table);
-        return columns;
-    }
-
-    @JsonIgnore
-    private String stdClause;
-
-    public String fetchStdPKClause(Context context) {
-        if (stdClause != null) {
-            return stdClause;
-        }
-        if (clause == null) {
-            return null;
-        }
-        if (indexes == null) {
-            fetchIndexes(context);
-        }
-        if (indexes == null) {
-            clause = null;
-            return null;
-        }
-        if (stdClause == null) {
-            stdClause = "";
-            for (String indexKey : indexes) {
-                if (stdClause.length() > 0) {
-                    stdClause += " AND ";
-                }
-                stdClause += indexKey + " = ?";
-            }
-        }
-        return stdClause;
-    }
-
-    public boolean hasStdPKClause(Context context) {
-        if (clause == null) return false;
-        String pkClause = fetchStdPKClause(context);
-        if (pkClause == null) return false;
-        return pkClause.equals(clause);
-    }
-
-    public boolean fetchPKClauseParams(Context context, Map<String, Object> map, String defaultValue) {
-        if (clause == null) {
-            return false;
-        }
-        if (indexes == null) {
-            fetchIndexes(context);
-        }
-        if (indexes == null) {
-            clause = null;
-            return false;
-        }
-        if (clause.equals(fetchStdPKClause(context))) {
-            if (params != null && params.size() == indexes.size()) {
-                int i = 0;
-                for(String indexKey: indexes) {
-                    if (map.containsKey(indexKey)) {
-                        params.set(i, map.get(indexKey));
-                    }
-                    i++;
-                }
-                return true;
-            }
-        } else {
-            clause = fetchStdPKClause(context);
-        }
-        if (params == null) {
-            params = new ArrayList<Object>();
-        } else {
-            params.clear();
-        }
-        for(String indexKey: indexes) {
-            if (map.containsKey(indexKey)) {
-                params.add(map.get(indexKey));
-            } else {
-                params.add(defaultValue);
-            }
-        }
-        return true;
-    }
-
-    public boolean preparePKClauseParams(Context context) {
-        KvPair pair = context.getPair();
-        if (pair == null) {
-            return false;
-        }
-        String key = pair.getId();
-        Map<String, Object> map = pair.getData();
-        if (map == null) {
-            return false;
-        }
-        return fetchPKClauseParams(context, map, key);
-    }
-
-    public boolean prepareQueryClauseParams(Context context) {
-        if (query == null || queryKey == null) {
-            return false;
-        }
-        Integer limit = query.getLimit();
-        Map<String, Condition> conditions = query.getConditions();
-        if (limit == null && (conditions == null || conditions.size() == 0)) {
-            queryKey = null;
-            query = null;
-            return false;
-        }
-        KvPair pair = context.getPair();
-        String key = null;
-        if (pair != null) key = pair.getId();
-        if (params == null) {
-            params = new ArrayList<Object>();
-        } else {
-            params.clear();
-        }
-        clause = query.getClause(params, key);
-        return (clause != null);
+    @Override
+    public String toString() {
+        return "KeyInfo{" +
+                "isNew='" + isNew + '\'' +
+                ", table='" + table + '\'' +
+                ", expire='" + expire + '\'' +
+                ", " + (query == null ? "" : query.toString()) +
+                '}';
     }
 
     private List<String> cloneIndexes() {

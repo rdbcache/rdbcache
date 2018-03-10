@@ -58,14 +58,13 @@ public class Application implements ApplicationRunner {
         JedisConnectionFactory jedisConnectionFactory = (JedisConnectionFactory) redisConnectionFactory;
         HikariDataSource hikariDataSource = (HikariDataSource)dataSource;
 
-        String messsage = "";
+        String message = "";
 
-        messsage += "\nredis url: " + redisUrl + ", pool size: " + jedisConnectionFactory.getPoolConfig().getMaxTotal();
-        messsage += "\ndatabase url: " + dbaseUrl + ", pool size: " + hikariDataSource.getMaximumPoolSize();
+        message += "\nredis url: " + redisUrl + ", pool size: " + jedisConnectionFactory.getPoolConfig().getMaxTotal();
+        message += "\ndatabase url: " + dbaseUrl + ", pool size: " + hikariDataSource.getMaximumPoolSize();
+        message += "\n" + Cfg.printConfigurations();
 
-        LOGGER.info(messsage);
-
-        LOGGER.info(Cfg.printConfigurations());
+        LOGGER.info(message);
     }
 
     public static void main(String[] args) {

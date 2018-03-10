@@ -6,10 +6,7 @@
 
 package com.rdbcache.controllers;
 
-import com.rdbcache.helpers.Cfg;
-import com.rdbcache.helpers.Context;
-import com.rdbcache.helpers.AppCtx;
-import com.rdbcache.helpers.Utils;
+import com.rdbcache.helpers.*;
 
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvIdType;
@@ -946,7 +943,7 @@ public class RdbcacheApis {
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {
                 Query query = new Query(keyInfo.getTable());
-                query.setConditionsFromParams(params);
+                QueryBuilder.setConditionsFromParams(query, params);
                 keyInfo.setQuery(query);
                 keyInfo.setQueryKey(query.getKey());
             }
@@ -961,7 +958,7 @@ public class RdbcacheApis {
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {
                 Query query = new Query(keyInfo.getTable());
-                query.setConditionsFromParams(params);
+                QueryBuilder.setConditionsFromParams(query, params);
                 if (keyInfo.getQueryKey() == null || !keyInfo.getQueryKey().equals(query.getKey())) {
                     throw new BadRequestException(context, "can not modify condition for an existing key");
                 }
