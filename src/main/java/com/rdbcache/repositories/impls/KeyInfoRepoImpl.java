@@ -51,7 +51,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
         hkeyPrefix = Cfg.getHkeyPrefix();
-        if (Cfg.getDataMaxCacheTLL() <= 0l) {
+        if (Cfg.getKeyMinCacheTTL() <= 0l && Cfg.getDataMaxCacheTLL() <= 0l) {
             enableLocalCache = false;
         }
     }

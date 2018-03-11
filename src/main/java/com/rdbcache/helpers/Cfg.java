@@ -30,7 +30,7 @@ public class Cfg {
 
     private static Long eventLockTimeout = 60L;
 
-    private static Long keyInfoCacheTTL = 180L;
+    private static Long keyMinCacheTTL = 180L;
 
     private static Long tableInfoCacheTTL = 3600L;
 
@@ -125,13 +125,13 @@ public class Cfg {
 
     public static Long getEventLockTimeout() { return eventLockTimeout; }
 
-    @Value("${rdbcache.key_info_cache_ttl}")
+    @Value("${rdbcache.key_min_cache_ttl}")
     public void setKeyInfoCacheTTL(Long ttl) {
-        keyInfoCacheTTL = ttl;
+        keyMinCacheTTL = ttl;
     }
 
-    public static Long getKeyInfoCacheTTL() {
-        return keyInfoCacheTTL;
+    public static Long getKeyMinCacheTTL() {
+        return keyMinCacheTTL;
     }
 
     @Value("${rdbcache.table_info_cache_ttl}")
@@ -180,7 +180,7 @@ public class Cfg {
     }
 
     public static String printConfigurations() {
-        return "configurations: {"+
+        return "{"+
           "\"hdataPrefix\": \"" + hdataPrefix + "\", " +
           "\"hkeyPrefix\": \"" + hkeyPrefix + "\", " +
           "\"eventPrefix\": \"" + eventPrefix + "\", " +
@@ -188,7 +188,7 @@ public class Cfg {
           "\"defaultExpire\": \"" + defaultExpire + "\", " +
           "\"enableMonitor\": \"" + enableMonitor.toString() + "\", " +
           "\"eventLockTimeout\": \"" + eventLockTimeout.toString() + "\", " +
-          "\"keyInfoCacheTTL\": \"" + keyInfoCacheTTL.toString() + "\", " +
+          "\"keyMinCacheTTL\": \"" + keyMinCacheTTL.toString() + "\", " +
           "\"tableInfoCacheTTL\": \"" + tableInfoCacheTTL.toString() + "\", " +
           "\"maxCacheSize\": \"" + maxCacheSize.toString() + "\", " +
           "\"cacheRecycleSecs\": \"" + cacheRecycleSecs.toString() + "\", " +

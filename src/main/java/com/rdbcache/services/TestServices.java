@@ -119,8 +119,8 @@ public class TestServices extends Thread {
         Assert.isTrue(properties.getProperty("rdbcache.event_lock_timeout").equals(
                 Cfg.getEventLockTimeout().toString()), "Cfg.getEventLockTimeout() not match");
 
-        Assert.isTrue(properties.getProperty("rdbcache.key_info_cache_ttl").equals(
-                Cfg.getKeyInfoCacheTTL().toString()), "Cfg.getKeyInfoCacheTTL() not match");
+        Assert.isTrue(properties.getProperty("rdbcache.key_min_cache_ttl").equals(
+                Cfg.getKeyMinCacheTTL().toString()), "Cfg.getKeyMinCacheTTL() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.table_info_cache_ttl").equals(
                 Cfg.getTableInfoCacheTTL().toString()), "Cfg.getTableInfoCacheTTL() not match");
@@ -160,9 +160,9 @@ public class TestServices extends Thread {
         Assert.isTrue(AppCtx.getLocalCache().getDataMaxCacheTLL().toString().equals(
                 properties.getProperty("rdbcache.data_max_cache_ttl")),
                 "rdbcache.data_max_cache_ttl not match");
-        Assert.isTrue(AppCtx.getLocalCache().getKeyInfoCacheTTL().toString().equals(
-                properties.getProperty("rdbcache.key_info_cache_ttl")),
-                "rdbcache.key_info_cache_ttl not match");
+        Assert.isTrue(AppCtx.getLocalCache().getKeyMinCacheTTL().toString().equals(
+                properties.getProperty("rdbcache.key_min_cache_ttl")),
+                "rdbcache.key_min_cache_ttl not match");
         Assert.isTrue(AppCtx.getLocalCache().getMaxCacheSize().toString().equals(
                 properties.getProperty("rdbcache.local_cache_max_size")),
                 "rdbcache.local_cache_max_size not match");

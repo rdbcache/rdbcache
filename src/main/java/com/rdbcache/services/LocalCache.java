@@ -35,7 +35,7 @@ public class LocalCache extends Thread {
 
     private Long maxCacheSize = Cfg.getMaxCacheSize();
 
-    private Long keyInfoCacheTTL = Cfg.getKeyInfoCacheTTL();
+    private Long keyMinCacheTTL = Cfg.getKeyMinCacheTTL();
 
     private Long dataMaxCacheTLL = Cfg.getDataMaxCacheTLL();
 
@@ -49,7 +49,7 @@ public class LocalCache extends Thread {
     public void handleEvent(ContextRefreshedEvent event) {
         recycleSecs = Cfg.getCacheRecycleSecs();
         maxCacheSize = Cfg.getMaxCacheSize();
-        keyInfoCacheTTL = Cfg.getKeyInfoCacheTTL();
+        keyMinCacheTTL = Cfg.getKeyMinCacheTTL();
         dataMaxCacheTLL = Cfg.getDataMaxCacheTLL();
 
         if (cache == null) {
@@ -90,12 +90,12 @@ public class LocalCache extends Thread {
         this.maxCacheSize = maxCacheSize;
     }
 
-    public Long getKeyInfoCacheTTL() {
-        return keyInfoCacheTTL;
+    public Long getKeyMinCacheTTL() {
+        return keyMinCacheTTL;
     }
 
-    public void setKeyInfoCacheTTL(Long keyInfoCacheTTL) {
-        this.keyInfoCacheTTL = keyInfoCacheTTL;
+    public void setKeyMinCacheTTL(Long keyMinCacheTTL) {
+        this.keyMinCacheTTL = keyMinCacheTTL;
     }
 
     public Long getDataMaxCacheTLL() {
@@ -212,11 +212,11 @@ public class LocalCache extends Thread {
     }
 
     public void putKeyInfo(String key, @NotNull KeyInfo keyInfo) {
-        if (keyInfoCacheTTL <= 0l) {
+        if (keyMinCacheTTL <= 0l) {
             return;
         }
         Long ttl = keyInfo.getTTL();
-        if (ttl < keyInfoCacheTTL) ttl = keyInfoCacheTTL;
+        if (ttl < keyMinCacheTTL) ttl = keyMinCacheTTL;
         put("key::" + key, keyInfo.toMap(), ttl * 1000);
     }
 

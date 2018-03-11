@@ -60,7 +60,7 @@ public class DbaseRepoImpl implements DbaseRepo {
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
         enableDbFallback = Cfg.getEnableDbFallback();
-        if (Cfg.getDataMaxCacheTLL() <= 0l) {
+        if (Cfg.getKeyMinCacheTTL() <= 0l && Cfg.getDataMaxCacheTLL() <= 0l) {
             enableLocalCache = false;
         }
     }

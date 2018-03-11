@@ -52,7 +52,7 @@ public class RedisRepoImpl implements RedisRepo {
     public void handleEvent(ContextRefreshedEvent event) {
         hdataPrefix = Cfg.getHdataPrefix();
         eventPrefix = Cfg.getEventPrefix();
-        if (Cfg.getDataMaxCacheTLL() <= 0l) {
+        if (Cfg.getKeyMinCacheTTL() <= 0l && Cfg.getDataMaxCacheTLL() <= 0l) {
             enableLocalCache = false;
         }
     }

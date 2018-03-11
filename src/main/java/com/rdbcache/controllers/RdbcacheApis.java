@@ -57,7 +57,7 @@ public class RdbcacheApis {
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
         enableMonitor = Cfg.getEnableMonitor();
-        if (Cfg.getDataMaxCacheTLL() <= 0l) {
+        if (Cfg.getKeyMinCacheTTL() <= 0l && Cfg.getDataMaxCacheTLL() <= 0l) {
             enableLocalCache = false;
         }
     }
@@ -886,9 +886,6 @@ public class RdbcacheApis {
             HttpServletRequest request,
             @PathVariable Optional<String> opt) {
 
-        if (!enableLocalCache) {
-            throw new BadRequestException("LocalCache is disabled");
-        }
         Context context = new Context(false);
         if (enableMonitor) context.enableMonitor(request);
 
@@ -908,7 +905,13 @@ public class RdbcacheApis {
             }
         }
 
-        return response(context);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("result", "DONE");
+        data.put("keyMinCacheTTL", Cfg.getKeyMinCacheTTL());
+        data.put("dataMaxCacheTLL", Cfg.getDataMaxCacheTLL());
+        data.put("tableInfoCacheTTL", Cfg.getTableInfoCacheTTL());
+
+        return response(context, data);
     }
 
     private KeyInfo setupContextAndKeyInfo(
@@ -994,12 +997,25 @@ public class RdbcacheApis {
 
     private ResponseEntity<Map<String, Object>> response(
             Context context) {
-        return response(context, false);
+        return response(context, false, null);
     }
 
     private ResponseEntity<Map<String, Object>> response(
             Context context,
             Boolean batch) {
+        return response(context, batch, null);
+    }
+
+    private ResponseEntity<Map<String, Object>> response(
+            Context context,
+            Map<String, Object> data) {
+        return response(context, false, data);
+    }
+
+    private ResponseEntity<Map<String, Object>> response(
+            Context context,
+            Boolean batch,
+            Map<String, Object> data) {
 
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         Long now = System.currentTimeMillis();
@@ -1012,7 +1028,11 @@ public class RdbcacheApis {
         List<KvPair> pairs = context.getPairs();
         if (pairs != null) {
             if (pairs.size() == 0) {
-                map.put("data", pairs);
+                if (data == null) {
+                    map.put("data", pairs);
+                } else {
+                    map.put("data", data);
+                }
             } else if (pairs.size() == 1 && !batch) {
                 KvPair pair = pairs.get(0);
                 map.put("key", pair.getId());

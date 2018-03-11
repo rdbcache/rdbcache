@@ -61,7 +61,7 @@ public class Application implements ApplicationRunner {
 
         message += "\nredis url: " + redisUrl + ", pool size: " + jedisConnectionFactory.getPoolConfig().getMaxTotal();
         message += "\ndatabase url: " + dbaseUrl + ", pool size: " + hikariDataSource.getMaximumPoolSize();
-        message += "\n" + Cfg.printConfigurations();
+        message += "\nconfigurations: " + Cfg.printConfigurations();
 
         LOGGER.info(message);
     }
