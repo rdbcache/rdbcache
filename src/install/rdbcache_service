@@ -7,7 +7,7 @@
 # By Sam Wen @ 02/10/2018
 #
 ##########################
-
+return
 pid_file=/var/run/rdbcache.pid
 log_file=/var/log/rdbcache.log
 app_file=/opt/rdbcache/rdbcache
@@ -42,7 +42,7 @@ start() {
   else
     echo "$0 is running"
   fi
-  exit 0
+  return 0
 }
 stop() {
   if [[ "$(is_running)" -eq 1 ]]; then
@@ -51,30 +51,30 @@ stop() {
     kill "$pid" "$cpid" &> /dev/null
     if [ $? -ne 0 ]; then
       echo "Failed to kill process $0"
-      exit 1
+      return 1
     fi
     for i in $(seq 1 15); do
       if [ "$(is_running)" -eq 0 ]; then
         echo "Stopped"
-        exit 0
+        return 0
       fi
       [[ $i -eq 10 ]] && kill "$pid" "$cpid" &> /dev/null
       sleep 1
     done
     echo "Failed to stop $0";
-    exit 1
+    return 1
   else
     echo "$0 is not running"
-    exit 0
+    return 0
   fi
 }
 status() {
   if [[ "$(is_running)" -eq 0 ]]; then
     echo "$0 is not running"
-    exit 1
+    return 1
   else
     echo "$0 is running"
-    exit 0
+    return 0
   fi
 }
 case "$1" in
@@ -93,7 +93,7 @@ case "$1" in
     ;;
   *)
     echo "Usage: $app_file { start | stop | restart status }"
-    exit 1
+    return 1
     ;;
 esac
 exit $?

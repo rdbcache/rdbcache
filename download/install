@@ -86,8 +86,6 @@ if [ ! -f $DOWNLOAD_DIR/rdbcache.jar ]; then
   exit 1
 fi
 
-#chown -R root.root $DOWNLOAD_DIR
-
 if [ -d /opt/rdbcache ]; then
   rm -rf /opt/rdbcache
 fi
