@@ -62,7 +62,7 @@ public class TestServices extends Thread {
     @Override
     public void run() {
 
-        LOGGER.info("TestServices is running on thread " + getName());
+        LOGGER.debug("TestServices is running on thread " + getName());
 
         while (isRunning) {
 
@@ -76,7 +76,7 @@ public class TestServices extends Thread {
 
                 if (!isRunning) break;
 
-                LOGGER.info("TestServices thread starts to check ...");
+                LOGGER.debug("TestServices thread starts to check ...");
 
                 Assert.isTrue(AppCtx.getLocalCache().isAlive(), "LocalCache is not alive");
                 Assert.isTrue(!AppCtx.getLocalCache().getState().name().equals("TERMINATED"), "LocalCache is terminated");

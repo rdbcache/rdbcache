@@ -826,7 +826,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         if (condition == null ||
                 condition.size() != 1 ||
                 !condition.containsKey("=")) {
-            LOGGER.debug("only = is supported");
+            LOGGER.error("only = is supported");
             return false;
         }
         List<String> keys = condition.get("=");

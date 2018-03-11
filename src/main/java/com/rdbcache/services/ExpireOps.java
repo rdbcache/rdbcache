@@ -145,7 +145,7 @@ public class ExpireOps {
      */
     public void onExpireEvent(String event) {
 
-        LOGGER.trace("Received: " + event);
+        LOGGER.debug("Received: " + event);
 
         if (!event.startsWith(eventPrefix)) {
             return;

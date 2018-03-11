@@ -324,7 +324,7 @@ public class LocalCache extends Thread {
 
         isRunning = true;
 
-        LOGGER.info("LocalCache is running on thread " + getName());
+        LOGGER.debug("LocalCache is running on thread " + getName());
 
         while (isRunning) {
 

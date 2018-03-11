@@ -90,7 +90,7 @@ public class TaskQueue extends Thread {
 
         isRunning = true;
 
-        LOGGER.info("Task Queue is running on thread " + getName());
+        LOGGER.debug("Task Queue is running on thread " + getName());
 
         while (isRunning) {
 
@@ -105,7 +105,7 @@ public class TaskQueue extends Thread {
 
                 if (!isRunning) break;
 
-                LOGGER.info("Received Task: " + task);
+                LOGGER.debug("Received Task: " + task);
 
                 String[] parts = task.split("::");
 

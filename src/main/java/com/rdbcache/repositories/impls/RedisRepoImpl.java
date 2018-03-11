@@ -414,7 +414,7 @@ public class RedisRepoImpl implements RedisRepo {
         String key = pair.getId();
         String table = keyInfo.getTable();
 
-        LOGGER.trace("deleteOneCompletely: " + key + " table: " + table);
+        LOGGER.debug("deleteOneCompletely: " + key + " table: " + table);
 
         delete(context, keyInfo);
 
@@ -428,6 +428,8 @@ public class RedisRepoImpl implements RedisRepo {
         KvPair pair = context.getPair();
         String key = pair.getId();
         String table = keyInfo.getTable();
+
+        LOGGER.debug("deleteExpireEvents: " + key + " table: " + table);
 
         // get existing expire key
         String expKey = eventPrefix + "::" + key;
