@@ -6,7 +6,7 @@
 
 package com.rdbcache.configs;
 
-import com.rdbcache.helpers.NullableSerializer;
+import com.rdbcache.helpers.Nullable;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.services.ExpireOps;
 import org.springframework.context.annotation.Bean;
@@ -65,7 +65,7 @@ public class RedisConfig {
         StringRedisTemplate template = new StringRedisTemplate();
 
         template.setConnectionFactory(redisConnectionFactory());
-        template.setHashValueSerializer(new NullableSerializer());
+        template.setHashValueSerializer(new Nullable());
 
         return template;
     }

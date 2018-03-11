@@ -1,8 +1,6 @@
 package com.rdbcache;
 
-import com.rdbcache.helpers.Cfg;
 import com.rdbcache.helpers.Utils;
-import com.rdbcache.services.AsyncOps;
 import com.rdbcache.services.LocalCache;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;

@@ -7,15 +7,19 @@
 package com.rdbcache.configs;
 
 import com.rdbcache.controllers.RdbcacheApis;
-import com.rdbcache.helpers.Cfg;
 import com.rdbcache.repositories.*;
 import com.rdbcache.repositories.impls.DbaseRepoImpl;
 import com.rdbcache.repositories.impls.KeyInfoRepoImpl;
 import com.rdbcache.repositories.impls.RedisRepoImpl;
 import com.rdbcache.services.*;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
+import redis.clients.jedis.JedisPoolConfig;
+
+import javax.sql.DataSource;
 
 public class AppCtx {
 
@@ -240,6 +244,14 @@ public class AppCtx {
         return jdbcTemplate;
     }
 
+    public static DataSource getJdbcDataSource() {
+
+        JdbcTemplate template = getJdbcTemplate();
+        if (template == null) return null;
+
+        return template.getDataSource();
+    }
+
     public static StringRedisTemplate getRedisTemplate() {
         if (redisTemplate == null) {
             try {
@@ -250,4 +262,21 @@ public class AppCtx {
         }
         return redisTemplate;
     }
+
+    public static JedisConnectionFactory getJedisConnectionFactory() {
+
+        StringRedisTemplate template = getRedisTemplate();
+        if (template == null) return null;
+
+        return (JedisConnectionFactory) redisTemplate.getConnectionFactory();
+    }
+
+    public static JedisPoolConfig getJedisPoolConfig() {
+
+        JedisConnectionFactory factory = getJedisConnectionFactory();
+        if (factory == null) return null;
+
+        return factory.getPoolConfig();
+    }
+
 }

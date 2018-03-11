@@ -1,7 +1,7 @@
 package com.rdbcache.services;
 
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -18,9 +18,9 @@ import org.springframework.util.Assert;
 
 @Service
 @Profile({"dev", "test"})
-public class TestServices extends Thread {
+public class TestInspectServices extends Thread {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestServices.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestInspectServices.class);
 
     private Properties properties = new Properties();
 
@@ -62,7 +62,7 @@ public class TestServices extends Thread {
     @Override
     public void run() {
 
-        LOGGER.debug("TestServices is running on thread " + getName());
+        LOGGER.debug("TestInspectServices is running on thread " + getName());
 
         while (isRunning) {
 
@@ -76,7 +76,7 @@ public class TestServices extends Thread {
 
                 if (!isRunning) break;
 
-                LOGGER.debug("TestServices thread starts to check ...");
+                LOGGER.debug("TestInspectServices thread starts to check ...");
 
                 Assert.isTrue(AppCtx.getLocalCache().isAlive(), "LocalCache is not alive");
                 Assert.isTrue(!AppCtx.getLocalCache().getState().name().equals("TERMINATED"), "LocalCache is terminated");
@@ -99,51 +99,46 @@ public class TestServices extends Thread {
     private void assertCfgProperties() {
 
         Assert.isTrue(properties.getProperty("rdbcache.hdata_prefix").equals(
-                Cfg.getHdataPrefix()), "Cfg.getHdataPrefix() not match");
+                PropCfg.getHdataPrefix()), "PropCfg.getHdataPrefix() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.hkeys_prefix").equals(
-                Cfg.getHkeyPrefix()), "Cfg.getHkeyPrefix() not match");
+                PropCfg.getHkeyPrefix()), "PropCfg.getHkeyPrefix() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.event_prefix").equals(
-                Cfg.getEventPrefix()), "Cfg.getEventPrefix() not match");
+                PropCfg.getEventPrefix()), "PropCfg.getEventPrefix() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.queue_name").equals(
-                Cfg.getQueueName()), "Cfg.getQueueName() not match");
+                PropCfg.getQueueName()), "PropCfg.getQueueName() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.default_expire").equals(
-                Cfg.getDefaultExpire()), "Cfg.getDefaultExpire() not match");
+                PropCfg.getDefaultExpire()), "PropCfg.getDefaultExpire() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.enable_monitor").equals(
-                Cfg.getEnableMonitor().toString()), "Cfg.getEnableMonitor() not match");
+                PropCfg.getEnableMonitor().toString()), "PropCfg.getEnableMonitor() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.event_lock_timeout").equals(
-                Cfg.getEventLockTimeout().toString()), "Cfg.getEventLockTimeout() not match");
+                PropCfg.getEventLockTimeout().toString()), "PropCfg.getEventLockTimeout() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.key_min_cache_ttl").equals(
-                Cfg.getKeyMinCacheTTL().toString()), "Cfg.getKeyMinCacheTTL() not match");
+                PropCfg.getKeyMinCacheTTL().toString()), "PropCfg.getKeyMinCacheTTL() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.table_info_cache_ttl").equals(
-                Cfg.getTableInfoCacheTTL().toString()), "Cfg.getTableInfoCacheTTL() not match");
+                PropCfg.getTableInfoCacheTTL().toString()), "PropCfg.getTableInfoCacheTTL() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.local_cache_max_size").equals(
-                Cfg.getMaxCacheSize().toString()), "Cfg.getMaxCacheSize() not match");
+                PropCfg.getMaxCacheSize().toString()), "PropCfg.getMaxCacheSize() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.cache_recycle_secs").equals(
-                Cfg.getCacheRecycleSecs().toString()), "Cfg.getCacheRecycleSecs() not match");
+                PropCfg.getCacheRecycleSecs().toString()), "PropCfg.getCacheRecycleSecs() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.enable_db_fallback").equals(
-                Cfg.getEnableDbFallback().toString()), "Cfg.getEnableDbFallback() not match");
+                PropCfg.getEnableDbFallback().toString()), "PropCfg.getEnableDbFallback() not match");
 
         Assert.isTrue(properties.getProperty("rdbcache.data_max_cache_ttl").equals(
-                Cfg.getDataMaxCacheTLL().toString()), "Cfg.getDataMaxCacheTLL() not match");
+                PropCfg.getDataMaxCacheTLL().toString()), "PropCfg.getDataMaxCacheTLL() not match");
     }
 
     private void assertCfgPerBean() {
-
-        //RdbcacheApis
-        Assert.isTrue(AppCtx.getRdbcacheApis().getEnableMonitor().toString().equals(
-                properties.getProperty("rdbcache.enable_monitor")),
-                "rdbcache.enable_monitor not match");
 
         //TaskQueue
         Assert.isTrue(AppCtx.getTaskQueue().getEnableMonitor().toString().equals(

@@ -7,7 +7,7 @@
 package com.rdbcache.repositories.impls;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.KeyInfo;
@@ -34,9 +34,9 @@ public class RedisRepoImpl implements RedisRepo {
 
     private boolean enableLocalCache = true;
 
-    private String hdataPrefix = Cfg.getHdataPrefix();
+    private String hdataPrefix = PropCfg.getHdataPrefix();
     
-    private String eventPrefix = Cfg.getEventPrefix();
+    private String eventPrefix = PropCfg.getEventPrefix();
     
     @Autowired
     private StringRedisTemplate redisTemplate;
@@ -50,9 +50,9 @@ public class RedisRepoImpl implements RedisRepo {
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        hdataPrefix = Cfg.getHdataPrefix();
-        eventPrefix = Cfg.getEventPrefix();
-        if (Cfg.getKeyMinCacheTTL() <= 0l && Cfg.getDataMaxCacheTLL() <= 0l) {
+        hdataPrefix = PropCfg.getHdataPrefix();
+        eventPrefix = PropCfg.getEventPrefix();
+        if (PropCfg.getKeyMinCacheTTL() <= 0l && PropCfg.getDataMaxCacheTLL() <= 0l) {
             enableLocalCache = false;
         }
     }

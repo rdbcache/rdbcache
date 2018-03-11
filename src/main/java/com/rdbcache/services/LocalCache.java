@@ -7,8 +7,7 @@
 package com.rdbcache.services;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 
@@ -21,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,13 +31,13 @@ public class LocalCache extends Thread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalCache.class);
 
-    private Long recycleSecs = Cfg.getCacheRecycleSecs();
+    private Long recycleSecs = PropCfg.getCacheRecycleSecs();
 
-    private Long maxCacheSize = Cfg.getMaxCacheSize();
+    private Long maxCacheSize = PropCfg.getMaxCacheSize();
 
-    private Long keyMinCacheTTL = Cfg.getKeyMinCacheTTL();
+    private Long keyMinCacheTTL = PropCfg.getKeyMinCacheTTL();
 
-    private Long dataMaxCacheTLL = Cfg.getDataMaxCacheTLL();
+    private Long dataMaxCacheTLL = PropCfg.getDataMaxCacheTLL();
 
     private ConcurrentHashMap<String, Cached> cache = null;
 
@@ -47,13 +47,13 @@ public class LocalCache extends Thread {
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        recycleSecs = Cfg.getCacheRecycleSecs();
-        maxCacheSize = Cfg.getMaxCacheSize();
-        keyMinCacheTTL = Cfg.getKeyMinCacheTTL();
-        dataMaxCacheTLL = Cfg.getDataMaxCacheTLL();
+        recycleSecs = PropCfg.getCacheRecycleSecs();
+        maxCacheSize = PropCfg.getMaxCacheSize();
+        keyMinCacheTTL = PropCfg.getKeyMinCacheTTL();
+        dataMaxCacheTLL = PropCfg.getDataMaxCacheTLL();
 
         if (cache == null) {
-            int initCapacity = Cfg.getMaxCacheSize().intValue();
+            int initCapacity = PropCfg.getMaxCacheSize().intValue();
             int concurrentLevel = (initCapacity / 256 < 32 ? 32 : initCapacity / 256);
             cache = new ConcurrentHashMap<String, Cached>(
                     initCapacity, 0.75f, concurrentLevel);
@@ -69,7 +69,7 @@ public class LocalCache extends Thread {
     public synchronized void start() {
         if (cache == null) {
             cache = new ConcurrentHashMap<String, Cached>(
-                    Cfg.getMaxCacheSize().intValue(), 0.75f, 32);
+                    PropCfg.getMaxCacheSize().intValue(), 0.75f, 32);
         }
         super.start();
     }
@@ -235,7 +235,24 @@ public class LocalCache extends Thread {
         cache.remove("key::" + key);
     }
 
-    public void removeAllKeyInfo() {
+    public void getKeyInfo(String key, Map<String, Object> data) {
+        if (key.startsWith("key::")) {
+            key = key.substring(5, key.length());
+        }
+        data.put("key::"+key, getKeyInfo(key));
+    }
+
+    public void listAllKeyInfos(Map<String, Object> map) {
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (key == null) continue;
+            if (key.startsWith("key::")) {
+                map.put(key, get(key));
+            }
+        }
+    }
+
+    public void removeAllKeyInfos() {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
             if (key == null) continue;
@@ -273,6 +290,23 @@ public class LocalCache extends Thread {
         cache.remove("data::" + key);
     }
 
+    public void getData(String key, Map<String, Object> data) {
+        if (key.startsWith("data::")) {
+            key = key.substring(6, key.length());
+        }
+        data.put("data::"+key, getData(key));
+    }
+
+    public void listAllData(Map<String, Object> map) {
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (key == null) continue;
+            if (key.startsWith("data::")) {
+                map.put(key, get(key));
+            }
+        }
+    }
+
     public void removeAllData() {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
@@ -283,7 +317,24 @@ public class LocalCache extends Thread {
         }
     }
 
-    public void removeAllTable() {
+    public void getTable(String key, Map<String, Object> data) {
+        if (key.startsWith("table_")) {
+            key = key.substring(6, key.length());
+        }
+        data.put("table_"+key, get("table_"+key));
+    }
+
+    public void listAllTables(Map<String, Object> map) {
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (key == null) continue;
+            if (key.startsWith("table_")) {
+                map.put(key, get(key));
+            }
+        }
+    }
+
+    public void removeAllTables() {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
             if (key == null) continue;
@@ -432,7 +483,7 @@ public class LocalCache extends Thread {
         }
     }
 
-    class Cached implements Cloneable {
+    class Cached implements Cloneable, Serializable {
 
         private Map<String, Object> map;
 

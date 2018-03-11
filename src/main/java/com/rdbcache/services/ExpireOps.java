@@ -6,7 +6,7 @@
 
 package com.rdbcache.services;
 
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.Utils;
@@ -35,11 +35,11 @@ public class ExpireOps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpireOps.class);
 
-    private String eventPrefix = Cfg.getEventPrefix();
+    private String eventPrefix = PropCfg.getEventPrefix();
 
-    private Boolean enableMonitor = Cfg.getEnableMonitor();
+    private Boolean enableMonitor = PropCfg.getEnableMonitor();
     
-    private Long eventLockTimeout = Cfg.getEventLockTimeout();
+    private Long eventLockTimeout = PropCfg.getEventLockTimeout();
 
     @Autowired
     private StringRedisTemplate redisTemplate;
@@ -76,9 +76,9 @@ public class ExpireOps {
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        eventPrefix = Cfg.getEventPrefix();
-        enableMonitor = Cfg.getEnableMonitor();
-        eventLockTimeout = Cfg.getEventLockTimeout();
+        eventPrefix = PropCfg.getEventPrefix();
+        enableMonitor = PropCfg.getEnableMonitor();
+        eventLockTimeout = PropCfg.getEventLockTimeout();
     }
 
     public String getEventPrefix() {

@@ -8,11 +8,11 @@ package com.rdbcache.helpers;
 
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
 
-public class NullableSerializer extends GenericToStringSerializer<Object> {
+public class Nullable extends GenericToStringSerializer<Object> {
 
     private static byte[] bnull = "null".getBytes();
 
-    public NullableSerializer() {
+    public Nullable() {
         super(Object.class);
     }
 

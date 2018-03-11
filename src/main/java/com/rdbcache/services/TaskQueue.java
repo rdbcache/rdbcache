@@ -6,7 +6,7 @@
 
 package com.rdbcache.services;
 
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.KeyInfo;
@@ -30,9 +30,9 @@ public class TaskQueue extends Thread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskQueue.class);
 
-    private Boolean enableMonitor = Cfg.getEnableMonitor();
+    private Boolean enableMonitor = PropCfg.getEnableMonitor();
 
-    private String queueName = Cfg.getQueueName();
+    private String queueName = PropCfg.getQueueName();
 
     private ListOperations listOps;
 
@@ -46,8 +46,8 @@ public class TaskQueue extends Thread {
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        enableMonitor = Cfg.getEnableMonitor();
-        queueName = Cfg.getQueueName();
+        enableMonitor = PropCfg.getEnableMonitor();
+        queueName = PropCfg.getQueueName();
     }
 
     @EventListener
@@ -124,7 +124,7 @@ public class TaskQueue extends Thread {
 
                 KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
                 if (keyInfo == null) {
-                    keyInfo = new KeyInfo(Cfg.getDefaultExpire(), "value");
+                    keyInfo = new KeyInfo(PropCfg.getDefaultExpire(), "value");
                 }
 
                 //...

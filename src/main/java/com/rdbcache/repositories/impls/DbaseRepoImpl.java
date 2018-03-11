@@ -7,14 +7,13 @@
 package com.rdbcache.repositories.impls;
 
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.*;
 import com.rdbcache.queries.QueryInfo;
 import com.rdbcache.repositories.DbaseRepo;
-import com.rdbcache.services.AsyncOps;
 
 import com.rdbcache.queries.Condition;
 import com.rdbcache.queries.Query;
@@ -29,7 +28,6 @@ import org.springframework.stereotype.Repository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.Assert;
 
 import javax.annotation.PostConstruct;
 import java.sql.Connection;
@@ -37,7 +35,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
 public class DbaseRepoImpl implements DbaseRepo {
@@ -48,7 +45,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     private boolean enableRedisCache = true;
 
-    private Boolean enableDbFallback = Cfg.getEnableDbFallback();
+    private Boolean enableDbFallback = PropCfg.getEnableDbFallback();
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -59,8 +56,8 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        enableDbFallback = Cfg.getEnableDbFallback();
-        if (Cfg.getKeyMinCacheTTL() <= 0l && Cfg.getDataMaxCacheTLL() <= 0l) {
+        enableDbFallback = PropCfg.getEnableDbFallback();
+        if (PropCfg.getKeyMinCacheTTL() <= 0l && PropCfg.getDataMaxCacheTLL() <= 0l) {
             enableLocalCache = false;
         }
     }

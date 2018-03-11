@@ -7,12 +7,11 @@
 package com.rdbcache.repositories.impls;
 
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.*;
 import com.rdbcache.queries.QueryInfo;
 import com.rdbcache.repositories.KeyInfoRepo;
-import com.rdbcache.services.AsyncOps;
 import com.rdbcache.queries.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -36,7 +35,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
     private boolean enableRedisCache = true;
 
-    private String hkeyPrefix = Cfg.getHkeyPrefix();
+    private String hkeyPrefix = PropCfg.getHkeyPrefix();
 
     @Autowired
     private RedisTemplate<String, KeyInfo> keyInfoTemplate;
@@ -50,8 +49,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        hkeyPrefix = Cfg.getHkeyPrefix();
-        if (Cfg.getKeyMinCacheTTL() <= 0l && Cfg.getDataMaxCacheTLL() <= 0l) {
+        hkeyPrefix = PropCfg.getHkeyPrefix();
+        if (PropCfg.getKeyMinCacheTTL() <= 0l && PropCfg.getDataMaxCacheTLL() <= 0l) {
             enableLocalCache = false;
         }
     }

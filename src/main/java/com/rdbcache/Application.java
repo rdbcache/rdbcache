@@ -6,7 +6,7 @@
 
 package com.rdbcache;
 
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.VersionInfo;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -59,11 +59,11 @@ public class Application implements ApplicationRunner {
 
         String message = "";
 
-        message += "\nredis url: " + redisUrl + ", pool size: " + jedisConnectionFactory.getPoolConfig().getMaxTotal();
+        message += "redis url: " + redisUrl + ", pool size: " + jedisConnectionFactory.getPoolConfig().getMaxTotal();
         message += "\ndatabase url: " + dbaseUrl + ", pool size: " + hikariDataSource.getMaximumPoolSize();
-        message += "\nconfigurations: " + Cfg.printConfigurations();
+        message += "\nconfigurations: " + PropCfg.printConfigurations();
 
-        LOGGER.info(message);
+        System.out.println(message);
     }
 
     public static void main(String[] args) {

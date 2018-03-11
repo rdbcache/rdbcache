@@ -7,18 +7,16 @@
 package com.rdbcache.controllers;
 
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.*;
 
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
-import com.rdbcache.queries.QueryInfo;
 
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.NotFoundException;
 
-import com.rdbcache.queries.Parser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +29,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
-import java.text.DecimalFormat;
-import java.util.regex.Pattern;
 import java.util.*;
 
 @RestController
@@ -40,24 +36,15 @@ public class RdbcacheApis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RdbcacheApis.class);
 
-    private Boolean enableMonitor = Cfg.getEnableMonitor();
-
     private boolean enableLocalCache = true;
-
-    private Pattern expPattern;
-
-    private DecimalFormat durationFormat;
 
     @PostConstruct
     public void init() {
-        expPattern = Pattern.compile("([0-9]+|-[0-9]+|\\+[0-9]+)");
-        durationFormat = new DecimalFormat("#.######");
     }
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        enableMonitor = Cfg.getEnableMonitor();
-        if (Cfg.getKeyMinCacheTTL() <= 0l && Cfg.getDataMaxCacheTLL() <= 0l) {
+        if (PropCfg.getKeyMinCacheTTL() <= 0l && PropCfg.getDataMaxCacheTLL() <= 0l) {
             enableLocalCache = false;
         }
     }
@@ -68,14 +55,6 @@ public class RdbcacheApis {
 
     public void setEnableLocalCache(boolean enableLocalCache) {
         this.enableLocalCache = enableLocalCache;
-    }
-
-    public Boolean getEnableMonitor() {
-        return enableMonitor;
-    }
-
-    public void setEnableMonitor(Boolean enableMonitor) {
-        this.enableMonitor = enableMonitor;
     }
 
     /**
@@ -102,7 +81,7 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt2) {
 
         Context context = new Context(key, true);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
 
         if (key.equals("*")) {
 
@@ -131,7 +110,7 @@ public class RdbcacheApis {
 
             }
         }
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -160,7 +139,7 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt2) {
 
         Context context = new Context(key, value, false);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
 
         if (enableLocalCache) {
             KvPair pair = context.getPair();
@@ -169,7 +148,7 @@ public class RdbcacheApis {
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
 
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -201,7 +180,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(key, value, false);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
 
         if (enableLocalCache) {
             KvPair pair = context.getPair();
@@ -210,7 +189,7 @@ public class RdbcacheApis {
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
 
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -241,7 +220,7 @@ public class RdbcacheApis {
             throw new BadRequestException("missing request body");
         }
         Context context = new Context(key, value, false);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
 
         if (key.equals("*")) {
 
@@ -257,7 +236,7 @@ public class RdbcacheApis {
             AppCtx.getAsyncOps().doPutOperation(context, keyInfo);
 
         }
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -289,7 +268,7 @@ public class RdbcacheApis {
             throw new BadRequestException("missing value");
         }
         Context context = new Context(key, value, true);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
 
         Context ctx = context.getCopyWith(key, value);
 
@@ -308,7 +287,7 @@ public class RdbcacheApis {
             AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
 
         }
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -340,7 +319,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(key, value, true);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, key, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
 
         Context ctx = context.getCopyWith(key, value);
 
@@ -359,7 +338,7 @@ public class RdbcacheApis {
             AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
 
         }
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -395,7 +374,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(true);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, null, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
         keyInfo.setIsNew(false);
         List<KvPair> pairs = context.getPairs();
 
@@ -439,7 +418,7 @@ public class RdbcacheApis {
 
         }
 
-        return response(context, true);
+        return Response.send(context, true);
     }
 
     /**
@@ -476,7 +455,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(false);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, null, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
         keyInfo.setIsNew(false);
         List<KvPair> pairs = context.getPairs();
 
@@ -508,7 +487,7 @@ public class RdbcacheApis {
 
         AppCtx.getAsyncOps().doPushOperations(context, keyInfo);
 
-        return response(context, true);
+        return Response.send(context, true);
     }
 
     /**
@@ -533,11 +512,11 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(key, false);
-        if (enableMonitor) context.enableMonitor(request);
+        Request.process(context, request);
 
         AppCtx.getAsyncOps().doDeleteFromRedis(context);
 
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -562,7 +541,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(false);
-        if (enableMonitor) context.enableMonitor(request);
+        Request.process(context, request);
 
         List<KvPair> pairs = context.getPairs();
 
@@ -572,7 +551,7 @@ public class RdbcacheApis {
 
         AppCtx.getAsyncOps().doDeleteFromRedis(context);
 
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -597,11 +576,11 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(key, false);
-        if (enableMonitor) context.enableMonitor(request);
+        Request.process(context, request);
 
         AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context);
 
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -626,7 +605,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(false);
-        if (enableMonitor) context.enableMonitor(request);
+        Request.process(context, request);
 
         List<KvPair> pairs = context.getPairs();
 
@@ -636,7 +615,7 @@ public class RdbcacheApis {
 
         AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context);
 
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -665,7 +644,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(true);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, null, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
 
         if (!AppCtx.getDbaseRepo().findAll(context, keyInfo)) {
 
@@ -677,7 +656,7 @@ public class RdbcacheApis {
 
         }
 
-        return response(context, true);
+        return Response.send(context, true);
     }
 
     /**
@@ -708,7 +687,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(true);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, null, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
         List<KvPair> pairs = context.getPairs();
 
         for (String key: keys) {
@@ -731,7 +710,7 @@ public class RdbcacheApis {
 
         }
 
-        return response(context, true);
+        return Response.send(context, true);
     }
 
     /**
@@ -765,7 +744,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(false);
-        KeyInfo keyInfo = setupContextAndKeyInfo(context, request, null, opt1, opt2);
+        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
         keyInfo.setIsNew(false);
         List<KvPair> pairs = context.getPairs();
 
@@ -792,7 +771,7 @@ public class RdbcacheApis {
 
         AppCtx.getAsyncOps().doSaveAllToRedisAnInsertAllTodDbase(context, keyInfo);
 
-        return response(context, true);
+        return Response.send(context, true);
     }
 
     /**
@@ -817,14 +796,14 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(true);
-        if (enableMonitor) context.enableMonitor(request);
+        Request.process(context, request);
 
         KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(traceId, "trace"));
         if (dbPair != null) {
             context.setPair(dbPair);
         }
 
-        return response(context);
+        return Response.send(context);
     }
 
     /**
@@ -854,7 +833,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context( true);
-        if (enableMonitor) context.enableMonitor(request);
+        Request.process(context, request);
         List<KvPair> pairs = context.getPairs();
 
         for (String referenced_id: traceIds) {
@@ -866,7 +845,7 @@ public class RdbcacheApis {
             }
         }
 
-        return response(context, true);
+        return Response.send(context, true);
     }
 
     /**
@@ -887,19 +866,19 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt) {
 
         Context context = new Context(false);
-        if (enableMonitor) context.enableMonitor(request);
+        Request.process(context, request);
 
         if (!opt.isPresent()) {
-            AppCtx.getLocalCache().removeAllKeyInfo();
+            AppCtx.getLocalCache().removeAllKeyInfos();
             AppCtx.getLocalCache().removeAllData();
         } else {
             String action = opt.get();
             if (action.equals("all")) {
                 AppCtx.getLocalCache().removeAll();
             } else if (action.equals("table")) {
-                AppCtx.getLocalCache().removeAllTable();
+                AppCtx.getLocalCache().removeAllTables();
             } else if (action.equals("key")) {
-                AppCtx.getLocalCache().removeAllKeyInfo();
+                AppCtx.getLocalCache().removeAllKeyInfos();
             } else if (action.equals("data")) {
                 AppCtx.getLocalCache().removeAllData();
             }
@@ -907,158 +886,7 @@ public class RdbcacheApis {
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("result", "DONE");
-        data.put("keyMinCacheTTL", Cfg.getKeyMinCacheTTL());
-        data.put("dataMaxCacheTLL", Cfg.getDataMaxCacheTLL());
-        data.put("tableInfoCacheTTL", Cfg.getTableInfoCacheTTL());
 
-        return response(context, data);
-    }
-
-    private KeyInfo setupContextAndKeyInfo(
-            Context context,
-            HttpServletRequest request,
-            String key,
-            Optional<String> opt1, Optional<String> opt2) {
-
-        if (enableMonitor) context.enableMonitor(request);
-
-        KeyInfo keyInfo = null;
-        if (key != null && !key.equals("*")) {
-            keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
-        }
-        if (keyInfo == null) {
-            keyInfo = new KeyInfo();
-        }
-
-        String[] opts = {null, null}; // {expire, table}
-
-        if (opt1!= null && opt1.isPresent()) {
-            assignOption(context, opt1.get(), opts);
-        }
-        if (opt2 != null && opt2.isPresent()) {
-            assignOption(context, opt2.get(), opts);
-        }
-
-        if (keyInfo.getIsNew()) {
-            if (opts[1] != null) {
-                keyInfo.setTable(opts[1]);
-            }
-            if (opts[0] != null) {
-                keyInfo.setExpire(opts[0]);
-            }
-            Map<String, String[]> params = request.getParameterMap();
-            if (params != null && params.size() > 0) {
-                QueryInfo queryInfo = new QueryInfo(keyInfo.getTable());
-                Parser.setConditions(queryInfo, params);
-                keyInfo.setQueryInfo(queryInfo);
-                keyInfo.setQueryKey(queryInfo.getKey());
-            }
-        } else {
-            if (opts[0] != null && !opts[0].equals(keyInfo.getExpire())) {
-                keyInfo.setExpire(opts[0]);
-                keyInfo.setIsNew(true);
-            }
-            if (opts[1] != null && !opts[1].equals(keyInfo.getTable())) {
-                throw new BadRequestException(context, "can not change table name for an existing key");
-            }
-            Map<String, String[]> params = request.getParameterMap();
-            if (params != null && params.size() > 0) {
-                QueryInfo queryInfo = new QueryInfo(keyInfo.getTable());
-                Parser.setConditions(queryInfo, params);
-                if (keyInfo.getQueryKey() == null || !keyInfo.getQueryKey().equals(queryInfo.getKey())) {
-                    throw new BadRequestException(context, "can not modify condition for an existing key");
-                }
-            }
-        }
-
-        LOGGER.debug("URI: "+ request.getRequestURI());
-        LOGGER.trace("key: " + key + " " + (keyInfo == null ? "" : keyInfo.toString()));
-
-        return keyInfo;
-    }
-
-    private void assignOption(Context context, String opt, String[] opts) {
-
-        opt = opt.trim();
-        if (opts[0] == null && expPattern.matcher(opt).matches()) {
-            opts[0] = opt;
-            return;
-        }
-        if (opts[1] == null) {
-            Map<String, Object> map = AppCtx.getDbaseOps().getTableList(context);
-            List<String> tables = (List<String>) map.get("tables");
-            if (tables.contains(opt)) {
-                opts[1] = opt;
-                return;
-            }
-        }
-        throw new BadRequestException(context, "invalid path variable " + opt);
-    }
-
-    private ResponseEntity<Map<String, Object>> response(
-            Context context) {
-        return response(context, false, null);
-    }
-
-    private ResponseEntity<Map<String, Object>> response(
-            Context context,
-            Boolean batch) {
-        return response(context, batch, null);
-    }
-
-    private ResponseEntity<Map<String, Object>> response(
-            Context context,
-            Map<String, Object> data) {
-        return response(context, false, data);
-    }
-
-    private ResponseEntity<Map<String, Object>> response(
-            Context context,
-            Boolean batch,
-            Map<String, Object> data) {
-
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        Long now = System.currentTimeMillis();
-        map.put("timestamp", now);
-        Long duration = context.stopFirstStopWatch();
-        if (duration != null) {
-            double db = ((double) duration) / 1000000000.0;
-            map.put("duration", durationFormat.format(db));
-        }
-        List<KvPair> pairs = context.getPairs();
-        if (pairs != null) {
-            if (pairs.size() == 0) {
-                if (data == null) {
-                    map.put("data", pairs);
-                } else {
-                    map.put("data", data);
-                }
-            } else if (pairs.size() == 1 && !batch) {
-                KvPair pair = pairs.get(0);
-                map.put("key", pair.getId());
-                if (context.ifSendValue()) {
-                    map.put("data",pair.getMapValue());
-                }
-            } else {
-                if (context.ifSendValue()) {
-                    Map<String, Object> dmap = new LinkedHashMap<String, Object>();
-                    map.put("data", dmap);
-                    for (KvPair pair : pairs) {
-                        dmap.put(pair.getId(), pair.getMapValue());
-                    }
-                } else {
-                    List<String> keys = new ArrayList<>();
-                    for (KvPair pair : pairs) {
-                        keys.add(pair.getId());
-                    }
-                    map.put("data", keys);
-                }
-            }
-        }
-        String traceId = context.getTraceId();
-        if ( traceId != null) {
-            map.put("trace_id", traceId);
-        }
-        return ResponseEntity.ok(map);
+        return Response.send(context, data);
     }
 }

@@ -6,7 +6,7 @@
 
 package com.rdbcache.models;
 
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.exceptions.ServerErrorException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -23,7 +23,7 @@ public class KeyInfo implements Serializable, Cloneable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyInfo.class);
 
-    private String expire = Cfg.getDefaultExpire();
+    private String expire = PropCfg.getDefaultExpire();
 
     private String table;
 

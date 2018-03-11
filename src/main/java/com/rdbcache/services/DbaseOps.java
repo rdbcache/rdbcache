@@ -7,10 +7,9 @@
 package com.rdbcache.services;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.helpers.Cfg;
+import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
@@ -31,7 +30,7 @@ public class DbaseOps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DbaseOps.class);
 
-    private Long tableInfoCacheTTL = Cfg.getTableInfoCacheTTL();
+    private Long tableInfoCacheTTL = PropCfg.getTableInfoCacheTTL();
 
     @PostConstruct
     public void init() {
@@ -39,7 +38,7 @@ public class DbaseOps {
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        tableInfoCacheTTL = Cfg.getTableInfoCacheTTL();
+        tableInfoCacheTTL = PropCfg.getTableInfoCacheTTL();
     }
 
     @EventListener

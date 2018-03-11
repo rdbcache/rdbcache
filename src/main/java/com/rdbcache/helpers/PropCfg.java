@@ -12,7 +12,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.stereotype.Component;
 
 @Component
-public class Cfg {
+public class PropCfg {
 
     private static String activeProfile = "prod";
 
@@ -145,7 +145,7 @@ public class Cfg {
 
     @Value("${rdbcache.local_cache_max_size}")
     public void setMaxCacheSize(Long maxCacheSize) {
-        Cfg.maxCacheSize = maxCacheSize;
+        PropCfg.maxCacheSize = maxCacheSize;
     }
 
     public static Long getMaxCacheSize() {
@@ -163,7 +163,7 @@ public class Cfg {
 
     @Value("${rdbcache.enable_db_fallback}")
     public void setEnableDbFallback(Boolean enableDbFallback) {
-        Cfg.enableDbFallback = enableDbFallback;
+        PropCfg.enableDbFallback = enableDbFallback;
     }
 
     public static Boolean getEnableDbFallback() {
@@ -172,7 +172,7 @@ public class Cfg {
 
     @Value("${rdbcache.data_max_cache_ttl}")
     public void setDataMaxCacheTLL(Long tll) {
-        Cfg.dataMaxCacheTLL = tll;
+        PropCfg.dataMaxCacheTLL = tll;
     }
 
     public static Long getDataMaxCacheTLL() {
