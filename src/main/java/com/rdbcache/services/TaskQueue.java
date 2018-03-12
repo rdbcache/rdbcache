@@ -111,7 +111,7 @@ public class TaskQueue extends Thread {
 
                 if (parts.length < 3) {
                     LOGGER.error("invalid task format");
-                    return;
+                    continue;
                 }
 
                 String action = parts[0];
@@ -122,9 +122,12 @@ public class TaskQueue extends Thread {
 
                 if (enableMonitor) context.enableMonitor(task, "queue", action);
 
-                KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
-                if (keyInfo == null) {
-                    keyInfo = new KeyInfo(PropCfg.getDefaultExpire(), "value");
+                KeyInfo keyInfo = new KeyInfo();
+                if (!AppCtx.getKeyInfoRepo().find(context, keyInfo)) {
+                    String msg = "keyInfo not found";
+                    LOGGER.error(msg);
+                    context.logTraceMessage(msg);
+                    continue;
                 }
 
                 //...

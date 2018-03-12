@@ -35,17 +35,17 @@ public class Request {
 
         if (PropCfg.getEnableMonitor()) context.enableMonitor(request);
 
-        KeyInfo keyInfo = null;
-
         if (key == null && opt1 == null && opt2 == null) {
             return null;
         }
 
-        if (key != null && !key.equals("*")) {
-            keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
-        }
-        if (keyInfo == null) {
-            keyInfo = new KeyInfo();
+        KeyInfo keyInfo = new KeyInfo();
+        if (key != null) {
+            if (!key.equals("*")) {
+                AppCtx.getKeyInfoRepo().find(context, keyInfo);
+            } else {
+                keyInfo.setGeneratedKey(true);
+            }
         }
 
         String[] opts = {null, null}; // {expire, table}

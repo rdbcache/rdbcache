@@ -8,6 +8,7 @@ package com.rdbcache.helpers;
 
 import com.rdbcache.Application;
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.Monitor;
 import com.rdbcache.models.StopWatch;
@@ -30,34 +31,33 @@ public class Context {
 
     public Context(String id, String value, Boolean sendValue) {
         this.sendValue = sendValue;
-        KvPair pair = null;
         if (id.equals("*")) {
-            pair = new KvPair(Utils.generateId(), "data", value);
+            pairs.add(new KvPair(Utils.generateId(), "data", value));
         } else {
-            pair = new KvPair(id, "data", value);
+            pairs.add(new KvPair(id, "data", value));
         }
-        pairs.add(pair);
         traceId = Utils.generateId();
         monitor = new Monitor();
     }
 
     public Context(String id, Boolean sendValue) {
         this.sendValue = sendValue;
-        KvPair pair = null;
         if (id.equals("*")) {
-            pair = new KvPair(Utils.generateId());
+            pairs.add(new KvPair(Utils.generateId()));
         } else {
-            pair = new KvPair(id);
+            pairs.add(new KvPair(id));
         }
-        pairs.add(pair);
         traceId = Utils.generateId();
         monitor = new Monitor();
     }
 
     public Context(String id, String traceId) {
         this.sendValue = false;
-        KvPair pair = new KvPair(id);
-        pairs.add(pair);
+        if (id.equals("*")) {
+            throw new ServerErrorException("* id is not allowed");
+        } else {
+            pairs.add(new KvPair(id));
+        }
         this.traceId = traceId;
         monitor = new Monitor();
     }

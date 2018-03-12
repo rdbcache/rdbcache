@@ -134,7 +134,7 @@ public class ExpireOps {
         if (stopWatch != null) stopWatch.stopNow();
 
         if (result == 1 && keyInfo.getIsNew()) {
-            AppCtx.getKeyInfoRepo().saveOne(context, keyInfo);
+            AppCtx.getKeyInfoRepo().save(context, keyInfo);
         }
     }
 
@@ -181,8 +181,9 @@ public class ExpireOps {
 
         try {
 
-            KeyInfo keyInfo = AppCtx.getKeyInfoRepo().findOne(context);
-            if (keyInfo == null) {
+            KeyInfo keyInfo = new KeyInfo();
+           ;
+            if (!AppCtx.getKeyInfoRepo().find(context, keyInfo)) {
 
                 String msg = "keyInfo not found";
                 LOGGER.error(msg);
@@ -195,11 +196,11 @@ public class ExpireOps {
             Long expire = Long.valueOf(keyInfo.getExpire());
 
             if (expire > 0) {
-                if (AppCtx.getRedisRepo().findOne(context, keyInfo)) {
+                if (AppCtx.getRedisRepo().find(context, keyInfo)) {
 
-                    AppCtx.getDbaseRepo().saveOne(context, keyInfo);
+                    AppCtx.getDbaseRepo().save(context, keyInfo);
                     AppCtx.getRedisRepo().delete(context, keyInfo);
-                    AppCtx.getKeyInfoRepo().deleteOne(context, false);
+                    AppCtx.getKeyInfoRepo().delete(context, false);
 
                 } else {
                     String msg = "failed to find key from redis for " + key;
@@ -209,9 +210,9 @@ public class ExpireOps {
             }
 
             if (expire < 0) {
-                if (AppCtx.getDbaseRepo().findOne(context, keyInfo)) {
+                if (AppCtx.getDbaseRepo().find(context, keyInfo)) {
 
-                    AppCtx.getRedisRepo().saveOne(context, keyInfo);
+                    AppCtx.getRedisRepo().save(context, keyInfo);
                     setExpireKey(context, keyInfo);
 
                 } else {

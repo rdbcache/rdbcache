@@ -217,8 +217,8 @@
       </activation>
       <properties>
         <build.profile.id>prod</build.profile.id>
-        <build.doCheck>true</build.doCheck>
-        <build.doUpdate>true</build.doUpdate>
+        <build.doCheck>false</build.doCheck>
+        <build.doUpdate>false</build.doUpdate>
         <profile_finalname>${project.artifactId}</profile_finalname>
       </properties>
     </profile>

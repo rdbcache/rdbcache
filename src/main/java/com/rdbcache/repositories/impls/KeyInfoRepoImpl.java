@@ -80,23 +80,22 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     }
 
     @Override
-    public KeyInfo findOne(Context context) {
+    public boolean find(Context context, KeyInfo keyInfo) {
 
         KvPair pair = context.getPair();
         if (pair == null) {
-            return null;
+            return false;
         }
         String key = pair.getId();
 
-        LOGGER.trace("findOne: " + key);
-
-        KeyInfo keyInfo = null;
+        LOGGER.trace("find: " + key);
 
         if (enableLocalCache) {
-            keyInfo  = AppCtx.getLocalCache().getKeyInfo(key);
-            if (keyInfo != null) {
+            KeyInfo keyInfoCache  = AppCtx.getLocalCache().getKeyInfo(key);
+            if (keyInfoCache != null) {
                 LOGGER.debug("found from local cache");
-                return keyInfo;
+                keyInfo.copy(keyInfoCache);
+                return true;
             }
         }
 
@@ -105,13 +104,14 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         if (enableRedisCache) {
 
             stopWatch = context.startStopWatch("redis", "keyInfoOps.get");
-            keyInfo = keyInfoOps.get(hkeyPrefix + "::keyinfo", key);
+            KeyInfo keyInfoRedis = keyInfoOps.get(hkeyPrefix + "::keyinfo", key);
             if (stopWatch != null) stopWatch.stopNow();
 
-            if (keyInfo != null) {
+            if (keyInfoRedis != null) {
                 LOGGER.debug("found from redis");
                 AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
-                return keyInfo;
+                keyInfo.copy(keyInfoRedis);
+                return true;
             }
         }
 
@@ -121,41 +121,40 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         if (dbPair == null || dbPair.getData() == null) {
             LOGGER.debug("keyinfo not found from database for " + key);
-            return null;
+            return false;
         }
         LOGGER.debug("found key info from database for " + key);
 
-        final KeyInfo finalKeyInfo = new KeyInfo(dbPair.getData());
+        keyInfo.fromMap(dbPair.getData());
 
         if (enableLocalCache) {
-            AppCtx.getLocalCache().putKeyInfo(key, finalKeyInfo);
+            AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
         }
 
         if (enableRedisCache) {
             Utils.getExcutorService().submit(() -> {
                 Thread.yield();
                 StopWatch stopWatch2 = context.startStopWatch("redis", "keyInfoOps.put");
-                keyInfoOps.put(hkeyPrefix + "::keyinfo", key, finalKeyInfo);
+                keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
                 if (stopWatch2 != null) stopWatch2.stopNow();
             });
         }
 
-        return keyInfo;
+        return true;
     }
 
     @Override
-    public List<KeyInfo> findAll(Context context) {
+    public boolean find(Context context, List<KeyInfo> keyInfos) {
 
         List<KvPair> pairs = context.getPairs();
 
-        LOGGER.trace("findAll: " + pairs.size());
+        LOGGER.trace("find: " + pairs.size());
 
         if (pairs.size() == 0) {
-            return null;
+            return false;
         }
 
         List<String> keys = new ArrayList<String>();
-        List<KeyInfo> keyInfos = new ArrayList<KeyInfo>();
         List<String> redisKeys = new ArrayList<String>();
         List<KvIdType> idTypes = new ArrayList<KvIdType>();
 
@@ -183,7 +182,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (foundAll) {
-            return keyInfos;
+            return true;
         }
 
         StopWatch stopWatch = null;
@@ -220,7 +219,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
 
             if (foundAll) {
-                return keyInfos;
+                return true;
             }
         }
 
@@ -263,16 +262,21 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             });
         }
-        return keyInfos;
+        return true;
     }
 
     @Override
-    public void saveOne(Context context, KeyInfo keyInfo) {
+    public boolean save(Context context, KeyInfo keyInfo) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
 
-        LOGGER.trace("saveOne: " + key + " table: " + keyInfo.getTable());
+        LOGGER.trace("save: " + key + " table: " + keyInfo.getTable());
+
+        if (!keyInfo.getIsNew()) {
+            LOGGER.warn("save KeyInfo is not new");
+            return true;
+        }
 
         if (enableLocalCache) {
 
@@ -293,16 +297,14 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 }
                 if (cachedKeyInfo.equals(keyInfo)) {
                     keyInfo.setIsNew(false);
-                    return;
+                    return true;
                 }
             }
             AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
         }
 
         final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
-
         if (finalQueryInfo != null) {
-
             keyInfo.setQueryInfo(null);
             Utils.getExcutorService().submit(() -> {
 
@@ -311,7 +313,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             });
         }
 
-        final KeyInfo finalKeyInfo = keyInfo;
+        keyInfo.setIsNew(false);
+
         Utils.getExcutorService().submit(() -> {
 
             Thread.yield();
@@ -321,27 +324,29 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             if (enableRedisCache) {
 
                 stopWatch = context.startStopWatch("redis", "keyInfoOps.put");
-                keyInfoOps.put(hkeyPrefix + "::keyinfo", key, finalKeyInfo);
+                keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
                 if (stopWatch != null) stopWatch.stopNow();
             }
 
-            KvPair dbPair = new KvPair(key, "info", finalKeyInfo.toMap());
+            KvPair dbPair = new KvPair(key, "info", keyInfo.toMap());
 
             stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
             AppCtx.getKvPairRepo().save(dbPair);
             if (stopWatch != null) stopWatch.stopNow();
         });
+
+        return true;
     }
 
     @Override
-    public void saveAll(Context context, List<KeyInfo> keyInfos) {
+    public boolean save(Context context, List<KeyInfo> keyInfos) {
 
         List<KvPair> pairs = context.getPairs();
 
-        LOGGER.trace("saveAll: " + pairs.size() + " keyInfos: " + keyInfos.size());
+        LOGGER.trace("save: " + pairs.size() + " keyInfos: " + keyInfos.size());
 
         if (pairs.size() == 0 || keyInfos.size() == 0) {
-            return;
+            return false;
         }
 
         List<String> todoKeys = new ArrayList<String>();
@@ -350,36 +355,35 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         int i = 0;
         for (KvPair pair: pairs) {
 
-            String key = pair.getId();
             KeyInfo keyInfo = keyInfos.get(i++);
+
+            if (!keyInfo.getIsNew()) {
+                LOGGER.warn("save KeyInfo is not new");
+                continue;
+            }
+
+            String key = pair.getId();
 
             if (enableLocalCache) {
 
                 KeyInfo cachedKeyInfo = AppCtx.getLocalCache().getKeyInfo(key);
-
                 if (cachedKeyInfo != null) {
                     if (keyInfo.getTable() == null && cachedKeyInfo.getTable() != null) {
-                        keyInfo.setIsNew(false);
-                        continue;
+                        keyInfo.setTable(cachedKeyInfo.getTable());
                     }
                     if (keyInfo.getClause() == null && cachedKeyInfo.getClause() != null) {
-                        keyInfo.setIsNew(false);
-                        continue;
+                        keyInfo.setClause(cachedKeyInfo.getClause());
                     }
                     if (keyInfo.getParams() == null && cachedKeyInfo.getParams() != null) {
-                        keyInfo.setIsNew(false);
-                        continue;
+                        keyInfo.setParams(cachedKeyInfo.getParams());
+                    }
+                    if (!Query.hasStdClause(context, keyInfo) && Query.hasStdClause(context, cachedKeyInfo)) {
+                        keyInfo.setClause(cachedKeyInfo.getClause());
+                        keyInfo.setParams(cachedKeyInfo.getParams());
                     }
                     if (cachedKeyInfo.equals(keyInfo)) {
                         keyInfo.setIsNew(false);
                         continue;
-                    }
-                    if (Query.hasStdClause(context, cachedKeyInfo)) {
-                        if (cachedKeyInfo.getClause().equals(keyInfo.getClause()) &&
-                                keyInfo.getParams().equals(cachedKeyInfo.getParams())) {
-                            keyInfo.setIsNew(false);
-                            return;
-                        }
                     }
                 }
                 AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
@@ -388,11 +392,12 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             todoKeyInfos.add(keyInfo);
         }
         if (todoKeys.size() == 0) {
-            return;
+            return true;
         }
 
-        final List<String> finalKeys = todoKeys;
-        final List<KeyInfo> finalKeyInfos = todoKeyInfos;
+        for (KeyInfo keyInfo: todoKeyInfos) {
+            keyInfo.setIsNew(false);
+        }
 
         Utils.getExcutorService().submit(() -> {
 
@@ -400,8 +405,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             if (enableRedisCache) {
                 int index = 0;
-                for (String key : finalKeys) {
-                    KeyInfo keyInfoPer = finalKeyInfos.get(index++);
+                for (String key : todoKeys) {
+                    KeyInfo keyInfoPer = todoKeyInfos.get(index++);
 
                     StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.putAll");
                     keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfoPer);
@@ -411,8 +416,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             List<KvPair> dbPairs = new ArrayList<KvPair>();
             int index = 0;
-            for (String key: finalKeys) {
-                dbPairs.add(new KvPair(key, "info", finalKeyInfos.get(index++).toMap()));
+            for (String key: todoKeys) {
+                dbPairs.add(new KvPair(key, "info", todoKeyInfos.get(index++).toMap()));
             }
 
             StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
@@ -420,10 +425,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             if (stopWatch != null) stopWatch.stopNow();
         });
 
+        return true;
     }
 
-    @Override
-    public void deleteOne(Context context, boolean dbOps) {
+    private void deleteOne(Context context, boolean dbOps) {
         KvPair pair = context.getPair();
         String key = pair.getId();
 
@@ -446,11 +451,16 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     }
 
     @Override
-    public void deleteAll(Context context, boolean dbOps) {
+    public void delete(Context context, boolean dbOps) {
 
         List<KvPair> pairs = context.getPairs();
 
-        LOGGER.trace("deleteAll: " + pairs.size());
+        if (pairs.size() == 1) {
+            deleteOne(context, dbOps);
+            return;
+        }
+
+        LOGGER.trace("delete: " + pairs.size());
 
         if (pairs.size() == 0) {
             return;

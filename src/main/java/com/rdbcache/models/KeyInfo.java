@@ -29,12 +29,15 @@ public class KeyInfo implements Serializable, Cloneable {
 
     private List<String> indexes;
 
-    private String clause = "";
+    private String clause = "";    // null means worked on it, conclusion is not for any query
 
     private List<Object> params;
 
     @JsonProperty("query_key")
-    private String queryKey = "";
+    private String queryKey = "";  // null means worked on it, conclusion is not for any query
+
+    @JsonProperty("generated_key")
+    private Boolean generatedKey = false;
 
     @JsonIgnore
     private Boolean isNew = false;
@@ -113,6 +116,14 @@ public class KeyInfo implements Serializable, Cloneable {
         this.queryKey = queryKey;
     }
 
+    public Boolean getGeneratedKey() {
+        return generatedKey;
+    }
+
+    public void setGeneratedKey(Boolean generatedKey) {
+        this.generatedKey = generatedKey;
+    }
+
     public Boolean getIsNew() {
         return isNew;
     }
@@ -159,17 +170,31 @@ public class KeyInfo implements Serializable, Cloneable {
         return query.getLimit();
     }
 
-    public void copyRedisInfo(KeyInfo keyInfo) {
-        this.expire = keyInfo.expire;
-        this.table = keyInfo.table;
+    public void copy(KeyInfo keyInfo) {
+        isNew = false;
+        expire = keyInfo.expire;
+        table = keyInfo.table;
+        indexes = keyInfo.indexes;
+        clause = keyInfo.clause;
+        params = keyInfo.params;
+        queryKey = keyInfo.queryKey;
+        generatedKey = keyInfo.generatedKey;
+        columns = keyInfo.columns;
+        if (keyInfo.query != null) {
+            query = keyInfo.query.clone();
+        } else {
+            query = null;
+        }
+        stdClause = keyInfo.stdClause;
     }
 
     public void copyQueryInfo(KeyInfo keyInfo) {
-        queryKey = keyInfo.queryKey;
         table = keyInfo.table;
-        indexes = keyInfo.cloneIndexes();
+        queryKey = keyInfo.queryKey;
+        generatedKey = keyInfo.generatedKey;
+        indexes = keyInfo.indexes;
         clause = keyInfo.clause;
-        params = keyInfo.cloneParams();
+        params = keyInfo.params;
         if (keyInfo.query != null) {
             query = keyInfo.query.clone();
         } else {
@@ -185,8 +210,6 @@ public class KeyInfo implements Serializable, Cloneable {
             e.printStackTrace();
             throw new ServerErrorException(e.getCause().getMessage());
         }
-        if (indexes != null) keyInfo.indexes = cloneIndexes();
-        if (params != null) keyInfo.params = cloneParams();
         if (query != null) keyInfo.query = query.clone();
         return keyInfo;
     }
@@ -199,6 +222,7 @@ public class KeyInfo implements Serializable, Cloneable {
         if (clause != null) map.put("clause", clause);
         if (params != null) map.put("params", params);
         if (queryKey != null) map.put("query_key", queryKey);
+        if (generatedKey != null) map.put("generated_key", generatedKey);
         return map;
     }
 
@@ -210,6 +234,7 @@ public class KeyInfo implements Serializable, Cloneable {
         if (map.containsKey("clause")) clause = (String) map.get("clause");
         if (map.containsKey("params")) params = (List<Object>) map.get("params");
         if (map.containsKey("query_key")) queryKey = (String) map.get("query_key");
+        if (map.containsKey("generated_key")) generatedKey = (Boolean) map.get("generated_key");
     }
     
     @Override
@@ -237,33 +262,5 @@ public class KeyInfo implements Serializable, Cloneable {
                 ", expire='" + expire + '\'' +
                 (query == null ? "" : ", " + query.toString()) +
                 '}';
-    }
-
-    private List<String> cloneIndexes() {
-        if (indexes == null) {
-            return null;
-        }
-        List<String> newindexes = new ArrayList<String>();
-        if (indexes.size() == 0) {
-            return newindexes;
-        }
-        for(String index: indexes) {
-            newindexes.add(index);
-        }
-        return newindexes;
-    }
-
-    private List<Object> cloneParams() {
-        if (params == null) {
-            return null;
-        }
-        List<Object> newParams = new ArrayList<Object>();
-        if (params.size() == 0) {
-            return newParams;
-        }
-        for(Object object: params) {
-            newParams.add(object);
-        }
-        return newParams;
     }
 }

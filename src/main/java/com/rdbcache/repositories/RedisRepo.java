@@ -13,19 +13,15 @@ public interface RedisRepo {
 
     public boolean ifExits(Context context, KeyInfo keyInfo);
 
-    public boolean findOne(Context context, KeyInfo keyInfo);
+    public boolean find(Context context, KeyInfo keyInfo);
 
-    public boolean saveOne(Context context, KeyInfo keyInfo);
+    public boolean save(Context context, KeyInfo keyInfo);
 
     public boolean updateIfExists(Context context, KeyInfo keyInfo);
-
-    public boolean findAll(Context context, KeyInfo keyInfo);
-
-    public boolean saveAll(Context context, KeyInfo keyInfo);
 
     public boolean findAndSave(Context context, KeyInfo keyInfo);
 
     public void delete(Context context, KeyInfo keyInfo);
 
-    public void deleteOneCompletely(Context context, KeyInfo keyInfo);
+    public void deleteCompletely(Context context, KeyInfo keyInfo);
 }

@@ -103,8 +103,7 @@ public class RedisRepoImpl implements RedisRepo {
         return result;
     }
 
-    @Override
-    public boolean findOne(Context context, KeyInfo keyInfo) {
+    private boolean findOne(Context context, KeyInfo keyInfo) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
@@ -148,8 +147,7 @@ public class RedisRepoImpl implements RedisRepo {
         return true;
     }
 
-    @Override
-    public boolean saveOne(Context context, KeyInfo keyInfo) {
+    private boolean saveOne(Context context, KeyInfo keyInfo) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
@@ -226,12 +224,17 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public boolean findAll(Context context, KeyInfo keyInfo) {
+    public boolean find(Context context, KeyInfo keyInfo) {
 
         List<KvPair> pairs = context.getPairs();
+
+        if (pairs.size() == 1) {
+            return findOne(context, keyInfo);
+        }
+
         String table = keyInfo.getTable();
 
-        LOGGER.trace("findAll: " + pairs.size() + " table: " + table);
+        LOGGER.trace("find: " + pairs.size() + " table: " + table);
 
         boolean foundAll = true;
         for (KvPair pair: pairs) {
@@ -277,12 +280,17 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public boolean saveAll(Context context, KeyInfo keyInfo) {
+    public boolean save(Context context, KeyInfo keyInfo) {
 
         List<KvPair> pairs = context.getPairs();
+
+        if (pairs.size() == 1) {
+            return saveOne(context, keyInfo);
+        }
+
         String table = keyInfo.getTable();
 
-        LOGGER.trace("saveAll: " + pairs.size() + " table: " + table);
+        LOGGER.trace("save: " + pairs.size() + " table: " + table);
 
         boolean savedAll = true;
         for (KvPair pair: pairs) {
@@ -393,7 +401,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         deleteExpireEvents(context, keyInfo);
 
-        AppCtx.getKeyInfoRepo().deleteOne(context, false);
+        AppCtx.getKeyInfoRepo().delete(context, false);
 
         if (enableLocalCache) {
             AppCtx.getLocalCache().removeData(key);
@@ -408,13 +416,13 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public void deleteOneCompletely(Context context, KeyInfo keyInfo) {
+    public void deleteCompletely(Context context, KeyInfo keyInfo) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
         String table = keyInfo.getTable();
 
-        LOGGER.debug("deleteOneCompletely: " + key + " table: " + table);
+        LOGGER.debug("deleteCompletely: " + key + " table: " + table);
 
         delete(context, keyInfo);
 

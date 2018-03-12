@@ -85,7 +85,7 @@ public class RdbcacheApis {
 
         if (key.equals("*")) {
 
-            if (AppCtx.getDbaseRepo().findOne(context, keyInfo)) {
+            if (AppCtx.getDbaseRepo().find(context, keyInfo)) {
 
                 AppCtx.getAsyncOps().doSaveToRedis(context, keyInfo);
 
@@ -96,11 +96,11 @@ public class RdbcacheApis {
             }
         } else {
 
-            if (AppCtx.getRedisRepo().findOne(context, keyInfo)) {
+            if (AppCtx.getRedisRepo().find(context, keyInfo)) {
 
                 AppCtx.getAsyncOps().doSaveToDbase(context, keyInfo);
 
-            } else if (AppCtx.getDbaseRepo().findOne(context, keyInfo)) {
+            } else if (AppCtx.getDbaseRepo().find(context, keyInfo)) {
 
                 AppCtx.getAsyncOps().doSaveToRedis(context, keyInfo);
 
@@ -274,7 +274,7 @@ public class RdbcacheApis {
 
         if (key.equals("*")) {
 
-            AppCtx.getDbaseRepo().findOne(context, keyInfo);
+            AppCtx.getDbaseRepo().find(context, keyInfo);
             AppCtx.getAsyncOps().doSaveToRedis(ctx, keyInfo);
 
         } else if (AppCtx.getRedisRepo().findAndSave(context, keyInfo)) {
@@ -283,7 +283,7 @@ public class RdbcacheApis {
 
         } else {
 
-            AppCtx.getDbaseRepo().findOne(context, keyInfo);
+            AppCtx.getDbaseRepo().find(context, keyInfo);
             AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
 
         }
@@ -325,7 +325,7 @@ public class RdbcacheApis {
 
         if (key.equals("*")) {
 
-            AppCtx.getDbaseRepo().findOne(context, keyInfo);
+            AppCtx.getDbaseRepo().find(context, keyInfo);
             AppCtx.getAsyncOps().doSaveToRedisAndDbase(ctx, keyInfo);
 
         } else if (AppCtx.getRedisRepo().findAndSave(context, keyInfo)) {
@@ -334,7 +334,7 @@ public class RdbcacheApis {
 
         } else {
 
-            AppCtx.getDbaseRepo().findOne(context, keyInfo);
+            AppCtx.getDbaseRepo().find(context, keyInfo);
             AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
 
         }
@@ -383,7 +383,7 @@ public class RdbcacheApis {
             pairs.add(pair);
         }
 
-        AppCtx.getRedisRepo().findAll(context, keyInfo);
+        AppCtx.getRedisRepo().find(context, keyInfo);
 
         List<KvPair> redisPairs = new ArrayList<KvPair>();
         List<KvPair> dbPairs = new ArrayList<KvPair>();
@@ -393,9 +393,10 @@ public class RdbcacheApis {
             if (!pair.hasContent()) {
 
                 Context ctx = context.getCopyWith(pair);
-                KeyInfo dbKeyInfo = AppCtx.getKeyInfoRepo().findOne(ctx);
+                KeyInfo dbKeyInfo = new KeyInfo();
 
-                if (dbKeyInfo != null && AppCtx.getDbaseRepo().findOne(ctx, dbKeyInfo)) {
+                if (AppCtx.getKeyInfoRepo().find(ctx, dbKeyInfo) &&
+                    AppCtx.getDbaseRepo().find(ctx, dbKeyInfo)) {
                     dbPairs.add(pair);
                 }
 
@@ -646,9 +647,9 @@ public class RdbcacheApis {
         Context context = new Context(true);
         KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
 
-        if (!AppCtx.getDbaseRepo().findAll(context, keyInfo)) {
+        if (!AppCtx.getDbaseRepo().find(context, keyInfo)) {
 
-            LOGGER.debug("findAll: no record found from database");
+            LOGGER.debug("find: no record found from database");
 
         } else {
 
@@ -700,7 +701,7 @@ public class RdbcacheApis {
             pairs.add(pair);
         }
 
-        if (!AppCtx.getDbaseRepo().findAll(context, keyInfo)) {
+        if (!AppCtx.getDbaseRepo().find(context, keyInfo)) {
 
             LOGGER.debug("findAll: no record found from database");
 

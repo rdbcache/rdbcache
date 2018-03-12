@@ -13,15 +13,13 @@ import java.util.List;
 
 public interface KeyInfoRepo {
 
-    public KeyInfo findOne(Context context);
+    public boolean find(Context context, KeyInfo keyInfo);
 
-    public List<KeyInfo> findAll(Context context);
+    public boolean find(Context context, List<KeyInfo> keyInfos);
 
-    public void saveOne(Context context, KeyInfo keyInfo);
+    public boolean save(Context context, KeyInfo keyInfo);
 
-    public void saveAll(Context context, List<KeyInfo> keyInfos);
+    public boolean save(Context context, List<KeyInfo> keyInfos);
 
-    public void deleteOne(Context context, boolean dbOps);
-
-    public void deleteAll(Context context, boolean dbOps);
+    public void delete(Context context, boolean dbOps);
 }

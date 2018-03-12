@@ -43,26 +43,35 @@ public class Query {
     public static boolean readyForQuery(Context context, KeyInfo keyInfo, boolean insertOnly, boolean forQuery) {
 
         String queryKey = keyInfo.getQueryKey();
+
+        // null means worked on it, conclusion is not for any query
         if (queryKey == null) return false;
+
         String table = keyInfo.getTable();
         if (table != null && insertOnly) return true;
+
         String clause = keyInfo.getClause();
         List<Object> params = keyInfo.getParams();
-        if (table != null && clause != null && params != null) return true;
+        if (table != null && params != null && clause != null && clause.length() > 0) return true;
 
-        KeyInfo keyInfoFound = AppCtx.getKeyInfoRepo().findOne(context);
+        KeyInfo keyInfoFound = new KeyInfo();
+        if (AppCtx.getKeyInfoRepo().find(context, keyInfoFound)) {
 
-        if (keyInfoFound != null) {
             keyInfo.copyQueryInfo(keyInfoFound);
+
             queryKey = keyInfo.getQueryKey();
             if (queryKey == null) return false;
+
             table = keyInfo.getTable();
             if (table == null) return false;
+
             if (insertOnly) return true;
+
             clause = keyInfo.getClause();
             params = keyInfo.getParams();
-            if (table != null && clause != null && params != null) return true;
-            if (keyInfo.getQueryInfo() == null) return false;
+            if (table != null && params != null && clause != null  && clause.length() > 0) {
+                return true;
+            }
         }
 
         if (insertOnly) return false;
@@ -76,6 +85,7 @@ public class Query {
                 return true;
             }
         }
+
         return prepareClauseParams(context, keyInfo);
     }
 
@@ -100,12 +110,16 @@ public class Query {
     }
 
     public static List<String> fetchIndexes(Context context, KeyInfo keyInfo) {
+        if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
+            return null;
+        }
         List<String> indexes = keyInfo.getIndexes();
         if ( indexes != null) {
             return indexes;
         }
         Map<String, Object> map = AppCtx.getDbaseOps().getTableIndexes(context, keyInfo.getTable());
         if (map == null || map.size() == 0) {
+            keyInfo.setQueryKey(null);
             return null;
         }
         if (map.containsKey("PRIMARY")) {
@@ -121,16 +135,25 @@ public class Query {
     }
 
     public static Map<String, Object> fetchColumns(Context context, KeyInfo keyInfo) {
+        if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
+            return null;
+        }
         Map<String, Object> columns = keyInfo.getColumns();
         if (columns != null) {
             return columns;
         }
         columns = AppCtx.getDbaseOps().getTableColumns(context, keyInfo.getTable());
         keyInfo.setColumns(columns);
+        if (columns == null) {
+            keyInfo.setQueryKey(null);
+        }
         return columns;
     }
 
     public static boolean fetchClauseParams(Context context, KeyInfo keyInfo, Map<String, Object> map, String defaultValue) {
+        if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
+            return false;
+        }
         String clause = keyInfo.getClause();
         if (clause == null) {
             return false;
@@ -138,6 +161,7 @@ public class Query {
         List<String> indexes = fetchIndexes(context, keyInfo);
         if (indexes == null) {
             keyInfo.setClause(null);
+            keyInfo.setQueryKey(null);
             return false;
         }
         List<Object> params = keyInfo.getParams();
@@ -183,11 +207,13 @@ public class Query {
             return stdClause;
         }
         if (keyInfo.getClause() == null) {
+            keyInfo.setQueryKey(null);
             return null;
         }
         List<String> indexes = fetchIndexes(context, keyInfo);
         if (indexes == null) {
             keyInfo.setClause(null);
+            keyInfo.setQueryKey(null);
             return null;
         }
         stdClause = "";

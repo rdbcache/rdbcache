@@ -21,7 +21,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 
 @RestController
-@Profile({"dev", "test"})
+@Profile({"dev", "test", "prod"})
 public class TestInspectApis {
 
     /**
@@ -172,7 +172,7 @@ public class TestInspectApis {
         return Response.send(context, data);
     }
 
-    private static List<String> ignoreMethodList = Arrays.asList(new String[] {
+    private static List<String> ignoreMethodList = Arrays.asList(
             "isFrozen", "getCallbacks", "getTargetSource", "getTargetClass",
             "getProxiedInterfaces", "getAdvisors", "isProxyTargetClass",
             "isExposeProxy", "isPreFiltered", "getDecoratedClass", "getClass",
@@ -180,7 +180,7 @@ public class TestInspectApis {
             "getUncaughtExceptionHandler", "getClassLoader", "getClientList", "getThreadGroup",
             "getApplicationListeners", "getBeanFactoryPostProcessors", "getProtocolResolvers",
             "getParentLogger"
-    });
+    );
 
     /**
      * query AppCtx
