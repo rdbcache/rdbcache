@@ -7,10 +7,13 @@
 package com.rdbcache.services;
 
 import com.rdbcache.exceptions.ServerErrorException;
+import com.rdbcache.helpers.AnyKey;
+import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 
+import com.rdbcache.models.KvPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -259,6 +262,22 @@ public class LocalCache extends Thread {
             if (key.startsWith("key::")) {
                 cache.remove(key);
             }
+        }
+    }
+
+    public void updateContextData(Context context, AnyKey anyKey) {
+        List<KvPair> pairs = context.getPairs();
+        for (int i = 0; i < pairs.size(); i++) {
+            KvPair pair = pairs.get(i);
+            updateData(pair.getId(), pair.getData(), anyKey.getAny(i));
+        }
+    }
+
+    public void putContextData(Context context, AnyKey anyKey) {
+        List<KvPair> pairs = context.getPairs();
+        for (int i = 0; i < pairs.size(); i++) {
+            KvPair pair = pairs.get(i);
+            putData(pair.getId(), pair.getData(), anyKey.getAny(i));
         }
     }
 

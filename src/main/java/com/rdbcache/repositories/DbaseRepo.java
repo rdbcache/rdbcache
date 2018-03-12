@@ -6,18 +6,18 @@
 
 package com.rdbcache.repositories;
 
+import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.Context;
-import com.rdbcache.models.KeyInfo;
 
 public interface DbaseRepo {
 
-    public boolean find(Context context, KeyInfo keyInfo);
+    public boolean find(Context context, AnyKey anyKey);
 
-    public boolean save(Context context, KeyInfo keyInfo);
+    public boolean save(Context context, AnyKey anyKey);
 
-    public boolean insert(Context context, KeyInfo keyInfo);
+    public boolean insert(Context context, AnyKey anyKey);
 
-    public boolean update(Context context, KeyInfo keyInfo);
+    public boolean update(Context context, AnyKey anyKey);
 
-    public boolean delete(Context context, KeyInfo keyInfo);
+    public boolean delete(Context context, AnyKey anyKey);
 }

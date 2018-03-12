@@ -79,8 +79,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         this.hkeyPrefix = hkeyPrefix;
     }
 
-    @Override
-    public boolean find(Context context, KeyInfo keyInfo) {
+    private boolean findOne(Context context, KeyInfo keyInfo) {
 
         KvPair pair = context.getPair();
         if (pair == null) {
@@ -144,7 +143,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     }
 
     @Override
-    public boolean find(Context context, List<KeyInfo> keyInfos) {
+    public boolean find(Context context, AnyKey anyKey) {
 
         List<KvPair> pairs = context.getPairs();
 
@@ -152,6 +151,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         if (pairs.size() == 0) {
             return false;
+        }
+
+        if (pairs.size() == 1 || anyKey.size() == 1) {
+            return findOne(context, anyKey.getAny());
         }
 
         List<String> keys = new ArrayList<String>();
@@ -164,19 +167,20 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             String key = pair.getId();
             keys.add(key);
 
-            KeyInfo keyInfo = null;
-
             if (enableLocalCache) {
-                keyInfo = AppCtx.getLocalCache().getKeyInfo(key);
-                keyInfos.add(keyInfo);
-            }
 
-            if (keyInfo == null) {
-                foundAll = false;
-                if (enableRedisCache) {
-                    redisKeys.add(key);
-                } else {
-                    idTypes.add(new KvIdType(key, "info"));
+                KeyInfo keyInfo = AppCtx.getLocalCache().getKeyInfo(key);
+                anyKey.add(keyInfo);
+
+                if (keyInfo == null) {
+
+                    foundAll = false;
+
+                    if (enableRedisCache) {
+                        redisKeys.add(key);
+                    } else {
+                        idTypes.add(new KvIdType(key, "info"));
+                    }
                 }
             }
         }
@@ -201,8 +205,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 String key = redisKeys.get(i);
                 KeyInfo keyInfo = redisKeyInfos.get(i);
 
-                for (; index < keyInfos.size(); index++) {
-                    if (keyInfos.get(index) == null) {
+                for (; index < anyKey.size(); index++) {
+                    if (!anyKey.hasKey(index)) {
                         break;
                     }
                 }
@@ -214,7 +218,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                     if (enableLocalCache) {
                         AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
                     }
-                    keyInfos.set(index, keyInfo);
+                    anyKey.setKey(index, keyInfo);
                 }
             }
 
@@ -241,7 +245,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             int index = keys.indexOf(key);
             keys.set(index, null);
-            keyInfos.set(index, keyInfo);
+            anyKey.setKey(index, keyInfo);
 
             if (enableLocalCache) {
                 AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
@@ -265,6 +269,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         return true;
     }
 
+    /*
     @Override
     public boolean save(Context context, KeyInfo keyInfo) {
 
@@ -337,15 +342,16 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         return true;
     }
+    */
 
     @Override
-    public boolean save(Context context, List<KeyInfo> keyInfos) {
+    public boolean save(Context context, AnyKey anyKey) {
 
         List<KvPair> pairs = context.getPairs();
 
-        LOGGER.trace("save: " + pairs.size() + " keyInfos: " + keyInfos.size());
+        LOGGER.trace("save: " + pairs.size() + " keyInfos: " + anyKey.size());
 
-        if (pairs.size() == 0 || keyInfos.size() == 0) {
+        if (pairs.size() == 0 || anyKey.size() == 0) {
             return false;
         }
 
@@ -355,7 +361,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         int i = 0;
         for (KvPair pair: pairs) {
 
-            KeyInfo keyInfo = keyInfos.get(i++);
+            KeyInfo keyInfo = anyKey.getAny(i++);
 
             if (!keyInfo.getIsNew()) {
                 LOGGER.warn("save KeyInfo is not new");

@@ -7,6 +7,7 @@
 package com.rdbcache.repositories.impls;
 
 import com.rdbcache.exceptions.ServerErrorException;
+import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
@@ -82,11 +83,11 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public boolean ifExits(Context context, KeyInfo keyInfo) {
+    public boolean ifExits(Context context, AnyKey anyKey) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
-        String table = keyInfo.getTable();
+        String table = anyKey.getKey().getTable();
 
         LOGGER.trace("ifExits: " + key + " table: " + table);
 
@@ -182,11 +183,11 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public boolean updateIfExists(Context context, KeyInfo keyInfo) {
+    public boolean updateIfExists(Context context, AnyKey anyKey) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
-        String table = keyInfo.getTable();
+        String table = anyKey.getKey().getTable();
 
         LOGGER.trace("updateIfExists: " + key + " table: " + table);
 
@@ -198,11 +199,11 @@ public class RedisRepoImpl implements RedisRepo {
 
         if (!result) return false;
 
-        Map<String, Object> map = pair.getData();
-
         if (enableLocalCache) {
-            AppCtx.getLocalCache().updateData(key, map, keyInfo);
+            AppCtx.getLocalCache().updateContextData(context, anyKey);
         }
+
+        Map<String, Object> map = pair.getData();
 
         stopWatch = context.startStopWatch("redis", "hashOps.putAll");
         try {
@@ -224,18 +225,19 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public boolean find(Context context, KeyInfo keyInfo) {
+    public boolean find(Context context, AnyKey anyKey) {
 
         List<KvPair> pairs = context.getPairs();
 
         if (pairs.size() == 1) {
-            return findOne(context, keyInfo);
+            return findOne(context, anyKey.getKey());
         }
 
-        String table = keyInfo.getTable();
+        String table = anyKey.getKey().getTable();
 
         LOGGER.trace("find: " + pairs.size() + " table: " + table);
 
+        int i = 0;
         boolean foundAll = true;
         for (KvPair pair: pairs) {
 
@@ -255,7 +257,7 @@ public class RedisRepoImpl implements RedisRepo {
                     if (stopWatch != null) stopWatch.stopNow();
 
                     if (enableLocalCache) {
-                        AppCtx.getLocalCache().putData(key, map, keyInfo);
+                        AppCtx.getLocalCache().putData(key, map, anyKey.getAny(i++));
                     }
 
                 } catch (Exception e) {
@@ -280,18 +282,19 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public boolean save(Context context, KeyInfo keyInfo) {
+    public boolean save(Context context, AnyKey anyKey) {
 
         List<KvPair> pairs = context.getPairs();
 
         if (pairs.size() == 1) {
-            return saveOne(context, keyInfo);
+            return saveOne(context, anyKey.getKey());
         }
 
-        String table = keyInfo.getTable();
+        String table = anyKey.getKey().getTable();
 
         LOGGER.trace("save: " + pairs.size() + " table: " + table);
 
+        int i = 0;
         boolean savedAll = true;
         for (KvPair pair: pairs) {
 
@@ -300,7 +303,7 @@ public class RedisRepoImpl implements RedisRepo {
             Map<String, Object> map = pair.getData();
 
             if (enableLocalCache) {
-                AppCtx.getLocalCache().putData(key, map, keyInfo);
+                AppCtx.getLocalCache().putData(key, map, anyKey.getAny(i++));
             }
 
             StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
@@ -326,11 +329,11 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public boolean findAndSave(Context context, KeyInfo keyInfo) {
+    public boolean findAndSave(Context context, AnyKey anyKey) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
-        String table =  keyInfo.getTable();
+        String table =  anyKey.getKey().getTable();
 
         LOGGER.trace("findAndSave: " + key + " table: " + table);
 
@@ -361,7 +364,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         try {
             if (enableLocalCache) {
-                AppCtx.getLocalCache().putData(key, map, keyInfo);
+                AppCtx.getLocalCache().putData(key, map, anyKey.getKey());
             }
 
             stopWatch = context.startStopWatch("redis", "hashOps.putAll");
@@ -391,15 +394,15 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public void delete(Context context, KeyInfo keyInfo) {
+    public void delete(Context context, AnyKey anyKey) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
-        String table = keyInfo.getTable();
+        String table = anyKey.getKey().getTable();
 
         LOGGER.trace("delete: " + key + " table: " + table);
 
-        deleteExpireEvents(context, keyInfo);
+        deleteExpireEvents(context, anyKey.getKey());
 
         AppCtx.getKeyInfoRepo().delete(context, false);
 
@@ -416,15 +419,15 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public void deleteCompletely(Context context, KeyInfo keyInfo) {
+    public void deleteCompletely(Context context, AnyKey anyKey) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
-        String table = keyInfo.getTable();
+        String table = anyKey.getKey().getTable();
 
         LOGGER.debug("deleteCompletely: " + key + " table: " + table);
 
-        delete(context, keyInfo);
+        delete(context, anyKey);
 
         StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.delete");
         AppCtx.getKvPairRepo().delete(new KvIdType(key, "info"));

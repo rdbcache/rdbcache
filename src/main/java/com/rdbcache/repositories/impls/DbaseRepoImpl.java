@@ -118,7 +118,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
                     Query.fetchClauseParams(context, keyInfo, map, key);
 
-                    AppCtx.getKeyInfoRepo().save(context, keyInfo);
+                    AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfo));
 
                     final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
                     if (finalQueryInfo != null) {
@@ -161,7 +161,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         setUseDefaultTable(keyInfo);
         pair.setData(dbPair.getData());
 
-        AppCtx.getKeyInfoRepo().save(context, keyInfo);
+        AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfo));
 
         LOGGER.debug("found from default table for " + key);
 
@@ -169,25 +169,27 @@ public class DbaseRepoImpl implements DbaseRepo {
     }
 
     @Override
-    public boolean find(Context context, KeyInfo keyInfo) {
+    public boolean find(Context context, AnyKey anyKey) {
 
         List<KvPair> pairs = context.getPairs();
 
         if (pairs.size() == 1) {
-            return findOne(context, keyInfo);
+            return findOne(context, anyKey.getKey());
         }
 
-        String table = keyInfo.getTable();
+        String table = anyKey.getKey().getTable();
 
         LOGGER.trace("find: " + pairs.size() + " table: " + table);
 
         if (table == null) {
             if (pairs.size() == 1) {
-                return kvFindOne(context, keyInfo);
+                return kvFindOne(context, anyKey.getKey());
             } else {
-                return kvFindAll(context, keyInfo);
+                return kvFindAll(context, anyKey.getKey());
             }
         }
+
+        KeyInfo keyInfo = anyKey.getKey();
 
         Map<String, Object> columns = Query.fetchColumns(context, keyInfo);
         List<String> indexes = Query.fetchIndexes(context, keyInfo);
@@ -246,7 +248,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
                     keyInfos.add(keyInfoPer);
                 }
-                AppCtx.getKeyInfoRepo().save(context, keyInfos);
+                AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfos));
 
                 keyInfo.setIsNew(false);
                 final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
@@ -292,7 +294,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         setUseDefaultTable(keyInfo);
         pair.setData(dbPair.getData());
 
-        AppCtx.getKeyInfoRepo().save(context, keyInfo);
+        AppCtx.getKeyInfoRepo().save(context,  new AnyKey(keyInfo));
 
         LOGGER.debug("found from default table for " + key);
 
@@ -358,7 +360,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             keyInfos.add(keyInfo);
         }
 
-        AppCtx.getKeyInfoRepo().save(context, keyInfos);
+        AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfos));
 
         return true;
     }
@@ -404,7 +406,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                         AppCtx.getLocalCache().updateData(key, map, keyInfo);
                     }
                     if (enableRedisCache) {
-                        AppCtx.getRedisRepo().updateIfExists(context, keyInfo);
+                        AppCtx.getRedisRepo().updateIfExists(context, new AnyKey(keyInfo));
                     }
                 }
 
@@ -435,17 +437,19 @@ public class DbaseRepoImpl implements DbaseRepo {
             Query.fetchClauseParams(context, keyInfo, dbMap, key);
         }
 
-        return update(context, keyInfo);
+        return update(context, new AnyKey(keyInfo));
     }
 
     @Override
-    public boolean save(Context context, KeyInfo keyInfo) {
+    public boolean save(Context context, AnyKey anyKey) {
 
         List<KvPair> pairs = context.getPairs();
+        KeyInfo keyInfo = anyKey.getKey();
 
         if (pairs.size() == 1) {
             return saveOne(context, keyInfo);
         }
+
 
         String table = keyInfo.getTable();
 
@@ -478,8 +482,8 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             // get it from database
             Context dbCtx = context.getCopyWith(key);
-            if (!find(dbCtx, keyInfoPer)) {
-                insert(contextPer, keyInfoPer);
+            if (!find(dbCtx, new AnyKey(keyInfoPer))) {
+                insert(contextPer, new AnyKey(keyInfoPer));
                 continue;
             }
 
@@ -504,7 +508,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                             AppCtx.getLocalCache().updateData(key, map, keyInfoPer);
                         }
                         if (enableRedisCache) {
-                            AppCtx.getRedisRepo().updateIfExists(contextPer, keyInfoPer);
+                            AppCtx.getRedisRepo().updateIfExists(contextPer, new AnyKey(keyInfoPer));
                         }
                     }
 
@@ -534,7 +538,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 Query.fetchClauseParams(contextPer, keyInfoPer, dbMap, key);
             }
 
-            update(context, keyInfoPer);
+            update(context, new AnyKey(keyInfoPer));
         }
         return true;
     }
@@ -616,11 +620,11 @@ public class DbaseRepoImpl implements DbaseRepo {
                         AppCtx.getLocalCache().putData(key, map, keyInfo);
                     }
                     if (enableRedisCache) {
-                        AppCtx.getRedisRepo().save(context, keyInfo);
+                        AppCtx.getRedisRepo().save(context, new AnyKey(keyInfo));
                     }
                 }
                 Query.fetchClauseParams(context, keyInfo, map, key);
-                AppCtx.getKeyInfoRepo().save(context, keyInfo);
+                AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfo));
 
                 keyInfo.setQueryInfo(null);
                 LOGGER.debug("insert ok: " + table + " for " + pair.getId());
@@ -643,15 +647,16 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         setUseDefaultTable(keyInfo);
 
-        AppCtx.getKeyInfoRepo().save(context, keyInfo);
+        AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfo));
 
         return true;
     }
 
     @Override
-    public boolean insert(Context context, KeyInfo keyInfo) {
+    public boolean insert(Context context, AnyKey anyKey) {
 
         List<KvPair> pairs = context.getPairs();
+        KeyInfo keyInfo = anyKey.getKey();
 
         if (pairs.size() == 1) {
             return insertOne(context, keyInfo);
@@ -672,7 +677,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 for (KvPair pair: pairs) {
                     keyInfos.add(new KeyInfo(keyInfo.getExpire()));
                 }
-                AppCtx.getKeyInfoRepo().save(context, keyInfos);
+                AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfos));
 
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
@@ -764,23 +769,24 @@ public class DbaseRepoImpl implements DbaseRepo {
                         AppCtx.getLocalCache().putData(key, map, keyInfoPer);
                     }
                     if (enableRedisCache) {
-                        AppCtx.getRedisRepo().save(ctx, keyInfoPer);
+                        AppCtx.getRedisRepo().save(ctx, new AnyKey(keyInfoPer));
                     }
                 }
                 Query.fetchClauseParams(ctx, keyInfoPer, map, pair.getId());
             }
         }
 
-        AppCtx.getKeyInfoRepo().save(context, keyInfos);
+        AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfos));
 
         return true;
     }
 
     @Override
-    public boolean update(Context context, KeyInfo keyInfo) {
+    public boolean update(Context context, AnyKey anyKey) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
+        KeyInfo keyInfo = anyKey.getKey();
         String table = keyInfo.getTable();
 
         LOGGER.trace("update: " + key + " table: " + table);
@@ -818,7 +824,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
                         LOGGER.debug("update to " + table + " ok for " + key);
 
-                        AppCtx.getKeyInfoRepo().save(context, keyInfo);
+                        AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfo));
 
                         final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
                         if (finalQueryInfo != null) {
@@ -862,16 +868,17 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         setUseDefaultTable(keyInfo);
 
-        AppCtx.getKeyInfoRepo().save(context, keyInfo);
+        AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfo));
 
         return true;
     }
 
     @Override
-    public boolean delete(Context context, KeyInfo keyInfo) {
+    public boolean delete(Context context, AnyKey anyKey) {
 
         KvPair pair = context.getPair();
         String key = pair.getId();
+        KeyInfo keyInfo = anyKey.getKey();
         String table = keyInfo.getTable();
 
         LOGGER.trace("delete: " + key + " table: " + table);

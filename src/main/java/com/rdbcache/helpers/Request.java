@@ -26,12 +26,12 @@ public class Request {
 
     private static Pattern expPattern = Pattern.compile("([0-9]+|-[0-9]+|\\+[0-9]+)");
 
-    public static KeyInfo process(Context context, HttpServletRequest request) {
+    public static AnyKey process(Context context, HttpServletRequest request) {
         return process(context, request, null, null, null);
     }
 
-    public static KeyInfo process(Context context, HttpServletRequest request, String key,
-            Optional<String> opt1, Optional<String> opt2) {
+    public static AnyKey process(Context context, HttpServletRequest request, String key,
+                                 Optional<String> opt1, Optional<String> opt2) {
 
         if (PropCfg.getEnableMonitor()) context.enableMonitor(request);
 
@@ -39,14 +39,15 @@ public class Request {
             return null;
         }
 
-        KeyInfo keyInfo = new KeyInfo();
-        if (key != null) {
-            if (!key.equals("*")) {
-                AppCtx.getKeyInfoRepo().find(context, keyInfo);
-            } else {
-                keyInfo.setGeneratedKey(true);
-            }
+        AnyKey anyKey = new AnyKey();
+
+        if (key != null && !key.equals("*")) {
+            AppCtx.getKeyInfoRepo().find(context, anyKey);
         }
+
+        KeyInfo keyInfo = anyKey.getAny();
+
+        keyInfo.setGeneratedKey(key != null && key.equals("*"));
 
         String[] opts = {null, null}; // {expire, table}
 
@@ -92,7 +93,7 @@ public class Request {
         LOGGER.debug("URI: "+ request.getRequestURI());
         LOGGER.trace("key: " + key + " " + (keyInfo == null ? "" : keyInfo.toString()));
 
-        return keyInfo;
+        return anyKey;
     }
 
     private static void assignOption(Context context, String opt, String[] opts) {

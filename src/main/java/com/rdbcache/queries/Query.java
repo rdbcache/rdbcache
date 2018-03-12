@@ -7,6 +7,7 @@
 package com.rdbcache.queries;
 
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvIdType;
@@ -54,10 +55,11 @@ public class Query {
         List<Object> params = keyInfo.getParams();
         if (table != null && params != null && clause != null && clause.length() > 0) return true;
 
-        KeyInfo keyInfoFound = new KeyInfo();
-        if (AppCtx.getKeyInfoRepo().find(context, keyInfoFound)) {
+        KeyInfo keyFound = new KeyInfo();
+        AnyKey anyKeyFound = new AnyKey(keyFound);
+        if (AppCtx.getKeyInfoRepo().find(context, anyKeyFound)) {
 
-            keyInfo.copyQueryInfo(keyInfoFound);
+            keyInfo.copyQueryInfo(keyFound);
 
             queryKey = keyInfo.getQueryKey();
             if (queryKey == null) return false;

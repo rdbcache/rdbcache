@@ -81,13 +81,13 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt2) {
 
         Context context = new Context(key, true);
-        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         if (key.equals("*")) {
 
-            if (AppCtx.getDbaseRepo().find(context, keyInfo)) {
+            if (AppCtx.getDbaseRepo().find(context, anyKey)) {
 
-                AppCtx.getAsyncOps().doSaveToRedis(context, keyInfo);
+                AppCtx.getAsyncOps().doSaveToRedis(context, anyKey);
 
             } else {
 
@@ -96,13 +96,13 @@ public class RdbcacheApis {
             }
         } else {
 
-            if (AppCtx.getRedisRepo().find(context, keyInfo)) {
+            if (AppCtx.getRedisRepo().find(context, anyKey)) {
 
-                AppCtx.getAsyncOps().doSaveToDbase(context, keyInfo);
+                AppCtx.getAsyncOps().doSaveToDbase(context, anyKey);
 
-            } else if (AppCtx.getDbaseRepo().find(context, keyInfo)) {
+            } else if (AppCtx.getDbaseRepo().find(context, anyKey)) {
 
-                AppCtx.getAsyncOps().doSaveToRedis(context, keyInfo);
+                AppCtx.getAsyncOps().doSaveToRedis(context, anyKey);
 
             } else {
 
@@ -139,14 +139,13 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt2) {
 
         Context context = new Context(key, value, false);
-        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         if (enableLocalCache) {
-            KvPair pair = context.getPair();
-            AppCtx.getLocalCache().putData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
+            AppCtx.getLocalCache().putContextData(context, anyKey);
         }
 
-        AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
+        AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, anyKey);
 
         return Response.send(context);
     }
@@ -180,14 +179,13 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(key, value, false);
-        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         if (enableLocalCache) {
-            KvPair pair = context.getPair();
-            AppCtx.getLocalCache().putData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
+            AppCtx.getLocalCache().putContextData(context, anyKey);
         }
 
-        AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
+        AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, anyKey);
 
         return Response.send(context);
     }
@@ -220,20 +218,19 @@ public class RdbcacheApis {
             throw new BadRequestException("missing request body");
         }
         Context context = new Context(key, value, false);
-        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         if (key.equals("*")) {
 
-            AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, keyInfo);
+            AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, anyKey);
 
         } else {
 
             if (enableLocalCache) {
-                KvPair pair = context.getPair();
-                AppCtx.getLocalCache().updateData(pair.getId(), (Map<String, Object>) pair.getData(), keyInfo);
+                AppCtx.getLocalCache().updateContextData(context, anyKey);
             }
 
-            AppCtx.getAsyncOps().doPutOperation(context, keyInfo);
+            AppCtx.getAsyncOps().doPutOperation(context, anyKey);
 
         }
         return Response.send(context);
@@ -268,23 +265,23 @@ public class RdbcacheApis {
             throw new BadRequestException("missing value");
         }
         Context context = new Context(key, value, true);
-        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         Context ctx = context.getCopyWith(key, value);
 
         if (key.equals("*")) {
 
-            AppCtx.getDbaseRepo().find(context, keyInfo);
-            AppCtx.getAsyncOps().doSaveToRedis(ctx, keyInfo);
+            AppCtx.getDbaseRepo().find(context, anyKey);
+            AppCtx.getAsyncOps().doSaveToRedis(ctx, anyKey);
 
-        } else if (AppCtx.getRedisRepo().findAndSave(context, keyInfo)) {
+        } else if (AppCtx.getRedisRepo().findAndSave(context, anyKey)) {
 
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
+            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
 
         } else {
 
-            AppCtx.getDbaseRepo().find(context, keyInfo);
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
+            AppCtx.getDbaseRepo().find(context, anyKey);
+            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
 
         }
         return Response.send(context);
@@ -319,23 +316,23 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(key, value, true);
-        KeyInfo keyInfo = Request.process(context, request, key, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         Context ctx = context.getCopyWith(key, value);
 
         if (key.equals("*")) {
 
-            AppCtx.getDbaseRepo().find(context, keyInfo);
-            AppCtx.getAsyncOps().doSaveToRedisAndDbase(ctx, keyInfo);
+            AppCtx.getDbaseRepo().find(context, anyKey);
+            AppCtx.getAsyncOps().doSaveToRedisAndDbase(ctx, anyKey);
 
-        } else if (AppCtx.getRedisRepo().findAndSave(context, keyInfo)) {
+        } else if (AppCtx.getRedisRepo().findAndSave(context, anyKey)) {
 
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
+            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
 
         } else {
 
-            AppCtx.getDbaseRepo().find(context, keyInfo);
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
+            AppCtx.getDbaseRepo().find(context, anyKey);
+            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
 
         }
         return Response.send(context);
@@ -374,8 +371,8 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(true);
-        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
-        keyInfo.setIsNew(false);
+        AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
+        anyKey.getKey().setIsNew(false);
         List<KvPair> pairs = context.getPairs();
 
         for (String key: keys) {
@@ -383,7 +380,7 @@ public class RdbcacheApis {
             pairs.add(pair);
         }
 
-        AppCtx.getRedisRepo().find(context, keyInfo);
+        AppCtx.getRedisRepo().find(context, anyKey);
 
         List<KvPair> redisPairs = new ArrayList<KvPair>();
         List<KvPair> dbPairs = new ArrayList<KvPair>();
@@ -395,8 +392,8 @@ public class RdbcacheApis {
                 Context ctx = context.getCopyWith(pair);
                 KeyInfo dbKeyInfo = new KeyInfo();
 
-                if (AppCtx.getKeyInfoRepo().find(ctx, dbKeyInfo) &&
-                    AppCtx.getDbaseRepo().find(ctx, dbKeyInfo)) {
+                if (AppCtx.getKeyInfoRepo().find(ctx, new AnyKey(dbKeyInfo)) &&
+                    AppCtx.getDbaseRepo().find(ctx, new AnyKey(dbKeyInfo))) {
                     dbPairs.add(pair);
                 }
 
@@ -408,14 +405,14 @@ public class RdbcacheApis {
         if (redisPairs.size() > 0) {
 
             Context ctx = context.getCopyWith(redisPairs);
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, keyInfo);
+            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
 
         }
 
         if (dbPairs.size() > 0) {
 
             Context ctx = context.getCopyWith(dbPairs);
-            AppCtx.getAsyncOps().doSaveToRedis(ctx, keyInfo);
+            AppCtx.getAsyncOps().doSaveToRedis(ctx, anyKey);
 
         }
 
@@ -456,8 +453,8 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(false);
-        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
-        keyInfo.setIsNew(false);
+        AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
+        anyKey.getKey().setIsNew(false);
         List<KvPair> pairs = context.getPairs();
 
         for (Map.Entry<String, Object> entry: map.entrySet()) {
@@ -472,7 +469,7 @@ public class RdbcacheApis {
             } else {
 
                 Map<String, Object> pmap = Utils.toMap(value.toString());
-                if (pmap == null && keyInfo.getTable() != null) {
+                if (pmap == null && anyKey.getKey().getTable() != null) {
                     throw new BadRequestException(context, "input for table is not a json");
                 } else if (pmap == null) {
 
@@ -486,7 +483,7 @@ public class RdbcacheApis {
             pairs.add(pair);
         }
 
-        AppCtx.getAsyncOps().doPushOperations(context, keyInfo);
+        AppCtx.getAsyncOps().doPushOperations(context, anyKey);
 
         return Response.send(context, true);
     }
@@ -645,15 +642,15 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(true);
-        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
 
-        if (!AppCtx.getDbaseRepo().find(context, keyInfo)) {
+        if (!AppCtx.getDbaseRepo().find(context, anyKey)) {
 
             LOGGER.debug("find: no record found from database");
 
         } else {
 
-            AppCtx.getAsyncOps().doSaveToRedis(context, keyInfo);
+            AppCtx.getAsyncOps().doSaveToRedis(context, anyKey);
 
         }
 
@@ -688,7 +685,7 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(true);
-        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
         List<KvPair> pairs = context.getPairs();
 
         for (String key: keys) {
@@ -701,13 +698,13 @@ public class RdbcacheApis {
             pairs.add(pair);
         }
 
-        if (!AppCtx.getDbaseRepo().find(context, keyInfo)) {
+        if (!AppCtx.getDbaseRepo().find(context, anyKey)) {
 
             LOGGER.debug("findAll: no record found from database");
 
         } else {
 
-            AppCtx.getAsyncOps().doSaveToRedis(context, keyInfo);
+            AppCtx.getAsyncOps().doSaveToRedis(context, anyKey);
 
         }
 
@@ -745,8 +742,8 @@ public class RdbcacheApis {
         }
 
         Context context = new Context(false);
-        KeyInfo keyInfo = Request.process(context, request, null, opt1, opt2);
-        keyInfo.setIsNew(false);
+        AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
+        anyKey.getKey().setIsNew(false);
         List<KvPair> pairs = context.getPairs();
 
         for (Map<String, Object> map: list) {
@@ -770,7 +767,7 @@ public class RdbcacheApis {
             pairs.add(pair);
         }
 
-        AppCtx.getAsyncOps().doSaveAllToRedisAnInsertAllTodDbase(context, keyInfo);
+        AppCtx.getAsyncOps().doSaveAllToRedisAnInsertAllTodDbase(context, anyKey);
 
         return Response.send(context, true);
     }

@@ -243,7 +243,7 @@ public class TestInspectApis {
 
                         if (type.indexOf('.') == -1 || type.startsWith("java.lang.") || type.startsWith("java.util.")) {
                             try {
-                                Object value = objMethod.invoke(object, null);
+                                Object value = objMethod.invoke(object);
                                 map.put(name, value);
                             } catch (Exception e) {
                                 System.out.println("Call " + beanName + "." + objFName);
