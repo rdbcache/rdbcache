@@ -192,7 +192,11 @@ public class KvPair implements Serializable {
     }
 
     public void setData(Map<String, Object> map) {
-        this.data = filterOutNull(map);;
+        data = filterOutNull(map);;
+    }
+
+    public void clearData() {
+        data.clear();;
     }
 
     public Object getMapValue() {

@@ -33,6 +33,8 @@ public class Request {
     public static AnyKey process(Context context, HttpServletRequest request, String key,
                                  Optional<String> opt1, Optional<String> opt2) {
 
+        LOGGER.debug("URI: "+ request.getRequestURI());
+
         if (PropCfg.getEnableMonitor()) context.enableMonitor(request);
 
         if (key == null && opt1 == null && opt2 == null) {
@@ -92,7 +94,6 @@ public class Request {
             }
         }
 
-        LOGGER.debug("URI: "+ request.getRequestURI());
         LOGGER.trace("key: " + key + " " + (keyInfo == null ? "" : keyInfo.toString()));
 
         return anyKey;

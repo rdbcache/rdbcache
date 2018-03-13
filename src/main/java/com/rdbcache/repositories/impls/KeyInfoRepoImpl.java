@@ -88,7 +88,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             return false;
         }
 
-        LOGGER.trace("find: " + pairs.getPair().getId() + (pairs.size() == 1 ? "" : "..."));
+        LOGGER.trace("find -> " + pairs.getPair().getId() + (pairs.size() == 1 ? "" : "..."));
 
         List<String> keys = new ArrayList<String>();
         List<String> redisKeys = new ArrayList<String>();
@@ -125,7 +125,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (foundAll) {
-            LOGGER.trace("found");
+            LOGGER.trace("found from local cache");
             return true;
         }
 
@@ -146,7 +146,6 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                     foundAll = false;
                     idTypes.add(new KvIdType(key, "info"));
                 } else {
-                    LOGGER.debug("found from redis");
 
                     AppCtx.getLocalCache().putKeyInfo(key, keyInfoRedis);
                     anyKey.set(0, keyInfoRedis);
@@ -177,7 +176,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
 
             if (foundAll) {
-                LOGGER.trace("found");
+                LOGGER.trace("found from redis");
                 return true;
             }
         }
@@ -229,7 +228,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
         }
 
-        LOGGER.trace(foundAll ? "found" : "not found");
+        LOGGER.trace(foundAll ? "found from database" : "not found");
+
         return foundAll;
     }
 
@@ -237,7 +237,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
 
         if (pairs.size() == 0 || anyKey.size() == 0) {
-            LOGGER.warn("save(" + pairs.size() + ") anyKey(" + anyKey.size() + ")");
+            LOGGER.debug("save(" + pairs.size() + ") anyKey(" + anyKey.size() + ")");
             return false;
         }
 
@@ -249,14 +249,19 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         int i = 0;
         for (KvPair pair: pairs) {
 
-            KeyInfo keyInfo = anyKey.getAny(i++);
+            String key = pair.getId();
 
-            if (!keyInfo.getIsNew()) {
-                LOGGER.warn("save KeyInfo is not new");
+            if (key == null || key.length() == 0) {
+                LOGGER.debug("save invalid key");
                 continue;
             }
 
-            String key = pair.getId();
+            KeyInfo keyInfo = anyKey.getAny(i++);
+
+            if (!keyInfo.getIsNew()) {
+                LOGGER.debug("save KeyInfo is not new, skip ...");
+                continue;
+            }
 
             if (enableLocalCache) {
 

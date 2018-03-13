@@ -122,6 +122,12 @@ public class ExpireOps {
 
             KvPair pair = pairs.get(i);
             String key = pair.getId();
+
+            if (key == null || key.length() == 0) {
+                LOGGER.trace("setExpireKey invalid key");
+                continue;
+            }
+
             KeyInfo keyInfo = anyKey.getAny(i);
 
             LOGGER.trace("setExpireKey: " + key + " expire: " + keyInfo.getExpire());
