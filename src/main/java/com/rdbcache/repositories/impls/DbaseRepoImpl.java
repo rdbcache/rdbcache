@@ -86,9 +86,217 @@ public class DbaseRepoImpl implements DbaseRepo {
         this.enableDbFallback = enableDbFallback;
     }
 
-    private boolean findOne(Context context, KvPair pair, KeyInfo keyInfo) {
+    @Override
+    public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
 
+        LOGGER.trace("find pairs(" + pairs.size() + ") anyKey(" + anyKey.size() + "): " + anyKey.getAny().toString());
+
+        if (anyKey.size() > 1) {
+            throw new ServerErrorException("unsupported condtion");
+        }
+
+        KvPair pair = pairs.getPair();
+        KeyInfo keyInfo = anyKey.getAny();
+        String table = keyInfo.getTable();
+
+        if (table != null && Query.readyForQuery(context, pair, keyInfo)) {
+
+            Map<String, Object> columns = Query.fetchColumns(context, keyInfo);
+            List<String> indexes = Query.fetchIndexes(context, keyInfo);
+
+            String clause = keyInfo.getClause();
+            List<Object> params = keyInfo.getParams();
+
+            String sql = "select * from " + table;
+
+            if (clause != null && clause.length() > 0) {
+                sql += " where " + clause;
+            }
+
+            int limit = getLimt(context, pairs, keyInfo);
+            if (limit > 0) {
+                sql += " limit " + limit;
+            }
+
+            StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
+            try {
+                List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, params.toArray());
+                if (stopWatch != null) stopWatch.stopNow();
+
+                if (list.size() > 0) {
+
+                    LOGGER.debug("found " + list.size() + " record(s) from " + table);
+
+                    AnyKey anyKeyNew = new AnyKey();
+
+                    for (int i = 0; i < list.size(); i++) {
+
+                        Map<String, Object> map = convertDbMap(columns, list.get(i));
+
+                        KvPair pairNew = null;
+                        if (i == pairs.size()) {
+                            pairNew = new KvPair(Utils.generateId(), map);
+                            pairs.add(pairNew);
+                        } else {
+                            pairNew = pairs.get(i);
+                            pairNew.setData(map);
+                        }
+
+                        KeyInfo keyInfoNew = new KeyInfo(keyInfo.getExpire(), table);
+
+                        keyInfoNew.setIndexes(indexes);
+                        keyInfoNew.setColumns(columns);
+                        Query.fetchClauseParams(context, keyInfoNew, map, pairNew.getId());
+                        keyInfoNew.setIsNew(true);
+
+                        anyKeyNew.add(keyInfoNew);
+                    }
+
+                    AppCtx.getKeyInfoRepo().save(context, pairs, anyKeyNew);
+
+                    keyInfo.setIsNew(false);
+                    final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
+                    if (finalQueryInfo != null) {
+                        keyInfo.setQueryInfo(null);
+                        Utils.getExcutorService().submit(() -> {
+                            Thread.yield();
+                            Query.save(context, finalQueryInfo);
+                        });
+                    }
+                    return true;
+
+                } else {
+
+                    LOGGER.debug("not found any record from " + table);
+                }
+
+            } catch (Exception e) {
+                if (stopWatch != null) stopWatch.stopNow();
+
+                String msg = e.getCause().getMessage();
+                LOGGER.error(msg);
+                context.logTraceMessage(msg);
+                e.printStackTrace();
+            }
+
+            String msg = "find fallbacked to default table for " + pair.getId();
+            LOGGER.warn(msg);
+            if (enableDbFallback) {
+                context.logTraceMessage(msg);
+            } else {
+                throw new BadRequestException(context, "failed to update database");
+            }
+        }
+
+        // otherwise find it from default table
+        //
+        if (pairs.size() == 1) {
+            return kvTableFindOne(context, pairs, anyKey);
+        } else {
+            return kvTableFindAll(context, pairs, anyKey);
+        }
+    }
+
+    private boolean kvTableFindOne(Context context, KvPairs pairs, AnyKey anyKey) {
+
+        KvPair pair = pairs.getPair();
         String key = pair.getId();
+
+        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
+        KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(key, "data"));
+        if (stopWatch != null) stopWatch.stopNow();
+
+        if (dbPair == null) {
+            LOGGER.debug("not found from default table for " + key);
+            return false;
+        }
+
+        KeyInfo keyInfo = anyKey.getAny();
+
+        setUseDefaultTable(keyInfo);
+
+        pair.setData(dbPair.getData());
+
+        AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
+
+        LOGGER.debug("found from default table for " + key);
+
+        return true;
+
+    }
+
+    private boolean kvTableFindAll(Context context, KvPairs pairs, AnyKey anyKey) {
+
+        KeyInfo keyInfo = anyKey.getAny();
+        QueryInfo queryInfo = keyInfo.getQueryInfo();
+        if (queryInfo == null) {
+            LOGGER.debug("no queryInfo");
+            return false;
+        }
+        Map<String, Condition> conditions = queryInfo.getConditions();
+        if (conditions == null ||
+                conditions.size() != 1 ||
+                !conditions.containsKey("key")) {
+            LOGGER.error("no conditions or not key only");
+            return false;
+        }
+        Condition condition = conditions.get("key");
+        if (condition == null ||
+                condition.size() != 1 ||
+                !condition.containsKey("=")) {
+            LOGGER.error("only = is supported");
+            return false;
+        }
+
+        List<String> keys = condition.get("=");
+        if (keys == null || keys.size() == 0) {
+            LOGGER.error("condition is empty");
+            return false;
+        }
+
+        List<KvIdType> idTypes = new ArrayList<KvIdType>();
+        for (String key : keys) {
+            KvIdType idType = new KvIdType(key, "data");
+            idTypes.add(idType);
+        }
+
+        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findAll");
+        Iterable<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
+        if (stopWatch != null) stopWatch.stopNow();
+
+        if (dbPairs == null && !dbPairs.iterator().hasNext()) {
+            return false;
+        }
+
+        final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
+        if (finalQueryInfo != null) {
+            keyInfo.setQueryInfo(null);
+            Utils.getExcutorService().submit(() -> {
+                Thread.yield();
+                Query.save(context, finalQueryInfo);
+            });
+        }
+
+        AnyKey anyKeyNew = new AnyKey();
+        for (KvPair dbPair : dbPairs) {
+            pairs.add(dbPair);
+            KeyInfo keyInfoNew = new KeyInfo(keyInfo.getExpire());
+            keyInfoNew.setIsNew(true);
+            anyKeyNew.add(keyInfoNew);
+        }
+
+        AppCtx.getKeyInfoRepo().save(context, pairs, anyKeyNew);
+
+        LOGGER.debug("found " + pairs.size() + " from default table");
+
+        return true;
+    }
+
+    private boolean findOne(Context context, KvPairs pairs, AnyKey anyKey) {
+
+        KvPair pair = pairs.getPair();
+        String key = pair.getId();
+        KeyInfo keyInfo = anyKey.getAny();
         String table = keyInfo.getTable();
 
         LOGGER.trace("findOne: " + key + " table: " + table);
@@ -167,203 +375,10 @@ public class DbaseRepoImpl implements DbaseRepo {
         return true;
     }
 
-    @Override
-    public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
+    private boolean saveOne(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        if (pairs.size() == 1) {
-            return findOne(context, pairs.getPair(), anyKey.getKey());
-        }
-
-        String table = anyKey.getKey().getTable();
-
-        LOGGER.trace("find: " + pairs.size() + " table: " + table);
-
-        if (table == null) {
-            if (pairs.size() == 1) {
-                return kvFindOne(context, pairs.getPair(), anyKey.getKey());
-            } else {
-                return kvFindAll(context, pairs, anyKey);
-            }
-        }
-
-        KeyInfo keyInfo = anyKey.getKey();
         KvPair pair = pairs.getPair();
-
-        Map<String, Object> columns = Query.fetchColumns(context, keyInfo);
-        List<String> indexes = Query.fetchIndexes(context, keyInfo);
-
-        if (!Query.readyForQuery(context, pair, keyInfo)) {
-            return false;
-        }
-
-        String clause = keyInfo.getClause();
-        List<Object> params = keyInfo.getParams();
-        System.out.println("keyInfo: "+Utils.toJson(keyInfo));
-        System.out.println("params: "+params.toString());
-
-        String sql = "select * from " + table;
-
-        if (clause != null && clause.length() > 0) {
-            sql += " where " + clause;
-        }
-
-        int limit = getLimt(context, pairs, keyInfo);
-        if (limit > 0) {
-            sql += " limit " + limit;
-        }
-        System.out.println("sql1: " + sql);
-        StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
-        try {
-            List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, params.toArray());
-            if (stopWatch != null) stopWatch.stopNow();
-
-
-            if (list.size() > 0) {
-
-                LOGGER.debug("found " + list.size() + " record(s) from " + table);
-
-                int size = pairs.size();
-                List<KeyInfo> keyInfos = new ArrayList<KeyInfo>();
-                KvPair pair2 = null;
-
-                for (int i = 0; i < list.size(); i++) {
-
-                    if (i >= size) {
-                        pair2 = new KvPair(Utils.generateId());
-                        pairs.add(pair2);
-                    } else {
-                        pair2 = pairs.get(i);
-                    }
-                    Map<String, Object> map = convertDbMap(columns, list.get(i));
-                    pair2.setData(map);
-
-                    KeyInfo keyInfoPer = new KeyInfo(keyInfo.getExpire(), table);
-
-                    keyInfoPer.setIndexes(indexes);
-                    keyInfoPer.setColumns(columns);
-                    Query.fetchClauseParams(context, keyInfoPer, map, pair2.getId());
-                    keyInfoPer.setIsNew(true);
-
-                    keyInfos.add(keyInfoPer);
-                }
-                AppCtx.getKeyInfoRepo().save(context, pairs, new AnyKey(keyInfos));
-
-                keyInfo.setIsNew(false);
-                final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
-                if (finalQueryInfo != null) {
-                    keyInfo.setQueryInfo(null);
-                    Utils.getExcutorService().submit(() -> {
-                        Thread.yield();
-                        Query.save(context, finalQueryInfo);
-                    });
-                }
-                return true;
-
-            } else {
-                LOGGER.debug("not found any record from " + table);
-            }
-
-        } catch (Exception e) {
-            if (stopWatch != null) stopWatch.stopNow();
-
-            String msg = e.getCause().getMessage();
-            LOGGER.error(msg);
-            context.logTraceMessage(msg);
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    private boolean kvFindOne(Context context, KvPair pair, KeyInfo keyInfo) {
-
-        String key = pair.getId();
-
-        // otherwise find it from default table
-        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
-        KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(key, "data"));
-        if (stopWatch != null) stopWatch.stopNow();
-
-        if (dbPair == null) {
-            LOGGER.debug("not found from default table for " + key);
-            return false;
-        }
-
-        setUseDefaultTable(keyInfo);
-        pair.setData(dbPair.getData());
-
-        AppCtx.getKeyInfoRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
-
-        LOGGER.debug("found from default table for " + key);
-
-        return true;
-
-    }
-
-    private boolean kvFindAll(Context context, KvPairs pairs, AnyKey anyKey) {
-
         KeyInfo keyInfo = anyKey.getAny();
-        QueryInfo queryInfo = keyInfo.getQueryInfo();
-        if (queryInfo == null) {
-            LOGGER.debug("no queryInfo");
-            return false;
-        }
-        Map<String, Condition> conditions = queryInfo.getConditions();
-        if (conditions == null ||
-                conditions.size() != 1 ||
-                !conditions.containsKey("key")) {
-            LOGGER.error("no conditions or not key only");
-            return false;
-        }
-        Condition condition = conditions.get("key");
-        if (condition == null ||
-                condition.size() != 1 ||
-                !condition.containsKey("=")) {
-            LOGGER.error("only = is supported");
-            return false;
-        }
-        List<String> keys = condition.get("=");
-        if (keys == null || keys.size() == 0) {
-            LOGGER.error("condition is empty");
-            return false;
-        }
-        List<KvIdType> idTypes = new ArrayList<KvIdType>();
-        for (String key : keys) {
-            KvIdType idType = new KvIdType(key, "data");
-            idTypes.add(idType);
-        }
-
-        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findAll");
-        Iterable<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
-        if (stopWatch != null) stopWatch.stopNow();
-
-        if (dbPairs == null && !dbPairs.iterator().hasNext()) {
-            return false;
-        }
-
-        final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
-        if (finalQueryInfo != null) {
-            keyInfo.setQueryInfo(null);
-            Utils.getExcutorService().submit(() -> {
-                Thread.yield();
-                Query.save(context, finalQueryInfo);
-            });
-        }
-
-        List<KeyInfo> keyInfos = new ArrayList<>();
-        //List<KvPair> pairs = context.getPairs();
-        for (KvPair dbPair : dbPairs) {
-            pairs.add(dbPair);
-            KeyInfo keyInfoPer = new KeyInfo(keyInfo.getExpire());
-            keyInfoPer.setIsNew(true);
-            keyInfos.add(keyInfo);
-        }
-
-        AppCtx.getKeyInfoRepo().save(context, pairs, new AnyKey(keyInfos));
-
-        return true;
-    }
-
-    private boolean saveOne(Context context, KvPair pair, KeyInfo keyInfo) {
 
         String key = pair.getId();
         String table = keyInfo.getTable();
@@ -378,19 +393,19 @@ public class DbaseRepoImpl implements DbaseRepo {
         }
 
         // get it from database
-        KvPair dbPair = new KvPair(key);
-        if (!findOne(context, dbPair, keyInfo)) {
+        KvPairs dbPairs = new KvPairs(key);
+        if (!findOne(context, dbPairs, anyKey)) {
             return insertOne(context, pair, keyInfo);
         }
 
-        String dbValue = dbPair.getValue();
+        String dbValue = dbPairs.getPair().getValue();
         String value = pair.getValue();
         if (value != null && value.equals(dbValue)) {
             LOGGER.trace("identical as string");
             return true;
         }
 
-        Map<String, Object> dbMap = dbPair.getData();
+        Map<String, Object> dbMap = dbPairs.getPair().getData();
         if (dbMap != null && dbMap.size() > 0) {
 
             if (table != null) {
@@ -436,20 +451,20 @@ public class DbaseRepoImpl implements DbaseRepo {
         return update(context, new KvPairs(pair), new AnyKey(keyInfo));
     }
 
+
     @Override
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        KeyInfo keyInfo = anyKey.getKey();
-        KvPair pair = pairs.getPair();
+        LOGGER.trace("save pairs(" + pairs.size() + ") anyKey(" + anyKey.size() + "): " + anyKey.getAny().toString());
 
         if (pairs.size() == 1) {
-            return saveOne(context, pair, keyInfo);
+            return saveOne(context, pairs, anyKey);
         }
 
+        KeyInfo keyInfo = anyKey.getKey();
+        //KvPair pair = pairs.getPair();
 
         String table = keyInfo.getTable();
-
-        LOGGER.trace("save: #pairs = " + pairs.size() + " table: " + table);
 
         List<String> indexes = Query.fetchIndexes(context, keyInfo);
 
@@ -869,64 +884,73 @@ public class DbaseRepoImpl implements DbaseRepo {
     @Override
     public boolean delete(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        KvPair pair = pairs.getPair();
-        String key = pair.getId();
-        KeyInfo keyInfo = anyKey.getKey();
-        String table = keyInfo.getTable();
+        LOGGER.trace("delete pairs(" + pairs.size() + ") anyKey(" + anyKey.size() + "): " + anyKey.getAny().toString());
 
-        LOGGER.trace("delete: " + key + " table: " + table);
+        Boolean allOk = true;
 
-        if (table != null && Query.readyForDelete(context, pair, keyInfo)) {
+        for (int i = 0; i < pairs.size(); i++) {
 
-            String clause = keyInfo.getClause();
-            List<Object> params = keyInfo.getParams();
+            KvPair pair = pairs.get(i);
+            String key = pair.getId();
+            KeyInfo keyInfo = anyKey.getAny(i);
+            String table = keyInfo.getTable();
 
-            String sql = "delete from " + table + " where " + clause + " limit 1";
+            if (table != null && Query.readyForDelete(context, pair, keyInfo)) {
 
-            StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.update");
-            try {
-                if (jdbcTemplate.update(sql, params.toArray()) > 0) {
+                String clause = keyInfo.getClause();
+                List<Object> params = keyInfo.getParams();
+
+                String sql = "delete from " + table + " where " + clause + " limit 1";
+
+                StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.update");
+                try {
+                    if (jdbcTemplate.update(sql, params.toArray()) > 0) {
+                        if (stopWatch != null) stopWatch.stopNow();
+
+                        LOGGER.debug("delete from " + table + " ok for " + key);
+
+                        AppCtx.getKeyInfoRepo().delete(context, pairs, true);
+
+                        continue;
+
+                    } else if (stopWatch != null) {
+
+                        stopWatch.stopNow();
+                    }
+
+                } catch (Exception e) {
                     if (stopWatch != null) stopWatch.stopNow();
 
-                    LOGGER.debug("delete from " + table + " ok for " + key);
-
-                    AppCtx.getKeyInfoRepo().delete(context, pairs,true);
-
-                    return true;
+                    String msg = e.getCause().getMessage();
+                    LOGGER.error(msg);
+                    e.printStackTrace();
+                    context.logTraceMessage(msg);
                 }
-                else if (stopWatch != null) stopWatch.stopNow();
 
-            } catch (Exception e) {
-                if (stopWatch != null) stopWatch.stopNow();
-
-                String msg = e.getCause().getMessage();
-                LOGGER.error(msg);
-                e.printStackTrace();
+                String msg = "delete fallbacked to default table for " + pair.getId();
+                LOGGER.warn(msg);
                 if (enableDbFallback) {
                     context.logTraceMessage(msg);
                 } else {
-                    throw new BadRequestException(context, msg);
+                    allOk = false;
+                    continue;
                 }
             }
-            String msg = "delete fallbacked to default table for " + pair.getId();
-            LOGGER.warn(msg);
-            if (enableDbFallback) {
-                context.logTraceMessage(msg);
-            } else {
-                throw new BadRequestException(context, "failed to delete from database");
-            }
+
+            // otherwise save to default table
+            //
+            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
+            AppCtx.getKvPairRepo().delete(pair);
+            if (stopWatch != null) stopWatch.stopNow();
+
+            setUseDefaultTable(keyInfo);
+
+            AppCtx.getKeyInfoRepo().delete(context, pairs, true);
         }
 
-        // otherwise save to default table
-        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-        AppCtx.getKvPairRepo().delete(pair);
-        if (stopWatch != null) stopWatch.stopNow();
+        LOGGER.trace("delete returns " + allOk);
 
-        setUseDefaultTable(keyInfo);
-
-        AppCtx.getKeyInfoRepo().delete(context, pairs,true);
-
-        return true;
+        return allOk;
     }
 
     private void setUseDefaultTable(KeyInfo keyInfo) {
