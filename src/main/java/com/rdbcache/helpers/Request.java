@@ -47,7 +47,9 @@ public class Request {
 
         KeyInfo keyInfo = anyKey.getAny();
 
-        keyInfo.setGeneratedKey(key != null && key.equals("*"));
+        if (key != null && key.equals("*")) {
+            keyInfo.setGeneratedKey(true);
+        }
 
         String[] opts = {null, null}; // {expire, table}
 

@@ -121,18 +121,19 @@ public class TaskQueue extends Thread {
                 String traceId = parts[2];
 
                 Context context = new Context(traceId);
-                KvPairs pairs = new KvPairs(key);
-
                 if (enableMonitor) context.enableMonitor(task, "queue", action);
 
-                KeyInfo keyInfo = new KeyInfo();
-                AnyKey anyKey = new AnyKey(keyInfo);
+                KvPairs pairs = new KvPairs(key);
+
+                AnyKey anyKey = new AnyKey();
                 if (!AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
                     String msg = "keyInfo not found";
                     LOGGER.error(msg);
                     context.logTraceMessage(msg);
                     continue;
                 }
+
+                KeyInfo keyInfo = anyKey.getAny();
 
                 //...
 

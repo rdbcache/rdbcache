@@ -1,3 +1,9 @@
+/**
+ * @link http://rdbcache.com/
+ * @copyright Copyright (c) 2017-2018 Sam Wen
+ * @license http://rdbcache.com/license/
+ */
+
 package com.rdbcache.helpers;
 
 import com.rdbcache.exceptions.ServerErrorException;
@@ -64,15 +70,5 @@ public class AnyKey extends ArrayList<KeyInfo> {
 
     public AnyKey getAnyKey(int index) {
         return new AnyKey(getAny(index));
-    }
-
-    public boolean hasKey(int index) {
-        if (index >= size()) {
-            throw new ServerErrorException("hasKey index out of range");
-        }
-        if (get(index) == null) {
-            return false;
-        }
-        return true;
     }
 }

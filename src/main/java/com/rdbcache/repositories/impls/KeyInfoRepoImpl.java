@@ -79,165 +79,121 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         this.hkeyPrefix = hkeyPrefix;
     }
 
-    private boolean findOne(Context context, KvPairs pairs, KeyInfo keyInfo) {
-
-        KvPair pair = pairs.getPair();
-        if (pair == null) {
-            return false;
-        }
-        String key = pair.getId();
-
-        LOGGER.trace("find: " + key);
-
-        if (enableLocalCache) {
-            KeyInfo keyInfoCache  = AppCtx.getLocalCache().getKeyInfo(key);
-            if (keyInfoCache != null) {
-                LOGGER.debug("found from local cache");
-                keyInfo.copy(keyInfoCache);
-                return true;
-            }
-        }
-
-        StopWatch stopWatch = null;
-
-        if (enableRedisCache) {
-
-            stopWatch = context.startStopWatch("redis", "keyInfoOps.get");
-            KeyInfo keyInfoRedis = keyInfoOps.get(hkeyPrefix + "::keyinfo", key);
-            if (stopWatch != null) stopWatch.stopNow();
-
-            if (keyInfoRedis != null) {
-                LOGGER.debug("found from redis");
-                AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
-                keyInfo.copy(keyInfoRedis);
-                return true;
-            }
-        }
-
-        stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
-        KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(key, "info"));
-        if (stopWatch != null) stopWatch.stopNow();
-
-        if (dbPair == null || dbPair.getData() == null) {
-            LOGGER.debug("keyinfo not found from database for " + key);
-            return false;
-        }
-        LOGGER.debug("found key info from database for " + key);
-
-        keyInfo.fromMap(dbPair.getData());
-
-        if (enableLocalCache) {
-            AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
-        }
-
-        if (enableRedisCache) {
-            Utils.getExcutorService().submit(() -> {
-                Thread.yield();
-                StopWatch stopWatch2 = context.startStopWatch("redis", "keyInfoOps.put");
-                keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
-                if (stopWatch2 != null) stopWatch2.stopNow();
-            });
-        }
-
-        return true;
-    }
-
     @Override
     public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("find: " + pairs.size());
+        LOGGER.trace("find pairs(" + pairs.size() + ") anyKey(" + anyKey.size() + ")");
 
-        if (pairs.size() == 0) {
+        if (pairs.size() == 0 || pairs.getPair() == null) {
             return false;
         }
 
-        if (pairs.size() == 1 || anyKey.size() == 1) {
-            return findOne(context, pairs, anyKey.getAny());
-        }
+        LOGGER.trace("find: " + pairs.getPair().getId() + (pairs.size() == 1 ? "" : "..."));
 
         List<String> keys = new ArrayList<String>();
         List<String> redisKeys = new ArrayList<String>();
         List<KvIdType> idTypes = new ArrayList<KvIdType>();
 
         boolean foundAll = true;
-        for (KvPair pair: pairs) {
 
-            String key = pair.getId();
+        for (int i = 0; i < pairs.size(); i++) {
+
+            if (i == anyKey.size()) {
+                anyKey.add(new KeyInfo());
+            }
+
+            KvPair pair = pairs.get(i);
+            String key =  pair.getId();
             keys.add(key);
 
+            KeyInfo keyInfo = null;
             if (enableLocalCache) {
+                keyInfo = AppCtx.getLocalCache().getKeyInfo(key);
+            }
 
-                KeyInfo keyInfo = AppCtx.getLocalCache().getKeyInfo(key);
-                anyKey.add(keyInfo);
-
-                if (keyInfo == null) {
-
-                    foundAll = false;
-
-                    if (enableRedisCache) {
-                        redisKeys.add(key);
-                    } else {
-                        idTypes.add(new KvIdType(key, "info"));
-                    }
+            if (keyInfo == null) {
+                foundAll = false;
+                if (enableRedisCache) {
+                    redisKeys.add(key);
+                } else {
+                    idTypes.add(new KvIdType(key, "info"));
                 }
+            } else {
+                anyKey.set(i, keyInfo);
+                keys.set(i, null);
             }
         }
 
         if (foundAll) {
+            LOGGER.trace("found");
             return true;
         }
 
-        StopWatch stopWatch = null;
 
         if (redisKeys.size() > 0) {
 
-            List<KeyInfo> redisKeyInfos = null;
-            stopWatch = context.startStopWatch("redis", "keyInfoOps.multiGet");
-            redisKeyInfos = keyInfoOps.multiGet(hkeyPrefix + "::keyinfo", redisKeys);
-            if (stopWatch != null) stopWatch.stopNow();
-
             foundAll = true;
-            int index = 0;
-            for (int i = 0; i < redisKeys.size(); i++) {
 
-                String key = redisKeys.get(i);
-                KeyInfo keyInfo = redisKeyInfos.get(i);
+            if (redisKeys.size() == 1) {
 
-                for (; index < anyKey.size(); index++) {
-                    if (!anyKey.hasKey(index)) {
-                        break;
-                    }
-                }
+                String key = redisKeys.get(0);
 
-                if (keyInfo == null) {
+                StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.get");
+                KeyInfo keyInfoRedis = keyInfoOps.get(hkeyPrefix + "::keyinfo", key);
+                if (stopWatch != null) stopWatch.stopNow();
+
+                if (keyInfoRedis == null) {
                     foundAll = false;
                     idTypes.add(new KvIdType(key, "info"));
                 } else {
-                    if (enableLocalCache) {
-                        AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+                    LOGGER.debug("found from redis");
+
+                    AppCtx.getLocalCache().putKeyInfo(key, keyInfoRedis);
+                    anyKey.set(0, keyInfoRedis);
+                }
+            } else {
+
+                StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.multiGet");
+                List<KeyInfo> redisKeyInfos = keyInfoOps.multiGet(hkeyPrefix + "::keyinfo", redisKeys);
+                if (stopWatch != null) stopWatch.stopNow();
+
+                for (int i = 0; i < redisKeys.size(); i++) {
+
+                    String key = redisKeys.get(i);
+                    KeyInfo keyInfo = redisKeyInfos.get(i);
+
+                    if (keyInfo == null) {
+                        foundAll = false;
+                        idTypes.add(new KvIdType(key, "info"));
+                    } else {
+                        if (enableLocalCache) {
+                            AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+                        }
+                        int index = keys.indexOf(key);
+                        keys.set(index, null);
+                        anyKey.setKey(index, keyInfo);
                     }
-                    anyKey.setKey(index, keyInfo);
                 }
             }
 
             if (foundAll) {
+                LOGGER.trace("found");
                 return true;
             }
         }
 
-        stopWatch = context.startStopWatch("redis", "kvPairRepo.findAll");
-        Iterable<KvPair> dbKeyInfos = AppCtx.getKvPairRepo().findAll(idTypes);
+        StopWatch stopWatch = context.startStopWatch("redis", "kvPairRepo.findAll");
+        Iterable<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
         if (stopWatch != null) stopWatch.stopNow();
 
         final Map<String, KeyInfo> redisKeyInfoMap = new LinkedHashMap<String, KeyInfo>();
 
-        Iterator<KvPair> iterator = dbKeyInfos.iterator();
+        Iterator<KvPair> iterator = dbPairs.iterator();
         while (iterator.hasNext()) {
 
             KvPair dbPair = iterator.next();
-            if (dbPair == null) {
-                continue;
-            }
+            if (dbPair == null) continue;
+
             String key = dbPair.getId();
             KeyInfo keyInfo = new KeyInfo(dbPair.getData());
 
@@ -264,92 +220,28 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             });
         }
-        return true;
-    }
 
-    /*
-    @Override
-    public boolean save(Context context, KeyInfo keyInfo) {
-
-        KvPair pair = context.getPair();
-        String key = pair.getId();
-
-        LOGGER.trace("save: " + key + " table: " + keyInfo.getTable());
-
-        if (!keyInfo.getIsNew()) {
-            LOGGER.warn("save KeyInfo is not new");
-            return true;
-        }
-
-        if (enableLocalCache) {
-
-            KeyInfo cachedKeyInfo = AppCtx.getLocalCache().getKeyInfo(key);
-            if (cachedKeyInfo != null) {
-                if (keyInfo.getTable() == null && cachedKeyInfo.getTable() != null) {
-                    keyInfo.setTable(cachedKeyInfo.getTable());
-                }
-                if (keyInfo.getClause() == null && cachedKeyInfo.getClause() != null) {
-                    keyInfo.setClause(cachedKeyInfo.getClause());
-                }
-                if (keyInfo.getParams() == null && cachedKeyInfo.getParams() != null) {
-                    keyInfo.setParams(cachedKeyInfo.getParams());
-                }
-                if (!Query.hasStdClause(context, keyInfo) && Query.hasStdClause(context, cachedKeyInfo)) {
-                    keyInfo.setClause(cachedKeyInfo.getClause());
-                    keyInfo.setParams(cachedKeyInfo.getParams());
-                }
-                if (cachedKeyInfo.equals(keyInfo)) {
-                    keyInfo.setIsNew(false);
-                    return true;
-                }
+        foundAll = true;
+        for (int i = 0; i < keys.size(); i++) {
+            if (keys.get(i) != null) {
+                foundAll = false;
+                break;
             }
-            AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
         }
 
-        final QueryInfo finalQueryInfo = keyInfo.getQueryInfo();
-        if (finalQueryInfo != null) {
-            keyInfo.setQueryInfo(null);
-            Utils.getExcutorService().submit(() -> {
-
-                Thread.yield();
-                Query.save(context, finalQueryInfo);
-            });
-        }
-
-        keyInfo.setIsNew(false);
-
-        Utils.getExcutorService().submit(() -> {
-
-            Thread.yield();
-
-            StopWatch stopWatch = null;
-
-            if (enableRedisCache) {
-
-                stopWatch = context.startStopWatch("redis", "keyInfoOps.put");
-                keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
-                if (stopWatch != null) stopWatch.stopNow();
-            }
-
-            KvPair dbPair = new KvPair(key, "info", keyInfo.toMap());
-
-            stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-            AppCtx.getKvPairRepo().save(dbPair);
-            if (stopWatch != null) stopWatch.stopNow();
-        });
-
-        return true;
+        LOGGER.trace(foundAll ? "found" : "not found");
+        return foundAll;
     }
-    */
 
     @Override
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("save: " + pairs.size() + " keyInfos: " + anyKey.size());
-
         if (pairs.size() == 0 || anyKey.size() == 0) {
+            LOGGER.warn("save(" + pairs.size() + ") anyKey(" + anyKey.size() + ")");
             return false;
         }
+
+        LOGGER.trace("save(" + pairs.size() + "): " + pairs.getPair().getId() + " anyKey(" + anyKey.size() + ")");
 
         List<String> todoKeys = new ArrayList<String>();
         List<KeyInfo> todoKeyInfos = new ArrayList<KeyInfo>();
@@ -430,64 +322,32 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         return true;
     }
 
-    private void deleteOne(Context context, KvPair pair, boolean dbOps) {
-        String key = pair.getId();
-
-        if (enableLocalCache) {
-
-            AppCtx.getLocalCache().removeKeyInfo(key);
-        }
-
-        if (enableRedisCache) {
-            StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.delete");
-            keyInfoOps.delete(hkeyPrefix + "::keyinfo", key);
-            if (stopWatch != null) stopWatch.stopNow();
-        }
-
-        if (dbOps) {
-            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.delete");
-            AppCtx.getKvPairRepo().delete(new KvIdType(key, "info"));
-            if (stopWatch != null) stopWatch.stopNow();
-        }
-    }
-
     @Override
     public void delete(Context context, KvPairs pairs, boolean dbOps) {
 
-        if (pairs.size() == 1) {
-            deleteOne(context, pairs.getPair(), dbOps);
-            return;
-        }
-
-        LOGGER.trace("delete: " + pairs.size());
-
         if (pairs.size() == 0) {
+            LOGGER.warn("delete(" + pairs.size() + ")");
             return;
         }
 
-        List<String> keys = new ArrayList<String>();
-        for (KvPair pair: pairs) {
-            String key = pair.getId();
-            keys.add(key);
-            if (enableLocalCache) {
-                AppCtx.getLocalCache().removeKeyInfo(key);
-            }
+        LOGGER.trace("delete(" + pairs.size() + "): " + pairs.getPair().getId());
+
+        if (enableLocalCache) {
+            AppCtx.getLocalCache().removeKeyInfo(pairs);
         }
 
         if (enableRedisCache) {
             StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.delete");
-            keyInfoOps.delete(hkeyPrefix + "::keyinfo", keys);
+            if (pairs.size() == 1) {
+                keyInfoOps.delete(hkeyPrefix + "::keyinfo", pairs.getPair().getId());
+            } else {
+                keyInfoOps.delete(hkeyPrefix + "::keyinfo", pairs.getKeys());
+            }
             if (stopWatch != null) stopWatch.stopNow();
         }
 
         if (dbOps) {
-            for (KvPair pair: pairs) {
-                String key = pair.getId();
-                StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.delete");
-                AppCtx.getKvPairRepo().delete(new KvIdType(key, "info"));
-                if (stopWatch != null) stopWatch.stopNow();
-            }
+            AppCtx.getKvPairRepo().delete(pairs);
         }
-
     }
 }

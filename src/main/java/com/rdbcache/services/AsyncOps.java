@@ -203,7 +203,7 @@ public class AsyncOps {
                         LOGGER.warn(message);
                         context.logTraceMessage(message);
                     }
-                    AppCtx.getRedisRepo().delete(context, newPairs, anyKey, true);
+                    AppCtx.getRedisRepo().delete(context, newPairs, anyKey, false);
 
                 } catch (Exception e) {
                     e.printStackTrace();

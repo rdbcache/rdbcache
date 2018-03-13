@@ -185,8 +185,7 @@ public class ExpireOps {
 
         try {
 
-            KeyInfo keyInfo = new KeyInfo();
-            AnyKey anyKey = new AnyKey(keyInfo);
+            AnyKey anyKey = new AnyKey();
             if (!AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
 
                 String msg = "keyInfo not found";
@@ -194,6 +193,8 @@ public class ExpireOps {
                 context.logTraceMessage(msg);
                 return;
             }
+
+            KeyInfo keyInfo = anyKey.getAny();
 
             LOGGER.trace(keyInfo.toString());
 
@@ -216,6 +217,7 @@ public class ExpireOps {
             if (expire < 0) {
                 if (AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
+                    keyInfo.setIsNew(true);
                     AppCtx.getRedisRepo().save(context, pairs, anyKey);
                     setExpireKey(context, pairs, anyKey);
 

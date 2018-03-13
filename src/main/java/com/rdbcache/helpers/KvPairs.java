@@ -1,6 +1,13 @@
+/**
+ * @link http://rdbcache.com/
+ * @copyright Copyright (c) 2017-2018 Sam Wen
+ * @license http://rdbcache.com/license/
+ */
+
 package com.rdbcache.helpers;
 
 import com.rdbcache.exceptions.BadRequestException;
+import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
 
 import java.util.ArrayList;
@@ -83,5 +90,13 @@ public class KvPairs extends ArrayList<KvPair>{
             return null;
         }
         return get(0);
+    }
+
+    public List<String> getKeys() {
+        List<String> keys = new ArrayList<String>();
+        for (int i = 0; i < size(); i++) {
+            keys.add(get(i).getId());
+        }
+        return keys;
     }
 }
