@@ -7,10 +7,7 @@
 package com.rdbcache.services;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.helpers.AnyKey;
-import com.rdbcache.helpers.Context;
-import com.rdbcache.helpers.PropCfg;
-import com.rdbcache.helpers.Utils;
+import com.rdbcache.helpers.*;
 import com.rdbcache.models.KeyInfo;
 
 import com.rdbcache.models.KvPair;
@@ -238,6 +235,12 @@ public class LocalCache extends Thread {
         cache.remove("key::" + key);
     }
 
+    public void removeKeyInfo(List<KvPair> pairs) {
+        for (KvPair pair: pairs) {
+            cache.remove("key::" + pair.getId());
+        }
+    }
+
     public void getKeyInfo(String key, Map<String, Object> data) {
         if (key.startsWith("key::")) {
             key = key.substring(5, key.length());
@@ -265,16 +268,14 @@ public class LocalCache extends Thread {
         }
     }
 
-    public void updateContextData(Context context, AnyKey anyKey) {
-        List<KvPair> pairs = context.getPairs();
+    public void updatePairsData(KvPairs pairs, AnyKey anyKey) {
         for (int i = 0; i < pairs.size(); i++) {
             KvPair pair = pairs.get(i);
             updateData(pair.getId(), pair.getData(), anyKey.getAny(i));
         }
     }
 
-    public void putContextData(Context context, AnyKey anyKey) {
-        List<KvPair> pairs = context.getPairs();
+    public void putContextData(KvPairs pairs, AnyKey anyKey) {
         for (int i = 0; i < pairs.size(); i++) {
             KvPair pair = pairs.get(i);
             putData(pair.getId(), pair.getData(), anyKey.getAny(i));
@@ -307,6 +308,20 @@ public class LocalCache extends Thread {
 
     public void removeData(String key) {
         cache.remove("data::" + key);
+    }
+
+    public void removeData(List<KvPair> pairs) {
+        for (KvPair pair: pairs) {
+            cache.remove("data::" + pair.getId());
+        }
+    }
+
+    public void removeKeyAndData(List<KvPair> pairs) {
+        for (KvPair pair: pairs) {
+            String key = pair.getId();
+            cache.remove("key::" + key);
+            cache.remove("data::" + key);
+        }
     }
 
     public void getData(String key, Map<String, Object> data) {

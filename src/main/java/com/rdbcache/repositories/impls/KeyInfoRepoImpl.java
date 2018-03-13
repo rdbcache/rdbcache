@@ -79,9 +79,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         this.hkeyPrefix = hkeyPrefix;
     }
 
-    private boolean findOne(Context context, KeyInfo keyInfo) {
+    private boolean findOne(Context context, KvPairs pairs, KeyInfo keyInfo) {
 
-        KvPair pair = context.getPair();
+        KvPair pair = pairs.getPair();
         if (pair == null) {
             return false;
         }
@@ -143,9 +143,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     }
 
     @Override
-    public boolean find(Context context, AnyKey anyKey) {
-
-        List<KvPair> pairs = context.getPairs();
+    public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("find: " + pairs.size());
 
@@ -154,7 +152,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (pairs.size() == 1 || anyKey.size() == 1) {
-            return findOne(context, anyKey.getAny());
+            return findOne(context, pairs, anyKey.getAny());
         }
 
         List<String> keys = new ArrayList<String>();
@@ -345,9 +343,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     */
 
     @Override
-    public boolean save(Context context, AnyKey anyKey) {
-
-        List<KvPair> pairs = context.getPairs();
+    public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("save: " + pairs.size() + " keyInfos: " + anyKey.size());
 
@@ -434,8 +430,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         return true;
     }
 
-    private void deleteOne(Context context, boolean dbOps) {
-        KvPair pair = context.getPair();
+    private void deleteOne(Context context, KvPair pair, boolean dbOps) {
         String key = pair.getId();
 
         if (enableLocalCache) {
@@ -457,12 +452,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     }
 
     @Override
-    public void delete(Context context, boolean dbOps) {
-
-        List<KvPair> pairs = context.getPairs();
+    public void delete(Context context, KvPairs pairs, boolean dbOps) {
 
         if (pairs.size() == 1) {
-            deleteOne(context, dbOps);
+            deleteOne(context, pairs.getPair(), dbOps);
             return;
         }
 

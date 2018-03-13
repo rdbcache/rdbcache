@@ -6,11 +6,8 @@
 
 package com.rdbcache.services;
 
-import com.rdbcache.helpers.AnyKey;
-import com.rdbcache.helpers.PropCfg;
-import com.rdbcache.helpers.Context;
+import com.rdbcache.helpers.*;
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
@@ -119,9 +116,7 @@ public class ExpireOps {
     //
     // expire = 0,  it removes existing event and not to set any event
     //
-    public void setExpireKey(Context context, AnyKey anyKey) {
-
-        List<KvPair> pairs = context.getPairs();
+    public void setExpireKey(Context context, KvPairs pairs, AnyKey anyKey) {
 
         for (int i = 0; i < pairs.size(); i++) {
 
@@ -140,7 +135,7 @@ public class ExpireOps {
             if (stopWatch != null) stopWatch.stopNow();
 
             if (result == 1 && keyInfo.getIsNew()) {
-                AppCtx.getKeyInfoRepo().save(context, new AnyKey(keyInfo));
+                AppCtx.getKeyInfoRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
             }
         }
     }
@@ -168,7 +163,9 @@ public class ExpireOps {
         String key = parts[1];
         String traceId = parts[2];
 
-        Context context = new Context(key, traceId);
+        Context context = new Context(traceId);
+        KvPairs pairs = new KvPairs(key);
+
         if (enableMonitor) context.enableMonitor(event, "event", key);
 
         String lockKey = "lock_" + eventPrefix + "::" + key + "::" + traceId;
@@ -190,7 +187,7 @@ public class ExpireOps {
 
             KeyInfo keyInfo = new KeyInfo();
             AnyKey anyKey = new AnyKey(keyInfo);
-            if (!AppCtx.getKeyInfoRepo().find(context, anyKey)) {
+            if (!AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
 
                 String msg = "keyInfo not found";
                 LOGGER.error(msg);
@@ -203,11 +200,11 @@ public class ExpireOps {
             Long expire = Long.valueOf(keyInfo.getExpire());
 
             if (expire > 0) {
-                if (AppCtx.getRedisRepo().find(context, anyKey)) {
+                if (AppCtx.getRedisRepo().find(context, pairs, anyKey)) {
 
-                    AppCtx.getDbaseRepo().save(context, anyKey);
-                    AppCtx.getRedisRepo().delete(context, anyKey);
-                    AppCtx.getKeyInfoRepo().delete(context, false);
+                    AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+                    AppCtx.getRedisRepo().delete(context, pairs, anyKey, false);
+                    AppCtx.getKeyInfoRepo().delete(context, pairs,false);
 
                 } else {
                     String msg = "failed to find key from redis for " + key;
@@ -217,10 +214,10 @@ public class ExpireOps {
             }
 
             if (expire < 0) {
-                if (AppCtx.getDbaseRepo().find(context, anyKey)) {
+                if (AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
-                    AppCtx.getRedisRepo().save(context, anyKey);
-                    setExpireKey(context, anyKey);
+                    AppCtx.getRedisRepo().save(context, pairs, anyKey);
+                    setExpireKey(context, pairs, anyKey);
 
                 } else {
                     String msg = "failed to find key from database for " + key;

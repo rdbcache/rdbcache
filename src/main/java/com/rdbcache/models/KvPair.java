@@ -6,6 +6,7 @@
 
 package com.rdbcache.models;
 
+import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Utils;
 
@@ -56,6 +57,15 @@ public class KvPair implements Serializable {
             idType = new KvIdType(id, type);
         }
         data = new LinkedHashMap<String, Object>();
+    }
+
+    public KvPair(String id, Object value) {
+        if (id.equals("*")) {
+            throw new ServerErrorException("* id should be replaced by generated id");
+        } else {
+            idType = new KvIdType(id, "data");
+        }
+        setValue(value);
     }
 
     public KvPair(String id) {
@@ -152,6 +162,14 @@ public class KvPair implements Serializable {
             data.put("_DEFAULT_", value);
         } else {
             data = filterOutNull(map);
+        }
+    }
+
+    public void setValue(Object value) {
+        if (value instanceof Map) {
+            setData((Map<String, Object>) value);
+        } else {
+            setValue(value.toString());
         }
     }
 

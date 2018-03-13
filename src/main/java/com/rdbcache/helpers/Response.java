@@ -23,19 +23,19 @@ public class Response  {
 
     private static DecimalFormat durationFormat = new DecimalFormat("#.######");
 
-    public static ResponseEntity<Map<String, Object>> send(Context context) {
-        return send(context, false, null);
+    public static ResponseEntity<Map<String, Object>> send(Context context, KvPairs pairs) {
+        return send(context, pairs, false, null);
     }
 
-    public static ResponseEntity<Map<String, Object>> send(Context context, Boolean batch) {
-        return send(context, batch, null);
+    public static ResponseEntity<Map<String, Object>> send(Context context, KvPairs pairs, Boolean batch) {
+        return send(context, pairs, batch, null);
     }
 
     public static ResponseEntity<Map<String, Object>> send(Context context, Map<String, Object> data) {
-        return send(context, false, data);
+        return send(context, null, false, data);
     }
 
-    public static ResponseEntity<Map<String, Object>> send(Context context, Boolean batch, Map<String, Object> data) {
+    public static ResponseEntity<Map<String, Object>> send(Context context, KvPairs pairs, Boolean batch, Map<String, Object> data) {
 
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         Long now = System.currentTimeMillis();
@@ -45,7 +45,6 @@ public class Response  {
             double db = ((double) duration) / 1000000000.0;
             map.put("duration", durationFormat.format(db));
         }
-        List<KvPair> pairs = context.getPairs();
         if (pairs != null) {
             if (pairs.size() == 0) {
                 if (data == null) {

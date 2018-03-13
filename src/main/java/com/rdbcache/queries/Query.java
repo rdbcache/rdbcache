@@ -9,6 +9,7 @@ package com.rdbcache.queries;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.Context;
+import com.rdbcache.helpers.KvPairs;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
@@ -25,23 +26,23 @@ public class Query {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Query.class);
 
-    public static boolean readyForQuery(Context context, KeyInfo keyInfo) {
-        return readyForQuery(context, keyInfo, false, true);
+    public static boolean readyForQuery(Context context, KvPair pair, KeyInfo keyInfo) {
+        return readyForQuery(context, pair, keyInfo, false, true);
     }
 
-    public static boolean readyForUpdate(Context context, KeyInfo keyInfo) {
-        return readyForQuery(context, keyInfo, false, false);
+    public static boolean readyForUpdate(Context context, KvPair pair, KeyInfo keyInfo) {
+        return readyForQuery(context, pair, keyInfo, false, false);
     }
 
-    public static boolean readyForDelete(Context context, KeyInfo keyInfo) {
-        return readyForQuery(context, keyInfo, false, false);
+    public static boolean readyForDelete(Context context, KvPair pair, KeyInfo keyInfo) {
+        return readyForQuery(context, pair, keyInfo, false, false);
     }
 
-    public static boolean readyForInsert(Context context, KeyInfo keyInfo) {
-        return readyForQuery(context, keyInfo, true, false);
+    public static boolean readyForInsert(Context context, KvPair pair, KeyInfo keyInfo) {
+        return readyForQuery(context, pair, keyInfo, true, false);
     }
 
-    public static boolean readyForQuery(Context context, KeyInfo keyInfo, boolean insertOnly, boolean forQuery) {
+    public static boolean readyForQuery(Context context, KvPair pair, KeyInfo keyInfo, boolean insertOnly, boolean forQuery) {
 
         String queryKey = keyInfo.getQueryKey();
 
@@ -57,7 +58,7 @@ public class Query {
 
         KeyInfo keyFound = new KeyInfo();
         AnyKey anyKeyFound = new AnyKey(keyFound);
-        if (AppCtx.getKeyInfoRepo().find(context, anyKeyFound)) {
+        if (AppCtx.getKeyInfoRepo().find(context, new KvPairs(pair), anyKeyFound)) {
 
             keyInfo.copyQueryInfo(keyFound);
 
@@ -81,14 +82,14 @@ public class Query {
         if (table == null) return false;
 
         if (forQuery) {
-            if (prepareQueryClauseParams(context, keyInfo)) {
+            if (prepareQueryClauseParams(context, pair, keyInfo)) {
                 return true;
             } else if (keyInfo.getQueryLimit() != null) {
                 return true;
             }
         }
 
-        return prepareClauseParams(context, keyInfo);
+        return prepareClauseParams(context, pair, keyInfo);
     }
 
     public static void save(Context context, QueryInfo queryInfo) {
@@ -229,8 +230,7 @@ public class Query {
         return stdClause;
     }
     
-    private static  boolean prepareClauseParams(Context context, KeyInfo keyInfo) {
-        KvPair pair = context.getPair();
+    private static  boolean prepareClauseParams(Context context, KvPair pair, KeyInfo keyInfo) {
         if (pair == null) {
             return false;
         }
@@ -242,7 +242,7 @@ public class Query {
         return fetchClauseParams(context, keyInfo, map, key);
     }
 
-    private static boolean prepareQueryClauseParams(Context context, KeyInfo keyInfo) {
+    private static boolean prepareQueryClauseParams(Context context, KvPair pair, KeyInfo keyInfo) {
         QueryInfo queryInfo = keyInfo.getQueryInfo();
         if (queryInfo == null) {
             return false;
@@ -265,7 +265,6 @@ public class Query {
         } else {
             params.clear();
         }
-        KvPair pair = context.getPair();
         String key = null;
         if (pair != null) key = pair.getId();
         String clause = Parser.getClause(queryInfo, params, key);

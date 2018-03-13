@@ -19,8 +19,6 @@ import java.util.List;
 
 public class Context {
 
-    private List<KvPair> pairs = new ArrayList<KvPair>();
-
     private Monitor monitor;
 
     private Boolean sendValue = true;
@@ -29,50 +27,22 @@ public class Context {
 
     private Boolean monitorEnabled = false;
 
-    public Context(String id, String value, Boolean sendValue) {
+    public Context(Boolean sendValue) {
         this.sendValue = sendValue;
-        if (id.equals("*")) {
-            pairs.add(new KvPair(Utils.generateId(), "data", value));
-        } else {
-            pairs.add(new KvPair(id, "data", value));
-        }
         traceId = Utils.generateId();
         monitor = new Monitor();
     }
 
-    public Context(String id, Boolean sendValue) {
-        this.sendValue = sendValue;
-        if (id.equals("*")) {
-            pairs.add(new KvPair(Utils.generateId()));
-        } else {
-            pairs.add(new KvPair(id));
-        }
-        traceId = Utils.generateId();
-        monitor = new Monitor();
-    }
-
-    public Context(String id, String traceId) {
+    public Context(String traceId) {
         this.sendValue = false;
-        if (id.equals("*")) {
-            throw new ServerErrorException("* id is not allowed");
-        } else {
-            pairs.add(new KvPair(id));
-        }
         this.traceId = traceId;
         monitor = new Monitor();
     }
 
     // for monitoring purpose
-    public Context(Monitor monitor, List<KvPair> pairs) {
+    public Context(Monitor monitor) {
         this.monitor = monitor;
-        this.pairs = pairs;
         traceId = monitor.getTraceId();
-    }
-
-    public Context(Boolean sendValue) {
-        this.sendValue = sendValue;
-        traceId = Utils.generateId();
-        monitor = new Monitor();
     }
 
     public void enableMonitor(HttpServletRequest request) {
@@ -87,26 +57,6 @@ public class Context {
         monitor.setName(name);
         monitor.setTypeAndAction(type, action);
         monitor.setTraceId(traceId);
-    }
-
-    public List<KvPair> getPairs() {
-        return pairs;
-    }
-
-    public void setPairs(List<KvPair> pairs) {
-        this.pairs = pairs;
-    }
-
-    public void setPair(KvPair pair) {
-        pairs.clear();
-        pairs.add(pair);
-    }
-
-    public KvPair getPair() {
-        if (pairs.size() == 0) {
-            return null;
-        }
-        return pairs.get(0);
     }
 
     public Monitor getMonitor() {
@@ -131,34 +81,6 @@ public class Context {
 
     public void setTraceId(String traceId) {
         this.traceId = traceId;
-    }
-
-    // for monitoring purpose
-    public Context getCopyWith(String id) {
-        KvPair pair = new KvPair(id);
-        List<KvPair> ppairs = new ArrayList<KvPair>();
-        ppairs.add(pair);
-        return new Context(monitor, ppairs);
-    }
-
-    // for monitoring purpose
-    public Context getCopyWith(String id, String vaule) {
-        KvPair pair = new KvPair(id, "data", vaule);
-        List<KvPair> ppairs = new ArrayList<KvPair>();
-        ppairs.add(pair);
-        return new Context(monitor, ppairs);
-    }
-
-    // for monitoring purpose
-    public Context getCopyWith(KvPair pair) {
-        List<KvPair> ppairs = new ArrayList<KvPair>();
-        ppairs.add(pair);
-        return new Context(monitor, ppairs);
-    }
-
-    // for monitoring purpose
-    public Context getCopyWith(List<KvPair> pairs) {
-        return new Context(monitor, pairs);
     }
 
     public StopWatch startStopWatch(String type, String action) {

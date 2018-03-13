@@ -80,14 +80,15 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2) {
 
-        Context context = new Context(key, true);
+        Context context = new Context(true);
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
+        KvPairs pairs = new KvPairs(key);
+
         if (key.equals("*")) {
+            if (AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
-            if (AppCtx.getDbaseRepo().find(context, anyKey)) {
-
-                AppCtx.getAsyncOps().doSaveToRedis(context, anyKey);
+                AppCtx.getAsyncOps().doSaveToRedis(context, pairs, anyKey);
 
             } else {
 
@@ -95,22 +96,19 @@ public class RdbcacheApis {
 
             }
         } else {
+            if (AppCtx.getRedisRepo().find(context, pairs, anyKey)) {
 
-            if (AppCtx.getRedisRepo().find(context, anyKey)) {
+                AppCtx.getAsyncOps().doSaveToDbase(context, pairs, anyKey);
 
-                AppCtx.getAsyncOps().doSaveToDbase(context, anyKey);
+            } else if (AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
-            } else if (AppCtx.getDbaseRepo().find(context, anyKey)) {
-
-                AppCtx.getAsyncOps().doSaveToRedis(context, anyKey);
+                AppCtx.getAsyncOps().doSaveToRedis(context, pairs, anyKey);
 
             } else {
-
                 throw new NotFoundException(context, "data not found");
-
             }
         }
-        return Response.send(context);
+        return Response.send(context, pairs);
     }
 
     /**
@@ -138,16 +136,19 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2) {
 
-        Context context = new Context(key, value, false);
+        Context context = new Context(false);
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
+        KvPairs pairs = new KvPairs(key, value);
+
         if (enableLocalCache) {
-            AppCtx.getLocalCache().putContextData(context, anyKey);
+
+            AppCtx.getLocalCache().putContextData(pairs, anyKey);
         }
 
-        AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, anyKey);
+        AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairs, anyKey);
 
-        return Response.send(context);
+        return Response.send(context, pairs);
     }
 
     /**
@@ -178,16 +179,19 @@ public class RdbcacheApis {
             throw new BadRequestException("missing request body");
         }
 
-        Context context = new Context(key, value, false);
+        Context context = new Context(false);
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
+        KvPairs pairs = new KvPairs(key, value);
+
         if (enableLocalCache) {
-            AppCtx.getLocalCache().putContextData(context, anyKey);
+
+            AppCtx.getLocalCache().putContextData(pairs, anyKey);
         }
 
-        AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, anyKey);
+        AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairs, anyKey);
 
-        return Response.send(context);
+        return Response.send(context, pairs);
     }
 
     /**
@@ -217,23 +221,26 @@ public class RdbcacheApis {
         if (value == null || value.length() == 0) {
             throw new BadRequestException("missing request body");
         }
-        Context context = new Context(key, value, false);
+        Context context = new Context(false);
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
+
+        KvPairs pairs = new KvPairs(key, value);
 
         if (key.equals("*")) {
 
-            AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, anyKey);
+            AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairs, anyKey);
 
         } else {
 
             if (enableLocalCache) {
-                AppCtx.getLocalCache().updateContextData(context, anyKey);
+
+                AppCtx.getLocalCache().updatePairsData(pairs, anyKey);
             }
 
-            AppCtx.getAsyncOps().doPutOperation(context, anyKey);
-
+            AppCtx.getAsyncOps().doPutOperation(context, pairs, anyKey);
         }
-        return Response.send(context);
+
+        return Response.send(context, pairs);
     }
 
     /**
@@ -264,27 +271,31 @@ public class RdbcacheApis {
         if (value == null || value.length() == 0) {
             throw new BadRequestException("missing value");
         }
-        Context context = new Context(key, value, true);
+        Context context = new Context(true);
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
-        Context ctx = context.getCopyWith(key, value);
+        KvPairs pairs = new KvPairs(key, value);
+
+        KvPairs pairs2 = new KvPairs(key, value);
 
         if (key.equals("*")) {
 
-            AppCtx.getDbaseRepo().find(context, anyKey);
-            AppCtx.getAsyncOps().doSaveToRedis(ctx, anyKey);
+            AppCtx.getDbaseRepo().find(context, pairs, anyKey);
 
-        } else if (AppCtx.getRedisRepo().findAndSave(context, anyKey)) {
+            AppCtx.getAsyncOps().doSaveToRedis(context, pairs2, anyKey);
 
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
+        } else if (AppCtx.getRedisRepo().findAndSave(context, pairs, anyKey)) {
+
+            AppCtx.getAsyncOps().doSaveToDbase(context, pairs2, anyKey);
 
         } else {
 
-            AppCtx.getDbaseRepo().find(context, anyKey);
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
+            AppCtx.getDbaseRepo().find(context, pairs, anyKey);
 
+            AppCtx.getAsyncOps().doSaveToDbase(context, pairs2, anyKey);
         }
-        return Response.send(context);
+
+        return Response.send(context, pairs);
     }
 
     /**
@@ -315,27 +326,30 @@ public class RdbcacheApis {
             throw new BadRequestException("missing request body");
         }
 
-        Context context = new Context(key, value, true);
+        Context context = new Context(true);
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
-        Context ctx = context.getCopyWith(key, value);
+        KvPairs pairs = new KvPairs(key, value);
+        KvPairs pairs2 = new KvPairs(key, value);
 
         if (key.equals("*")) {
 
-            AppCtx.getDbaseRepo().find(context, anyKey);
-            AppCtx.getAsyncOps().doSaveToRedisAndDbase(ctx, anyKey);
+            AppCtx.getDbaseRepo().find(context, pairs, anyKey);
 
-        } else if (AppCtx.getRedisRepo().findAndSave(context, anyKey)) {
+            AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairs2, anyKey);
 
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
+        } else if (AppCtx.getRedisRepo().findAndSave(context, pairs, anyKey)) {
+
+            AppCtx.getAsyncOps().doSaveToDbase(context, pairs2, anyKey);
 
         } else {
 
-            AppCtx.getDbaseRepo().find(context, anyKey);
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
+            AppCtx.getDbaseRepo().find(context, pairs, anyKey);
 
+            AppCtx.getAsyncOps().doSaveToDbase(context, pairs2, anyKey);
         }
-        return Response.send(context);
+
+        return Response.send(context, pairs);
     }
 
     /**
@@ -372,51 +386,41 @@ public class RdbcacheApis {
 
         Context context = new Context(true);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
-        anyKey.getKey().setIsNew(false);
-        List<KvPair> pairs = context.getPairs();
 
-        for (String key: keys) {
-            KvPair pair = new KvPair(key);
-            pairs.add(pair);
-        }
+        KvPairs pairs = new KvPairs(keys);
 
-        AppCtx.getRedisRepo().find(context, anyKey);
+        AppCtx.getRedisRepo().find(context, pairs, anyKey);
 
-        List<KvPair> redisPairs = new ArrayList<KvPair>();
-        List<KvPair> dbPairs = new ArrayList<KvPair>();
+        KvPairs redisPairs = new KvPairs();
+        KvPairs dbPairs = new KvPairs();
 
         for (KvPair pair: pairs) {
 
             if (!pair.hasContent()) {
 
-                Context ctx = context.getCopyWith(pair);
-                KeyInfo dbKeyInfo = new KeyInfo();
+                AnyKey anyKey2 = new AnyKey(new KeyInfo());
+                KvPairs pairs2 = new KvPairs(pair);
 
-                if (AppCtx.getKeyInfoRepo().find(ctx, new AnyKey(dbKeyInfo)) &&
-                    AppCtx.getDbaseRepo().find(ctx, new AnyKey(dbKeyInfo))) {
+                if (AppCtx.getKeyInfoRepo().find(context, pairs2, anyKey2) &&
+                    AppCtx.getDbaseRepo().find(context, pairs2, anyKey2)) {
+
                     dbPairs.add(pair);
                 }
-
             } else {
+
                 redisPairs.add(pair);
             }
         }
 
         if (redisPairs.size() > 0) {
-
-            Context ctx = context.getCopyWith(redisPairs);
-            AppCtx.getAsyncOps().doSaveToDbase(ctx, anyKey);
-
+            AppCtx.getAsyncOps().doSaveToDbase(context, redisPairs, anyKey);
         }
 
         if (dbPairs.size() > 0) {
-
-            Context ctx = context.getCopyWith(dbPairs);
-            AppCtx.getAsyncOps().doSaveToRedis(ctx, anyKey);
-
+            AppCtx.getAsyncOps().doSaveToRedis(context, dbPairs, anyKey);
         }
 
-        return Response.send(context, true);
+        return Response.send(context, pairs, true);
     }
 
     /**
@@ -454,38 +458,12 @@ public class RdbcacheApis {
 
         Context context = new Context(false);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
-        anyKey.getKey().setIsNew(false);
-        List<KvPair> pairs = context.getPairs();
 
-        for (Map.Entry<String, Object> entry: map.entrySet()) {
+        KvPairs pairs = new KvPairs(map);
 
-            KvPair pair = new KvPair(entry.getKey());
-            Object value = entry.getValue();
+        AppCtx.getAsyncOps().doPushOperations(context, pairs, anyKey);
 
-            if (value instanceof Map) {
-
-                pair.setData((Map<String, Object>) value);
-
-            } else {
-
-                Map<String, Object> pmap = Utils.toMap(value.toString());
-                if (pmap == null && anyKey.getKey().getTable() != null) {
-                    throw new BadRequestException(context, "input for table is not a json");
-                } else if (pmap == null) {
-
-                    pmap = new LinkedHashMap<String, Object>();
-                    pmap.put("_DEFAULT_", value);
-
-                }
-                pair.setData(pmap);
-
-            }
-            pairs.add(pair);
-        }
-
-        AppCtx.getAsyncOps().doPushOperations(context, anyKey);
-
-        return Response.send(context, true);
+        return Response.send(context, pairs, true);
     }
 
     /**
@@ -509,12 +487,14 @@ public class RdbcacheApis {
             throw new BadRequestException("no * allowed as key");
         }
 
-        Context context = new Context(key, false);
+        Context context = new Context(false);
         Request.process(context, request);
 
-        AppCtx.getAsyncOps().doDeleteFromRedis(context);
+        KvPairs pairs = new KvPairs(key);
 
-        return Response.send(context);
+        AppCtx.getAsyncOps().doDeleteFromRedis(context, pairs);
+
+        return Response.send(context, pairs);
     }
 
     /**
@@ -532,7 +512,7 @@ public class RdbcacheApis {
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delkeypost(
             HttpServletRequest request,
-            @RequestBody ArrayList<String> keys) {
+            @RequestBody List<String> keys) {
 
         if (keys.contains("*")) {
             throw new BadRequestException("no * allowed as key");
@@ -541,15 +521,11 @@ public class RdbcacheApis {
         Context context = new Context(false);
         Request.process(context, request);
 
-        List<KvPair> pairs = context.getPairs();
+        KvPairs pairs = new KvPairs(keys);
 
-        for (String key: keys) {
-            pairs.add(new KvPair(key));
-        }
+        AppCtx.getAsyncOps().doDeleteFromRedis(context, pairs);
 
-        AppCtx.getAsyncOps().doDeleteFromRedis(context);
-
-        return Response.send(context);
+        return Response.send(context, pairs);
     }
 
     /**
@@ -573,12 +549,14 @@ public class RdbcacheApis {
             throw new BadRequestException("no * allowed as key");
         }
 
-        Context context = new Context(key, false);
+        Context context = new Context(false);
         Request.process(context, request);
 
-        AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context);
+        KvPairs pairs = new KvPairs(key);
 
-        return Response.send(context);
+        AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context, pairs);
+
+        return Response.send(context, pairs);
     }
 
     /**
@@ -596,7 +574,7 @@ public class RdbcacheApis {
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delallpost(
             HttpServletRequest request,
-            @RequestBody ArrayList<String> keys) {
+            @RequestBody List<String> keys) {
 
         if (keys.contains("*")) {
             throw new BadRequestException("no * allowed as key");
@@ -605,15 +583,11 @@ public class RdbcacheApis {
         Context context = new Context(false);
         Request.process(context, request);
 
-        List<KvPair> pairs = context.getPairs();
+        KvPairs pairs = new KvPairs(keys);
 
-        for (String key: keys) {
-            pairs.add(new KvPair(key));
-        }
+        AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context, pairs);
 
-        AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context);
-
-        return Response.send(context);
+        return Response.send(context, pairs);
     }
 
     /**
@@ -644,17 +618,19 @@ public class RdbcacheApis {
         Context context = new Context(true);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
 
-        if (!AppCtx.getDbaseRepo().find(context, anyKey)) {
+        KvPairs pairs = new KvPairs();
+
+        if (!AppCtx.getDbaseRepo().find(context, pairs,  anyKey)) {
 
             LOGGER.debug("find: no record found from database");
 
         } else {
 
-            AppCtx.getAsyncOps().doSaveToRedis(context, anyKey);
+            AppCtx.getAsyncOps().doSaveToRedis(context, pairs, anyKey);
 
         }
 
-        return Response.send(context, true);
+        return Response.send(context, pairs, true);
     }
 
     /**
@@ -686,29 +662,19 @@ public class RdbcacheApis {
 
         Context context = new Context(true);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
-        List<KvPair> pairs = context.getPairs();
 
-        for (String key: keys) {
-            KvPair pair = null;
-            if (key.equals("*")) {
-                pair = new KvPair(Utils.generateId());
-            } else {
-                pair = new KvPair(key);
-            }
-            pairs.add(pair);
-        }
+        KvPairs pairs = new KvPairs(keys);
 
-        if (!AppCtx.getDbaseRepo().find(context, anyKey)) {
+        if (!AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
             LOGGER.debug("findAll: no record found from database");
 
         } else {
 
-            AppCtx.getAsyncOps().doSaveToRedis(context, anyKey);
-
+            AppCtx.getAsyncOps().doSaveToRedis(context, pairs, anyKey);
         }
 
-        return Response.send(context, true);
+        return Response.send(context, pairs, true);
     }
 
     /**
@@ -743,33 +709,12 @@ public class RdbcacheApis {
 
         Context context = new Context(false);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
-        anyKey.getKey().setIsNew(false);
-        List<KvPair> pairs = context.getPairs();
 
-        for (Map<String, Object> map: list) {
+        KvPairs pairs = new KvPairs(list);
 
-            KvPair pair = null;
-            if (map.containsKey("key")) {
+        AppCtx.getAsyncOps().doSaveAllToRedisAnInsertAllTodDbase(context, pairs, anyKey);
 
-                String key = (String) map.get("key");
-                map.remove("key");
-                if (key.equals("*")) {
-                    pair = new KvPair(Utils.generateId(), "data", map);
-                } else {
-                    pair = new KvPair(key, "data", map);
-                }
-
-            } else {
-
-                pair = new KvPair(Utils.generateId(), "data", map);
-
-            }
-            pairs.add(pair);
-        }
-
-        AppCtx.getAsyncOps().doSaveAllToRedisAnInsertAllTodDbase(context, anyKey);
-
-        return Response.send(context, true);
+        return Response.send(context, pairs, true);
     }
 
     /**
@@ -796,12 +741,14 @@ public class RdbcacheApis {
         Context context = new Context(true);
         Request.process(context, request);
 
-        KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(traceId, "trace"));
-        if (dbPair != null) {
-            context.setPair(dbPair);
+        KvPairs pairs = new KvPairs();
+
+        KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(traceId, "trace"));
+        if (pair != null) {
+            pairs.add(pair);
         }
 
-        return Response.send(context);
+        return Response.send(context, pairs);
     }
 
     /**
@@ -832,18 +779,19 @@ public class RdbcacheApis {
 
         Context context = new Context( true);
         Request.process(context, request);
-        List<KvPair> pairs = context.getPairs();
+
+        KvPairs pairs = new KvPairs();
 
         for (String referenced_id: traceIds) {
-            KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(referenced_id, "trace"));
-            if (dbPair != null) {
-                pairs.add(dbPair);
+            KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(referenced_id, "trace"));
+            if (pair != null) {
+                pairs.add(pair);
             } else {
                 pairs.add(new KvPair(referenced_id));
             }
         }
 
-        return Response.send(context, true);
+        return Response.send(context, pairs, true);
     }
 
     /**

@@ -7,6 +7,7 @@
 package com.rdbcache.services;
 
 import com.rdbcache.helpers.AnyKey;
+import com.rdbcache.helpers.KvPairs;
 import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
@@ -119,13 +120,14 @@ public class TaskQueue extends Thread {
                 String key = parts[1];
                 String traceId = parts[2];
 
-                Context context = new Context(key, traceId);
+                Context context = new Context(traceId);
+                KvPairs pairs = new KvPairs(key);
 
                 if (enableMonitor) context.enableMonitor(task, "queue", action);
 
                 KeyInfo keyInfo = new KeyInfo();
                 AnyKey anyKey = new AnyKey(keyInfo);
-                if (!AppCtx.getKeyInfoRepo().find(context, anyKey)) {
+                if (!AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
                     String msg = "keyInfo not found";
                     LOGGER.error(msg);
                     context.logTraceMessage(msg);

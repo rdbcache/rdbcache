@@ -42,7 +42,7 @@ public class Request {
         AnyKey anyKey = new AnyKey();
 
         if (key != null && !key.equals("*")) {
-            AppCtx.getKeyInfoRepo().find(context, anyKey);
+            AppCtx.getKeyInfoRepo().find(context, new KvPairs(key), anyKey);
         }
 
         KeyInfo keyInfo = anyKey.getAny();
