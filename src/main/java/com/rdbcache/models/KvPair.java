@@ -24,6 +24,9 @@ public class KvPair implements Serializable {
     private KvIdType idType;
 
     @Transient
+    private Boolean uuid = false;
+
+    @Transient
     private Map<String, Object> data;
 
     @Column(insertable = false, updatable = false)
@@ -34,7 +37,8 @@ public class KvPair implements Serializable {
 
     public KvPair(String id, String type, String value) {
         if (id.equals("*")) {
-            throw new ServerErrorException("* id should be replaced by generated id");
+            idType = new KvIdType(Utils.generateId(), type);
+            uuid = true;
         } else {
             idType = new KvIdType(id, type);
         }
@@ -43,7 +47,8 @@ public class KvPair implements Serializable {
 
     public KvPair(String id, String type, Map<String, Object> data) {
         if (id.equals("*")) {
-            throw new ServerErrorException("* id should be replaced by generated id");
+            idType = new KvIdType(Utils.generateId(), type);
+            uuid = true;
         } else {
             idType = new KvIdType(id, type);
         }
@@ -52,7 +57,8 @@ public class KvPair implements Serializable {
 
     public KvPair(String id, String type) {
         if (id.equals("*")) {
-            throw new ServerErrorException("* id should be replaced by generated id");
+            idType = new KvIdType(Utils.generateId(), type);
+            uuid = true;
         } else {
             idType = new KvIdType(id, type);
         }
@@ -61,18 +67,20 @@ public class KvPair implements Serializable {
 
     public KvPair(String id, Object value) {
         if (id.equals("*")) {
-            throw new ServerErrorException("* id should be replaced by generated id");
+            idType = new KvIdType(Utils.generateId());
+            uuid = true;
         } else {
-            idType = new KvIdType(id, "data");
+            idType = new KvIdType(id);
         }
         setValue(value);
     }
 
     public KvPair(String id) {
         if (id.equals("*")) {
-            throw new ServerErrorException("* id should be replaced by generated id");
+            idType = new KvIdType(Utils.generateId());
+            uuid = true;
         } else {
-            idType = new KvIdType(id, "data");
+            idType = new KvIdType(id);
         }
         data = new LinkedHashMap<String, Object>();
     }
@@ -97,7 +105,8 @@ public class KvPair implements Serializable {
             idType = new KvIdType();
         }
         if (id.equals("*")) {
-            throw new ServerErrorException("* id should be replaced by generated id");
+            uuid = true;
+            idType.setId(Utils.generateId());
         } else {
             idType.setId(id);
         }

@@ -58,7 +58,7 @@ public class RdbcacheApis {
     }
 
     /**
-     * get
+     * get_get get single item
      *
      * To get data based on key and/or query string.
      * Once data found, it returns immediately. It queries redis first, then database. 
@@ -74,7 +74,7 @@ public class RdbcacheApis {
             "/v1/get/{key}/{opt1}",
             "/v1/get/{key}/{opt1}/{opt2}"
         }, method = RequestMethod.GET)
-    public ResponseEntity<?> get(
+    public ResponseEntity<?> get_get(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
@@ -84,6 +84,8 @@ public class RdbcacheApis {
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         KvPairs pairs = new KvPairs(key);
+
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
 
         if (key.equals("*")) {
             if (AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
@@ -112,7 +114,7 @@ public class RdbcacheApis {
     }
 
     /**
-     * set
+     * set_get get single item
      *
      * To set a value to a key based on the key and/or query string.
      * It returns immediately, and asynchronously saves to redis and database
@@ -129,7 +131,7 @@ public class RdbcacheApis {
             "/v1/set/{key}/{value}/{opt1}",
             "/v1/set/{key}/{value}/{opt1}/{opt2}"
         }, method = RequestMethod.GET)
-    public ResponseEntity<?> set(
+    public ResponseEntity<?> set_get(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable("value") String value,
@@ -140,6 +142,8 @@ public class RdbcacheApis {
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         KvPairs pairs = new KvPairs(key, value);
+
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
 
         if (enableLocalCache) {
 
@@ -152,7 +156,7 @@ public class RdbcacheApis {
     }
 
     /**
-     * setpost
+     * set_post post single item
      *
      * To set a value to a key based on the key and/or query string.
      * It returns immediately, and asynchronously saves to redis and database
@@ -168,7 +172,7 @@ public class RdbcacheApis {
             "/v1/set/{key}/{opt1}",
             "/v1/set/{key}/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
-    public ResponseEntity<?> setpost(
+    public ResponseEntity<?> set_post(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
@@ -184,6 +188,8 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(key, value);
 
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+
         if (enableLocalCache) {
 
             AppCtx.getLocalCache().putContextData(pairs, anyKey);
@@ -195,7 +201,7 @@ public class RdbcacheApis {
     }
 
     /**
-     * put
+     * put_post post/put single item
      *
      * To update a key with partial data based on the key and/or query string.
      * It returns immediately, and asynchronously updates to redis and database
@@ -211,7 +217,7 @@ public class RdbcacheApis {
             "/v1/put/{key}/{opt1}",
             "/v1/put/{key}/{opt1}/{opt2}"
         }, method = {RequestMethod.POST, RequestMethod.PUT})
-    public ResponseEntity<?> put(
+    public ResponseEntity<?> put_post(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
@@ -225,6 +231,8 @@ public class RdbcacheApis {
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         KvPairs pairs = new KvPairs(key, value);
+
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
 
         if (key.equals("*")) {
 
@@ -244,7 +252,7 @@ public class RdbcacheApis {
     }
 
     /**
-     * getset
+     * getset_get get single item
      *
      * To get current value of a key and update it to a new value based on the key and/or query string.
      * It finds the current value and returns immediately, and asynchronously updates to redis and database
@@ -261,7 +269,7 @@ public class RdbcacheApis {
             "/v1/getset/{key}/{value}/{opt1}",
             "/v1/getset/{key}/{value}/{opt1}/{opt2}"
         }, method = RequestMethod.GET)
-    public ResponseEntity<?> getset(
+    public ResponseEntity<?> getset_get(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable("value") String value,
@@ -275,6 +283,8 @@ public class RdbcacheApis {
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         KvPairs pairs = new KvPairs(key, value);
+
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
 
         KvPairs pairs2 = new KvPairs(key, value);
 
@@ -299,7 +309,7 @@ public class RdbcacheApis {
     }
 
     /**
-     * getset
+     * getset_post post single item
      *
      * To get current value of a key and update it to a new value based on key and/or query string.
      * It finds the current value and returns immediately, and asynchronously updates to redis and database
@@ -315,7 +325,7 @@ public class RdbcacheApis {
             "/v1/getset/{key}/{opt1}",
             "/v1/getset/{key}/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
-    public ResponseEntity<?> getsetpost(
+    public ResponseEntity<?> getset_post(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
@@ -330,6 +340,9 @@ public class RdbcacheApis {
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         KvPairs pairs = new KvPairs(key, value);
+
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+
         KvPairs pairs2 = new KvPairs(key, value);
 
         if (key.equals("*")) {
@@ -353,7 +366,7 @@ public class RdbcacheApis {
     }
 
     /**
-     * pull
+     * pull_post post multiple items
      *
      * To pull one or more entries based on input keys. No * key. No query string.
      * Once data found, it returns immediately. It queries redis first, then database. 
@@ -368,7 +381,7 @@ public class RdbcacheApis {
             "/v1/pull/{opt1}",
             "/v1/pull/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
-    public ResponseEntity<?> pull(
+    public ResponseEntity<?> pull_post(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
@@ -384,10 +397,12 @@ public class RdbcacheApis {
             throw  new BadRequestException("query string is not supported");
         }
 
-        Context context = new Context(true);
+        Context context = new Context(true, true);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
 
         KvPairs pairs = new KvPairs(keys);
+
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
 
         AppCtx.getRedisRepo().find(context, pairs, anyKey);
 
@@ -420,11 +435,11 @@ public class RdbcacheApis {
             AppCtx.getAsyncOps().doSaveToRedis(context, dbPairs, anyKey);
         }
 
-        return Response.send(context, pairs, true);
+        return Response.send(context, pairs);
     }
 
     /**
-     * push
+     * push_post post multiple items
      *
      * To update one or more entries based on input key and value map. No * key. No query string.
      * It returns immediately, and asynchronously updates redis and database
@@ -440,7 +455,7 @@ public class RdbcacheApis {
             "/v1/push/{opt1}",
             "/v1/push/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
-    public ResponseEntity<?> push(
+    public ResponseEntity<?> push_post(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
@@ -456,18 +471,20 @@ public class RdbcacheApis {
             throw new BadRequestException("query string is not supported");
         }
 
-        Context context = new Context(false);
+        Context context = new Context(false, true);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
 
         KvPairs pairs = new KvPairs(map);
 
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+
         AppCtx.getAsyncOps().doPushOperations(context, pairs, anyKey);
 
-        return Response.send(context, pairs, true);
+        return Response.send(context, pairs);
     }
 
     /**
-     * delkey
+     * delkey_get get/delete single item
      *
      * To delete a key from redis based on the input key. No query string.
      * It returns immediately. It will not delete database entry.
@@ -478,8 +495,8 @@ public class RdbcacheApis {
      */
     @RequestMapping(value = {
             "/v1/delkey/{key}"
-    }, method = RequestMethod.GET)
-    public ResponseEntity<?> delkey(
+    }, method = {RequestMethod.GET, RequestMethod.DELETE})
+    public ResponseEntity<?> delkey_get(
             HttpServletRequest request,
             @PathVariable("key") String key) {
 
@@ -492,13 +509,15 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(key);
 
+        LOGGER.trace("keys: " + pairs.getKeys().toString());
+
         AppCtx.getAsyncOps().doDeleteFromRedis(context, pairs);
 
         return Response.send(context, pairs);
     }
 
     /**
-     * delkeyepost
+     * delkey_post post multiple items
      *
      * To delete one or more keys from redis based on the input keys. No query string.
      * It returns immediately. It will not delete database entry.
@@ -510,7 +529,7 @@ public class RdbcacheApis {
     @RequestMapping(value = {
             "/v1/delkey"
     }, method = RequestMethod.POST)
-    public ResponseEntity<?> delkeypost(
+    public ResponseEntity<?> delkey_post(
             HttpServletRequest request,
             @RequestBody List<String> keys) {
 
@@ -523,13 +542,15 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(keys);
 
+        LOGGER.trace("keys: " + pairs.getKeys().toString());
+
         AppCtx.getAsyncOps().doDeleteFromRedis(context, pairs);
 
         return Response.send(context, pairs);
     }
 
     /**
-     * delall
+     * delall_get get single item
      *
      * To delete a key from redis and database based on the input key. No query string.
      * It returns immediately.
@@ -541,7 +562,7 @@ public class RdbcacheApis {
     @RequestMapping(value = {
             "/v1/delall/{key}"
     }, method = RequestMethod.GET)
-    public ResponseEntity<?> delall(
+    public ResponseEntity<?> delall_get(
             HttpServletRequest request,
             @PathVariable("key") String key) {
 
@@ -554,13 +575,15 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(key);
 
+        LOGGER.trace("keys: " + pairs.getKeys().toString());
+
         AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context, pairs);
 
         return Response.send(context, pairs);
     }
 
     /**
-     * delallpost
+     * delall_post post multple items
      *
      * To delete one or more keys from redis and database based on the input keys. No query string.
      * It returns immediately.
@@ -572,7 +595,7 @@ public class RdbcacheApis {
     @RequestMapping(value = {
             "/v1/delall"
     }, method = RequestMethod.POST)
-    public ResponseEntity<?> delallpost(
+    public ResponseEntity<?> delall_post(
             HttpServletRequest request,
             @RequestBody List<String> keys) {
 
@@ -591,7 +614,7 @@ public class RdbcacheApis {
     }
 
     /**
-     * select
+     * select_get get multiple items
      *
      * To select one or more entries based on query string.
      * It queries database and return immediately, and asynchronously saves the data to redis
@@ -606,7 +629,7 @@ public class RdbcacheApis {
             "/v1/select/{opt1}",
             "/v1/select/{opt1}/{opt2}"
         }, method = RequestMethod.GET)
-    public ResponseEntity<?> select(
+    public ResponseEntity<?> select_get(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2) {
@@ -615,12 +638,14 @@ public class RdbcacheApis {
             throw  new BadRequestException("query string is missing");
         }
 
-        Context context = new Context(true);
+        Context context = new Context(true, true);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
 
         KvPairs pairs = new KvPairs();
 
-        if (!AppCtx.getDbaseRepo().find(context, pairs,  anyKey)) {
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+
+        if (!AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
             LOGGER.debug("find: no record found from database");
 
@@ -630,11 +655,11 @@ public class RdbcacheApis {
 
         }
 
-        return Response.send(context, pairs, true);
+        return Response.send(context, pairs);
     }
 
     /**
-     * select
+     * select_post post multiple items
      *
      * To select one or more entries based on query string.
      * It queries database and return immediately, and asynchronously saves the data to redis
@@ -650,7 +675,7 @@ public class RdbcacheApis {
             "/v1/select/{opt1}",
             "/v1/select/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
-    public ResponseEntity<?> querypost(
+    public ResponseEntity<?> select_post(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
@@ -660,10 +685,12 @@ public class RdbcacheApis {
             throw  new BadRequestException("query string is missing");
         }
 
-        Context context = new Context(true);
+        Context context = new Context(true, true);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
 
         KvPairs pairs = new KvPairs(keys);
+
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
 
         if (!AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
@@ -674,13 +701,13 @@ public class RdbcacheApis {
             AppCtx.getAsyncOps().doSaveToRedis(context, pairs, anyKey);
         }
 
-        return Response.send(context, pairs, true);
+        return Response.send(context, pairs);
     }
 
     /**
-     * insert
+     * save_post post multiple items
      *
-     * To insert one or more entries based on input list.
+     * To save one or more entries based on input list.
      * It returns immediately, and asynchronously inserts into redis and database
      *
      * @param request HttpServletRequest
@@ -690,11 +717,11 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/insert",
-            "/v1/insert/{opt1}",
-            "/v1/insert/{opt1}/{opt2}"
+            "/v1/save",
+            "/v1/save/{opt1}",
+            "/v1/save/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
-    public ResponseEntity<?> insert(
+    public ResponseEntity<?> save_post(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
@@ -707,18 +734,20 @@ public class RdbcacheApis {
             throw new BadRequestException("missing request body");
         }
 
-        Context context = new Context(false);
+        Context context = new Context(false, true);
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
 
         KvPairs pairs = new KvPairs(list);
 
-        AppCtx.getAsyncOps().doSaveAllToRedisAnInsertAllTodDbase(context, pairs, anyKey);
+        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
 
-        return Response.send(context, pairs, true);
+        AppCtx.getAsyncOps().doSaveAllToRedisAndSaveAllTodDbase(context, pairs, anyKey);
+
+        return Response.send(context, pairs);
     }
 
     /**
-     * trace
+     * trace_get get single item
      *
      * get error messages by trace id
      *
@@ -730,7 +759,7 @@ public class RdbcacheApis {
     @RequestMapping(value = {
             "/v1/trace/{traceId}"
         }, method = RequestMethod.GET)
-    public ResponseEntity<?> trace(
+    public ResponseEntity<?> trace_get(
             HttpServletRequest request,
             @PathVariable("traceId") String traceId){
 
@@ -743,6 +772,8 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs();
 
+        LOGGER.trace("keys: " + pairs.getKeys().toString());
+
         KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(traceId, "trace"));
         if (pair != null) {
             pairs.add(pair);
@@ -752,7 +783,7 @@ public class RdbcacheApis {
     }
 
     /**
-     * tracepost
+     * trace_post post multiple items
      *
      * get error messages by trace id list
      *
@@ -763,7 +794,7 @@ public class RdbcacheApis {
     @RequestMapping(value = {
             "/v1/trace"
         }, method = RequestMethod.POST)
-    public ResponseEntity<?> tracepost(
+    public ResponseEntity<?> trace_post(
             HttpServletRequest request,
             @RequestBody List<String> traceIds){
 
@@ -777,10 +808,12 @@ public class RdbcacheApis {
             throw  new BadRequestException("no query string is needed");
         }
 
-        Context context = new Context( true);
+        Context context = new Context( true, true);
         Request.process(context, request);
 
         KvPairs pairs = new KvPairs();
+
+        LOGGER.trace("keys: " + pairs.getKeys().toString());
 
         for (String referenced_id: traceIds) {
             KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(referenced_id, "trace"));
@@ -791,11 +824,11 @@ public class RdbcacheApis {
             }
         }
 
-        return Response.send(context, pairs, true);
+        return Response.send(context, pairs);
     }
 
     /**
-     * flushCache
+     * flushcache_get get operational to multiple items
      *
      * flush local cache
      *
@@ -807,7 +840,7 @@ public class RdbcacheApis {
             "/v1/flush-cache",
             "/v1/flush-cache/{opt}"
     }, method = RequestMethod.GET)
-    public ResponseEntity<?> flushCache(
+    public ResponseEntity<?> flushcache_get(
             HttpServletRequest request,
             @PathVariable Optional<String> opt) {
 

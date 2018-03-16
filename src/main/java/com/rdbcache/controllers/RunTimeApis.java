@@ -1,3 +1,9 @@
+/**
+ * @link http://rdbcache.com/
+ * @copyright Copyright (c) 2017-2018 Sam Wen
+ * @license http://rdbcache.com/license/
+ */
+
 package com.rdbcache.controllers;
 
 import com.rdbcache.configs.AppCtx;
@@ -22,7 +28,7 @@ import java.util.*;
 
 @RestController
 @Profile({"dev", "test", "prod"})
-public class TestInspectApis {
+public class RunTimeApis {
 
     /**
      * query version info

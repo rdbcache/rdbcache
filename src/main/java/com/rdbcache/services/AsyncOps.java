@@ -88,14 +88,14 @@ public class AsyncOps {
         });
     }
 
-    public void doSaveAllToRedisAnInsertAllTodDbase(Context context, KvPairs pairs, AnyKey anyKey) {
+    public void doSaveAllToRedisAndSaveAllTodDbase(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + anyKey.getKey().getTable());
 
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getRedisRepo().save(context, pairs,  anyKey);
-            AppCtx.getDbaseRepo().insert(context, pairs, anyKey);
+            AppCtx.getDbaseRepo().save(context, pairs, anyKey);
             AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
             context.closeMonitor();
         });

@@ -6,6 +6,7 @@
 
 package com.rdbcache.models;
 
+import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.exceptions.ServerErrorException;
 
@@ -27,29 +28,24 @@ public class KeyInfo implements Serializable, Cloneable {
 
     private String table;
 
-    private List<String> indexes;
-
-    private String clause = "";    // null means worked on it, conclusion is not for any query
+    private String clause = "";
 
     private List<Object> params;
 
     @JsonProperty("query_key")
     private String queryKey = "";  // null means worked on it, conclusion is not for any query
 
-    @JsonProperty("generated_key")
-    private Boolean generatedKey = false;
-
     @JsonIgnore
     private Boolean isNew = false;
+
+    @JsonIgnore
+    private List<String> indexes;
 
     @JsonIgnore
     private Map<String, Object> columns;
 
     @JsonIgnore
     private QueryInfo query;
-
-    @JsonIgnore
-    private String stdClause;
 
     public KeyInfo(String expire, String table) {
         this.expire = expire;
@@ -84,14 +80,6 @@ public class KeyInfo implements Serializable, Cloneable {
         this.table = table;
     }
 
-    public List<String> getIndexes() {
-        return indexes;
-    }
-
-    public void setIndexes(List<String> indexes) {
-        this.indexes = indexes;
-    }
-
     public List<Object> getParams() {
         return params;
     }
@@ -116,14 +104,6 @@ public class KeyInfo implements Serializable, Cloneable {
         this.queryKey = queryKey;
     }
 
-    public Boolean getGeneratedKey() {
-        return generatedKey;
-    }
-
-    public void setGeneratedKey(Boolean generatedKey) {
-        this.generatedKey = generatedKey;
-    }
-
     public Boolean getIsNew() {
         return isNew;
     }
@@ -132,7 +112,44 @@ public class KeyInfo implements Serializable, Cloneable {
         this.isNew = isNew;
     }
 
+    public List<String> getIndexes() {
+        if (indexes != null) {
+            return indexes;
+        }
+        if (table == null || queryKey == null) {
+            return null;
+        }
+        Map<String, Object> map = AppCtx.getDbaseOps().getTableIndexes(null, table);
+        if (map == null || map.size() == 0) {
+            queryKey = null;
+            return null;
+        }
+        if (map.containsKey("PRIMARY")) {
+            indexes = (List<String>) map.get("PRIMARY");
+        } else {
+            for (Map.Entry<String, Object> entry: map.entrySet()) {
+                indexes = (List<String>) entry.getValue();
+                break;
+            }
+        }
+        return indexes;
+    }
+
+    public void setIndexes(List<String> indexes) {
+        this.indexes = indexes;
+    }
+
     public Map<String, Object> getColumns() {
+        if (columns != null) {
+            return columns;
+        }
+        if (table == null || queryKey == null) {
+            return null;
+        }
+        columns = AppCtx.getDbaseOps().getTableColumns(null, table);
+        if (columns == null) {
+            queryKey = null;
+        }
         return columns;
     }
 
@@ -145,16 +162,10 @@ public class KeyInfo implements Serializable, Cloneable {
     }
 
     public void setQueryInfo(QueryInfo query) {
+        if (query != null) {
+            queryKey = query.getKey();
+        }
         this.query = query;
-    }
-
-    public void setStdClause(String stdClause) {
-        this.stdClause = stdClause;
-    }
-
-    @JsonIgnore
-    public String getStdClause() {
-        return stdClause;
     }
 
     @JsonIgnore
@@ -170,38 +181,6 @@ public class KeyInfo implements Serializable, Cloneable {
         return query.getLimit();
     }
 
-    public void copy(KeyInfo keyInfo) {
-        isNew = false;
-        expire = keyInfo.expire;
-        table = keyInfo.table;
-        indexes = keyInfo.indexes;
-        clause = keyInfo.clause;
-        params = keyInfo.params;
-        queryKey = keyInfo.queryKey;
-        generatedKey = keyInfo.generatedKey;
-        columns = keyInfo.columns;
-        if (keyInfo.query != null) {
-            query = keyInfo.query.clone();
-        } else {
-            query = null;
-        }
-        stdClause = keyInfo.stdClause;
-    }
-
-    public void copyQueryInfo(KeyInfo keyInfo) {
-        table = keyInfo.table;
-        queryKey = keyInfo.queryKey;
-        generatedKey = keyInfo.generatedKey;
-        indexes = keyInfo.indexes;
-        clause = keyInfo.clause;
-        params = keyInfo.params;
-        if (keyInfo.query != null) {
-            query = keyInfo.query.clone();
-        } else {
-            query = null;
-        }
-    }
-
     public KeyInfo clone() {
         KeyInfo keyInfo = null;
         try {
@@ -210,7 +189,6 @@ public class KeyInfo implements Serializable, Cloneable {
             e.printStackTrace();
             throw new ServerErrorException(e.getCause().getMessage());
         }
-        if (query != null) keyInfo.query = query.clone();
         return keyInfo;
     }
 
@@ -218,11 +196,9 @@ public class KeyInfo implements Serializable, Cloneable {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         if (expire != null) map.put("expire", expire);
         if (table != null) map.put("table", table);
-        if (indexes != null) map.put("indexes", indexes);
         if (clause != null) map.put("clause", clause);
         if (params != null) map.put("params", params);
         if (queryKey != null) map.put("query_key", queryKey);
-        if (generatedKey != null) map.put("generated_key", generatedKey);
         return map;
     }
 
@@ -230,11 +206,10 @@ public class KeyInfo implements Serializable, Cloneable {
         if (map == null) return;
         if (map.containsKey("expire")) expire = (String) map.get("expire");
         if (map.containsKey("table")) table = (String) map.get("table");
-        if (map.containsKey("indexes")) indexes = (List<String>) map.get("indexes");
         if (map.containsKey("clause")) clause = (String) map.get("clause");
         if (map.containsKey("params")) params = (List<Object>) map.get("params");
         if (map.containsKey("query_key")) queryKey = (String) map.get("query_key");
-        if (map.containsKey("generated_key")) generatedKey = (Boolean) map.get("generated_key");
+        else queryKey = null;
     }
     
     @Override
@@ -244,14 +219,14 @@ public class KeyInfo implements Serializable, Cloneable {
         KeyInfo keyInfo = (KeyInfo) o;
         return Objects.equals(expire, keyInfo.expire) &&
                 Objects.equals(table, keyInfo.table) &&
-                Objects.equals(indexes, keyInfo.indexes) &&
                 Objects.equals(clause, keyInfo.clause) &&
-                Objects.equals(params, keyInfo.params);
+                Objects.equals(params, keyInfo.params) &&
+                Objects.equals(queryKey, keyInfo.queryKey);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(expire, table, indexes, clause, params);
+        return Objects.hash(expire, table, indexes, clause, params, queryKey);
     }
 
     @Override

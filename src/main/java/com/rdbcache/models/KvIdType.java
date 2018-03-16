@@ -15,11 +15,15 @@ public class KvIdType implements Serializable {
 
     private String id;
 
-    private String type;
+    private String type = "data";
 
     public KvIdType(String id, String type) {
         this.id = id;
         this.type = type;
+    }
+
+    public KvIdType(String id) {
+        this.id = id;
     }
 
     public KvIdType() {

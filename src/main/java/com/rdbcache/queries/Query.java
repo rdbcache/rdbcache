@@ -10,265 +10,555 @@ import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.KvPairs;
+import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
-import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
 
 public class Query {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Query.class);
 
-    public static boolean readyForQuery(Context context, KvPair pair, KeyInfo keyInfo) {
-        return readyForQuery(context, pair, keyInfo, false, true);
+    private Context context;
+
+    private JdbcTemplate jdbcTemplate;
+
+    private KvPairs pairs;
+
+    private AnyKey anyKey;
+
+    private String sql;
+
+    private List<Object> params;
+
+    public Query(Context context, JdbcTemplate jdbcTemplate, KvPairs pairs, AnyKey anyKey) {
+        this.context = context;
+        this.jdbcTemplate = jdbcTemplate;
+        this.pairs = pairs;
+        this.anyKey = anyKey;
     }
 
-    public static boolean readyForUpdate(Context context, KvPair pair, KeyInfo keyInfo) {
-        return readyForQuery(context, pair, keyInfo, false, false);
+    public String getSql() {
+        return sql;
     }
 
-    public static boolean readyForDelete(Context context, KvPair pair, KeyInfo keyInfo) {
-        return readyForQuery(context, pair, keyInfo, false, false);
+    public void setSql(String sql) {
+        this.sql = sql;
     }
 
-    public static boolean readyForInsert(Context context, KvPair pair, KeyInfo keyInfo) {
-        return readyForQuery(context, pair, keyInfo, true, false);
+    public List<Object> getParams() {
+        return params;
     }
 
-    public static boolean readyForQuery(Context context, KvPair pair, KeyInfo keyInfo, boolean insertOnly, boolean forQuery) {
+    public void setParams(List<Object> params) {
+        this.params = params;
+    }
 
-        String queryKey = keyInfo.getQueryKey();
+    public boolean pepareSelect() {
 
-        // null means worked on it, conclusion is not for any query
-        if (queryKey == null) return false;
+        Assert.isTrue(anyKey.size() == 1, "anyKey.size() = " +
+                anyKey.size() + ", select only supports anyKey size == 1");
+
+        KeyInfo keyInfo = anyKey.getAny();
 
         String table = keyInfo.getTable();
-        if (table != null && insertOnly) return true;
-
-        String clause = keyInfo.getClause();
-        List<Object> params = keyInfo.getParams();
-        if (table != null && params != null && clause != null && clause.length() > 0) return true;
-
-        KeyInfo keyFound = new KeyInfo();
-        AnyKey anyKeyFound = new AnyKey(keyFound);
-        if (AppCtx.getKeyInfoRepo().find(context, new KvPairs(pair), anyKeyFound)) {
-
-            keyInfo.copyQueryInfo(keyFound);
-
-            queryKey = keyInfo.getQueryKey();
-            if (queryKey == null) return false;
-
-            table = keyInfo.getTable();
-            if (table == null) return false;
-
-            if (insertOnly) return true;
-
-            clause = keyInfo.getClause();
-            params = keyInfo.getParams();
-            if (table != null && params != null && clause != null  && clause.length() > 0) {
-                return true;
-            }
-        }
-
-        if (insertOnly) return false;
-
-        if (table == null) return false;
-
-        if (forQuery) {
-            if (prepareQueryClauseParams(context, pair, keyInfo)) {
-                return true;
-            } else if (keyInfo.getQueryLimit() != null) {
-                return true;
-            }
-        }
-
-        return prepareClauseParams(context, pair, keyInfo);
-    }
-
-    public static void save(Context context, QueryInfo queryInfo) {
-
-        KvPair queryPair = new KvPair(queryInfo.getKey(), "query", queryInfo.toMap());
-        KvIdType idType = queryPair.getIdType();
-
-        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
-        KvPair dbPair = AppCtx.getKvPairRepo().findOne(idType);
-        if (stopWatch != null) stopWatch.stopNow();
-
-        if (dbPair != null) {
-            if (queryPair.getValue().equals(dbPair.getValue())) {
-                return;
-            }
-        }
-
-        stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-        AppCtx.getKvPairRepo().save(queryPair);
-        if (stopWatch != null) stopWatch.stopNow();
-    }
-
-    public static List<String> fetchIndexes(Context context, KeyInfo keyInfo) {
-        if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
-            return null;
-        }
-        List<String> indexes = keyInfo.getIndexes();
-        if ( indexes != null) {
-            return indexes;
-        }
-        Map<String, Object> map = AppCtx.getDbaseOps().getTableIndexes(context, keyInfo.getTable());
-        if (map == null || map.size() == 0) {
-            keyInfo.setQueryKey(null);
-            return null;
-        }
-        if (map.containsKey("PRIMARY")) {
-            indexes = (List<String>) map.get("PRIMARY");
-        } else {
-            for (Map.Entry<String, Object> entry: map.entrySet()) {
-                indexes = (List<String>) entry.getValue();
-                break;
-            }
-        }
-        keyInfo.setIndexes(indexes);
-        return indexes;
-    }
-
-    public static Map<String, Object> fetchColumns(Context context, KeyInfo keyInfo) {
-        if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
-            return null;
-        }
-        Map<String, Object> columns = keyInfo.getColumns();
-        if (columns != null) {
-            return columns;
-        }
-        columns = AppCtx.getDbaseOps().getTableColumns(context, keyInfo.getTable());
-        keyInfo.setColumns(columns);
-        if (columns == null) {
-            keyInfo.setQueryKey(null);
-        }
-        return columns;
-    }
-
-    public static boolean fetchClauseParams(Context context, KeyInfo keyInfo, Map<String, Object> map, String defaultValue) {
-        if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
+        if (table == null) {
             return false;
         }
-        String clause = keyInfo.getClause();
-        if (clause == null) {
-            return false;
-        }
-        List<String> indexes = fetchIndexes(context, keyInfo);
-        if (indexes == null) {
-            keyInfo.setClause(null);
-            keyInfo.setQueryKey(null);
-            return false;
-        }
-        List<Object> params = keyInfo.getParams();
-        if (clause.equals(fetchStdClause(context, keyInfo))) {
-            if (params != null && params.size() == indexes.size()) {
-                int i = 0;
-                for(String indexKey: indexes) {
-                    if (map.containsKey(indexKey)) {
-                        params.set(i, map.get(indexKey));
-                    }
-                    i++;
-                }
-                return true;
-            }
-        } else {
-            clause = fetchStdClause(context, keyInfo);
-            keyInfo.setClause(clause);
-        }
-        if (params == null) {
-            params = new ArrayList<Object>();
-            keyInfo.setParams(params);
-        } else {
-            params.clear();
-        }
-        for(String indexKey: indexes) {
-            if (map.containsKey(indexKey)) {
-                params.add(map.get(indexKey));
-            } else {
-                params.add(defaultValue);
-            }
-        }
-        return true;
-    }
 
-    public static boolean hasStdClause(Context context, KeyInfo keyInfo) {
-        String stdClause = fetchStdClause(context, keyInfo);
-        return (stdClause != null);
-    }
-
-    public static String fetchStdClause(Context context, KeyInfo keyInfo) {
-        String stdClause = keyInfo.getStdClause();
-        if (stdClause != null) {
-            return stdClause;
-        }
-        if (keyInfo.getClause() == null) {
-            keyInfo.setQueryKey(null);
-            return null;
-        }
-        List<String> indexes = fetchIndexes(context, keyInfo);
-        if (indexes == null) {
-            keyInfo.setClause(null);
-            keyInfo.setQueryKey(null);
-            return null;
-        }
-        stdClause = "";
-        for (String indexKey : indexes) {
-            if (stdClause.length() > 0) {
-                stdClause += " AND ";
-            }
-            stdClause += indexKey + " = ?";
-        }
-        keyInfo.setStdClause(stdClause);
-        return stdClause;
-    }
-    
-    private static  boolean prepareClauseParams(Context context, KvPair pair, KeyInfo keyInfo) {
-        if (pair == null) {
-            return false;
-        }
-        String key = pair.getId();
-        Map<String, Object> map = pair.getData();
-        if (map == null) {
-            return false;
-        }
-        return fetchClauseParams(context, keyInfo, map, key);
-    }
-
-    private static boolean prepareQueryClauseParams(Context context, KvPair pair, KeyInfo keyInfo) {
-        QueryInfo queryInfo = keyInfo.getQueryInfo();
-        if (queryInfo == null) {
-            return false;
-        }
         String queryKey = keyInfo.getQueryKey();
         if (queryKey == null) {
             return false;
         }
-        Integer limit = queryInfo.getLimit();
-        Map<String, Condition> conditions = queryInfo.getConditions();
-        if (limit == null && (conditions == null || conditions.size() == 0)) {
-            keyInfo.setQueryKey(null);
+
+        String clause = keyInfo.getClause();
+        params = keyInfo.getParams();
+
+        if (clause == null || clause.length() == 0 || params == null || params.size() == 0) {
+
+            boolean ready = false;
+            KvPair pair = pairs.getPair();
+            if (Parser.prepareQueryClauseParams(context, pair, keyInfo)) {
+                ready = true;
+            } else if (keyInfo.getQueryLimit() != null) {
+                ready = true;
+            } else if (Parser.fetchStdClauseParams(context, keyInfo, pair.getData(), pair.getId())) {
+                ready = true;
+            }
+            if (!ready) {
+                return false;
+            }
+
+            clause = keyInfo.getClause();
+            params = keyInfo.getParams();
+        }
+
+        int limit = 1;
+        if (context.isBatch()) {
+            limit = getLimt();
+        }
+
+        sql = "select * from " + table;
+
+        if (clause != null && clause.length() > 0) {
+            sql += " where " + clause;
+        }
+        if (limit != 0) {
+            sql += " limit " + limit;
+        }
+
+        keyInfo.setIsNew(false);
+
+        QueryInfo queryInfo = keyInfo.getQueryInfo();
+        if (queryInfo != null) {
             keyInfo.setQueryInfo(null);
+            Utils.getExcutorService().submit(() -> {
+                Thread.yield();
+                Parser.save(context, queryInfo);
+            });
+        }
+
+        LOGGER.trace("sql: " + sql);
+
+        return true;
+    }
+
+    public boolean executeSelect() {
+
+        KeyInfo keyInfo = anyKey.getAny();
+        String table = keyInfo.getTable();
+
+        LOGGER.trace("params: " + params.toString());
+
+        StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
+        try {
+            List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, params.toArray());
+            if (stopWatch != null) stopWatch.stopNow();
+
+            if (list != null && list.size() > 0) {
+
+                Map<String, Object> columns = keyInfo.getColumns();
+
+                anyKey.clear();
+                KvPair pair = null;
+                for (int i = 0; i < list.size(); i++) {
+
+                    if (i == pairs.size()) {
+                        pair = new KvPair(Utils.generateId());
+                        pairs.add(pair);
+                    } else {
+                        pair = pairs.get(i);
+                    }
+
+                    Map<String, Object> map = convertDbMap(columns, list.get(i));
+                    pair.setData(map);
+
+                    keyInfo.setParams(null);
+                    Parser.fetchStdClauseParams(context, keyInfo, pair.getData(), pair.getId());
+
+                    KeyInfo keyInfoNew = keyInfo.clone();
+                    keyInfoNew.setIsNew(true);
+                    anyKey.add(keyInfoNew);
+
+                    LOGGER.trace("found " + pair.getId() + " from " + table);
+                }
+
+                return true;
+            }
+        } catch (Exception e) {
+            if (stopWatch != null) stopWatch.stopNow();
+
+            String msg = e.getCause().getMessage();
+            LOGGER.error(msg);
+            context.logTraceMessage(msg);
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public boolean prepareInsert() {
+
+        Assert.isTrue(anyKey.size() == 1, "anyKey.size() = " +
+                anyKey.size() + ", insert only supports anyKey size == 1");
+
+        KeyInfo keyInfo = anyKey.getAny();
+
+        String table = keyInfo.getTable();
+        if (table == null) {
             return false;
         }
-        List<Object> params = keyInfo.getParams();
-        if (params == null) {
-            params = new ArrayList<Object>();
-            keyInfo.setParams(params);
-        } else {
-            params.clear();
+
+        String queryKey = keyInfo.getQueryKey();
+        if (queryKey == null) {
+            return false;
         }
-        String key = null;
-        if (pair != null) key = pair.getId();
-        String clause = Parser.getClause(queryInfo, params, key);
-        keyInfo.setClause(clause);
-        return (clause != null);
+
+        KvPair pair  = pairs.getPair();
+        Map<String, Object> map = pair.getData();
+        params = new ArrayList<>();
+
+        String fields = "", values = "";
+
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            params.add(entry.getValue());
+            if (fields.length() != 0) {
+                fields += ", ";
+                values += ", ";
+            }
+            fields += entry.getKey();
+            values += "?";
+        }
+
+        sql = "insert into " + table + " (" + fields + ") values (" + values + ")";
+
+        LOGGER.trace("sql: " + sql);
+
+        return true;
+    }
+
+    public boolean executeInsert(boolean enableLocal, boolean enableRedis) {
+
+        KeyInfo keyInfo = anyKey.getAny();
+        String table = keyInfo.getTable();
+
+        boolean allOk = true;
+
+        for (int i = 0; i < pairs.size(); i++) {
+
+            KvPair pair  = pairs.get(i);
+            Map<String, Object> map = pair.getData();
+
+            if (i > 0) {
+                params.clear();
+                for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    params.add(entry.getValue());
+                }
+            }
+
+            LOGGER.trace("params: " + params.toString());
+
+            int rowCount = 0;
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+
+            StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.update");
+            try {
+                rowCount = jdbcTemplate.update(new PreparedStatementCreator() {
+
+                    @Override
+                    public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+                        PreparedStatement ps;
+                        ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                        int i = 1;
+                        for (Object param : params) {
+                            ps.setObject(i++, param);
+                        }
+                        return ps;
+                    }
+                }, keyHolder);
+                if (stopWatch != null) stopWatch.stopNow();
+
+            } catch (Exception e) {
+                if (stopWatch != null) stopWatch.stopNow();
+
+                allOk = false;
+
+                String msg = e.getCause().getMessage();
+                LOGGER.error(msg);
+                context.logTraceMessage(msg);
+            }
+
+            if (rowCount > 0) {
+
+                String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
+                if (autoIncKey != null && keyHolder.getKey() == null) {
+                    LOGGER.error("failed to get auto increment id from query");
+                }
+                if (autoIncKey != null && keyHolder.getKey() != null) {
+                    String key = pair.getId();
+                    String keyValue = String.valueOf(keyHolder.getKey());
+                    map.put(autoIncKey, keyValue);
+                    if (enableLocal) {
+                        AppCtx.getLocalCache().putData(key, map, keyInfo);
+                    }
+                    if (enableRedis) {
+                        AppCtx.getRedisRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
+                    }
+                }
+
+                keyInfo.setParams(null);
+                Parser.fetchStdClauseParams(context, keyInfo, map, pair.getId());
+
+                KeyInfo keyInfoNew = keyInfo.clone();
+                keyInfoNew.setIsNew(true);
+                if (i < anyKey.size()) {
+                    anyKey.setKey(i, keyInfoNew);
+                } else {
+                    anyKey.add(keyInfoNew);
+                }
+                LOGGER.trace("inserted " + pair.getId() + " into " + table);
+
+            } else {
+
+                allOk = false;
+
+                LOGGER.warn("failed to insert " + pair.getId() + " into " + table);
+
+                if (i == anyKey.size()) {
+                    KeyInfo keyInfoNew = new KeyInfo(keyInfo.getExpire());
+                    keyInfoNew.setIsNew(true);
+                    keyInfoNew.setQueryKey(null);
+                    anyKey.add(keyInfoNew);
+                }
+            }
+        }
+
+        return allOk;
+    }
+
+    public boolean prepareUpdate() {
+
+        Assert.isTrue(anyKey.size() == pairs.size(), anyKey.size() + " != " +
+                pairs.size() + ", update only supports anyKey size == pairs size");
+
+        KeyInfo keyInfo = anyKey.getAny();
+
+        String table = keyInfo.getTable();
+        if (table == null) {
+            return false;
+        }
+
+        String queryKey = keyInfo.getQueryKey();
+        if (queryKey == null) {
+            return false;
+        }
+
+        KvPair pair  = pairs.getPair();
+        Map<String, Object> map = pair.getData();
+
+        if (!Parser.fetchStdClauseParams(context, keyInfo, map, pair.getId())) {
+            return false;
+        }
+
+        List<Object> queryParams = keyInfo.getParams();
+        String clause = keyInfo.getClause();
+        params = new ArrayList<>();
+
+        String updates = "";
+        for (Map.Entry<String, Object> entry: map.entrySet()) {
+            params.add(entry.getValue());
+            if (updates.length() != 0) updates += ", ";
+            updates += entry.getKey() + " = ?";
+        }
+
+        params.addAll(queryParams);
+        sql = "update " + table + " set " + updates + " where " + clause + " limit 1";
+
+        LOGGER.trace("sql: " + sql);
+
+        return true;
+    }
+
+    public boolean executeUpdate() {
+
+        boolean allOk = true;
+
+        for (int i = 0; i < pairs.size(); i++) {
+
+            KeyInfo keyInfo = anyKey.getAny(i);
+            String table = keyInfo.getTable();
+            KvPair pair  = pairs.get(i);
+
+            if (i > 0) {
+
+                List<Object> queryParams = keyInfo.getParams();
+                Map<String, Object> map = pair.getData();
+                params = new ArrayList<>();
+
+                String updates = "";
+                for (Map.Entry<String, Object> entry: map.entrySet()) {
+                    params.add(entry.getValue());
+                    if (updates.length() != 0) updates += ", ";
+                    updates += entry.getKey() + " = ?";
+                }
+
+                params.addAll(queryParams);
+                Parser.fetchStdClauseParams(context, keyInfo, map, pair.getId());
+                String clause = keyInfo.getClause();
+
+                sql = "update " + table + " set " + updates + " where " + clause + " limit 1";
+            }
+
+            LOGGER.trace("params: " + params.toString());
+
+            StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.update");
+            try {
+                if (jdbcTemplate.update(sql, params.toArray()) > 0) {
+                    if (stopWatch != null) stopWatch.stopNow();
+
+                    LOGGER.trace("update " + pair.getId() + " from " + table);
+
+                    continue;
+
+                } else {
+                    if (stopWatch != null) stopWatch.stopNow();
+
+                    allOk = false;
+                }
+
+            } catch (Exception e) {
+                if (stopWatch != null) stopWatch.stopNow();
+
+                allOk = false;
+
+                String msg = e.getCause().getMessage();
+                LOGGER.error(msg);
+                context.logTraceMessage(msg);
+                e.printStackTrace();
+            }
+
+            keyInfo.setQueryKey(null);
+        }
+
+        return allOk;
+    }
+
+    public boolean prepareDelete() {
+
+        Assert.isTrue(anyKey.size() == pairs.size(), anyKey.size() + " != " +
+                pairs.size() + ", delete only supports anyKey size == pairs size");
+
+        KeyInfo keyInfo = anyKey.getAny();
+
+        String table = keyInfo.getTable();
+        if (table == null) {
+            return false;
+        }
+
+        String queryKey = keyInfo.getQueryKey();
+        if (queryKey == null) {
+            return false;
+        }
+
+        KvPair pair  = pairs.getPair();
+        Map<String, Object> map = pair.getData();
+
+        if (!Parser.fetchStdClauseParams(context, keyInfo, map, pair.getId())) {
+            return false;
+        }
+
+        params = keyInfo.getParams();
+        String clause =  keyInfo.getClause();
+
+        sql = "delete from " + table + " where " + clause + " limit 1";
+
+        LOGGER.trace("sql: " + sql);
+
+        return true;
+    }
+
+    public boolean executeDelete() {
+
+        boolean allOk = true;
+
+        for (int i = 0; i < pairs.size(); i++) {
+
+            KeyInfo keyInfo = anyKey.getAny(i);
+            String table = keyInfo.getTable();
+            KvPair pair  = pairs.get(i);
+
+            if (i > 0) {
+                params = keyInfo.getParams();
+            }
+
+            LOGGER.trace("params: " + params.toString());
+
+            StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.delete");
+            try {
+                if (jdbcTemplate.update(sql, params.toArray()) > 0) {
+                    if (stopWatch != null) stopWatch.stopNow();
+
+                    LOGGER.trace("delete " + pair.getId() + " from " + table);
+
+                    continue;
+
+                } else {
+                    if (stopWatch != null) stopWatch.stopNow();
+
+                    allOk = false;
+                }
+
+            } catch (Exception e) {
+                if (stopWatch != null) stopWatch.stopNow();
+
+                allOk = false;
+
+                String msg = e.getCause().getMessage();
+                LOGGER.error(msg);
+                context.logTraceMessage(msg);
+                e.printStackTrace();
+            }
+
+            keyInfo.setQueryKey(null);
+        }
+
+        return allOk;
+    }
+
+    private int getLimt() {
+
+        KeyInfo keyInfo = anyKey.getAny();
+        Integer queryLimit = keyInfo.getQueryLimit();
+        int size = pairs.size();
+        int limit = 0;
+        if (queryLimit != null || size > 0) {
+            if (size == 0)  {
+                limit = queryLimit;
+            } else if (queryLimit != null && size > queryLimit) {
+                limit = queryLimit;
+            } else {
+                limit = size;
+            }
+        }
+        return limit;
+    }
+
+    private Map<String, Object> convertDbMap(Map<String, Object> columns, Map<String, Object> dbMap) {
+
+        for (Map.Entry<String, Object> entry: dbMap.entrySet()) {
+
+            String key = entry.getKey();
+            Map<String, Object> attributes = (Map<String, Object>) columns.get(key);
+            if (attributes == null) {
+                continue;
+            }
+            String type = (String) attributes.get("Type");
+            if (type == null) {
+                continue;
+            }
+            Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
+            if (Arrays.asList("timestamp", "datetime", "date", "time", "year(4)").contains(type)) {
+                assert value instanceof Date : "convertDbMap " + key + " is not instance of Date";
+                dbMap.put(key, AppCtx.getDbaseOps().formatDate(type, (Date) value));
+            }
+        }
+        return dbMap;
     }
 }

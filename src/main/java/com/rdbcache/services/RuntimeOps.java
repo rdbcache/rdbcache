@@ -1,3 +1,9 @@
+/**
+ * @link http://rdbcache.com/
+ * @copyright Copyright (c) 2017-2018 Sam Wen
+ * @license http://rdbcache.com/license/
+ */
+
 package com.rdbcache.services;
 
 import com.rdbcache.configs.AppCtx;
@@ -18,9 +24,9 @@ import org.springframework.util.Assert;
 
 @Service
 @Profile({"dev", "test"})
-public class TestInspectServices extends Thread {
+public class RuntimeOps extends Thread {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestInspectServices.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RuntimeOps.class);
 
     private Properties properties = new Properties();
 
@@ -62,7 +68,7 @@ public class TestInspectServices extends Thread {
     @Override
     public void run() {
 
-        LOGGER.debug("TestInspectServices is running on thread " + getName());
+        LOGGER.debug("RuntimeOps is running on thread " + getName());
 
         while (isRunning) {
 
@@ -76,7 +82,7 @@ public class TestInspectServices extends Thread {
 
                 if (!isRunning) break;
 
-                LOGGER.debug("TestInspectServices thread starts to check ...");
+                LOGGER.debug("RuntimeOps thread starts to check ...");
 
                 Assert.isTrue(AppCtx.getLocalCache().isAlive(), "LocalCache is not alive");
                 Assert.isTrue(!AppCtx.getLocalCache().getState().name().equals("TERMINATED"), "LocalCache is terminated");

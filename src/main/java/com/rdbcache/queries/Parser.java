@@ -6,13 +6,17 @@
 
 package com.rdbcache.queries;
 
+import com.rdbcache.configs.AppCtx;
+import com.rdbcache.helpers.Context;
+import com.rdbcache.models.KeyInfo;
+import com.rdbcache.models.KvIdType;
+import com.rdbcache.models.KvPair;
+import com.rdbcache.models.StopWatch;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Parser {
 
@@ -195,38 +199,104 @@ public class Parser {
         return clause;
     }
 
-    public static boolean isConditionsEqual(Map<String, Condition> a, Map<String, Condition> b) {
-        if (a == b) {
-            return true;
-        }
-        if ((a == null || a.size() == 0) && (b == null || b.size() == 0)) {
-            return true;
-        }
-        if ((a == null || a.size() == 0) || (b == null || b.size() == 0)) {
+    public static boolean prepareQueryClauseParams(Context context, KvPair pair, KeyInfo keyInfo) {
+        QueryInfo queryInfo = keyInfo.getQueryInfo();
+        if (queryInfo == null) {
             return false;
         }
-        if (a.size() != b.size()) {
+        String queryKey = keyInfo.getQueryKey();
+        if (queryKey == null) {
             return false;
         }
-        boolean isSame = true;
-        for (Map.Entry<String, Condition> entry: a.entrySet()) {
-            if (!b.containsKey(entry.getKey())) {
-                isSame = false;
-                break;
+        Integer limit = queryInfo.getLimit();
+        Map<String, Condition> conditions = queryInfo.getConditions();
+        if (limit == null && (conditions == null || conditions.size() == 0)) {
+            keyInfo.setQueryKey(null);
+            keyInfo.setQueryInfo(null);
+            return false;
+        }
+        List<Object> params = keyInfo.getParams();
+        if (params == null) {
+            params = new ArrayList<Object>();
+            keyInfo.setParams(params);
+        } else {
+            params.clear();
+        }
+        String key = null;
+        if (pair != null) key = pair.getId();
+        String clause = getClause(queryInfo, params, key);
+        keyInfo.setClause(clause);
+        return (clause != null);
+    }
+
+    public static boolean fetchStdClauseParams(Context context, KeyInfo keyInfo, Map<String, Object> map, String defaultValue) {
+        if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
+            return false;
+        }
+        List<String> indexes = keyInfo.getIndexes();
+        if (indexes == null) {
+            keyInfo.setClause(null);
+            keyInfo.setQueryKey(null);
+            return false;
+        }
+        if (keyInfo.getClause() == null) {
+            keyInfo.setQueryKey(null);
+            return false;
+        }
+        List<Object> params = keyInfo.getParams();
+        if (params != null && params.size() == indexes.size()) {
+            String stdClause = "";
+            for (String indexKey : indexes) {
+                if (stdClause.length() > 0) {
+                    stdClause += " AND ";
+                }
+                stdClause += indexKey + " = ?";
             }
-            Condition ac = entry.getValue();
-            Condition bc = b.get(entry.getKey());
-            if (ac == bc) {
-                continue;
-            } else if (ac == null || bc == null) {
-                isSame = false;
-                break;
-            }
-            if (!ac.equals(bc)) {
-                isSame = false;
-                break;
+            if (stdClause.equals(keyInfo.getClause())) {
+                return true;
             }
         }
-        return isSame;
+        if (params == null) {
+            params = new ArrayList<Object>();
+            keyInfo.setParams(params);
+        } else {
+            params.clear();
+        }
+        String stdClause = "";
+        for (String indexKey : indexes) {
+            if (stdClause.length() > 0) {
+                stdClause += " AND ";
+            }
+            stdClause += indexKey + " = ?";
+            if (map.containsKey(indexKey)) {
+                params.add(map.get(indexKey));
+            } else if (defaultValue != null) {
+                params.add(defaultValue);
+            } else {
+                return false;
+            }
+        }
+        keyInfo.setClause(stdClause);
+        return true;
+    }
+
+    public static void save(Context context, QueryInfo queryInfo) {
+
+        KvPair queryPair = new KvPair(queryInfo.getKey(), "query", queryInfo.toMap());
+        KvIdType idType = queryPair.getIdType();
+
+        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
+        KvPair dbPair = AppCtx.getKvPairRepo().findOne(idType);
+        if (stopWatch != null) stopWatch.stopNow();
+
+        if (dbPair != null) {
+            if (queryPair.getValue().equals(dbPair.getValue())) {
+                return;
+            }
+        }
+
+        stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
+        AppCtx.getKvPairRepo().save(queryPair);
+        if (stopWatch != null) stopWatch.stopNow();
     }
 }

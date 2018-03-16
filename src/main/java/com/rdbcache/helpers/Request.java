@@ -9,8 +9,8 @@ package com.rdbcache.helpers;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.models.KeyInfo;
-import com.rdbcache.queries.Parser;
 import com.rdbcache.queries.QueryInfo;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,10 +49,6 @@ public class Request {
 
         KeyInfo keyInfo = anyKey.getAny();
 
-        if (key != null && key.equals("*")) {
-            keyInfo.setGeneratedKey(true);
-        }
-
         String[] opts = {null, null}; // {expire, table}
 
         if (opt1!= null && opt1.isPresent()) {
@@ -71,8 +67,7 @@ public class Request {
             }
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {
-                QueryInfo queryInfo = new QueryInfo(keyInfo.getTable());
-                Parser.setConditions(queryInfo, params);
+                QueryInfo queryInfo = new QueryInfo(keyInfo.getTable(), params);
                 keyInfo.setQueryInfo(queryInfo);
                 keyInfo.setQueryKey(queryInfo.getKey());
             }
@@ -86,15 +81,12 @@ public class Request {
             }
             Map<String, String[]> params = request.getParameterMap();
             if (params != null && params.size() > 0) {
-                QueryInfo queryInfo = new QueryInfo(keyInfo.getTable());
-                Parser.setConditions(queryInfo, params);
+                QueryInfo queryInfo = new QueryInfo(keyInfo.getTable(), params);
                 if (keyInfo.getQueryKey() == null || !keyInfo.getQueryKey().equals(queryInfo.getKey())) {
                     throw new BadRequestException(context, "can not modify condition for an existing key");
                 }
             }
         }
-
-        LOGGER.trace("key: " + key + " " + (keyInfo == null ? "" : keyInfo.toString()));
 
         return anyKey;
     }

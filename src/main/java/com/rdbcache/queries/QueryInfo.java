@@ -124,7 +124,7 @@ public class QueryInfo implements Serializable, Cloneable {
 
         if (table != null ? !table.equals(queryInfo.table) : queryInfo.table != null) return false;
         if (limit != null ? !limit.equals(queryInfo.limit) : queryInfo.limit != null) return false;
-        return Parser.isConditionsEqual(conditions, queryInfo.conditions);
+        return isConditionsEqual(conditions, queryInfo.conditions);
     }
 
     @Override
@@ -162,4 +162,40 @@ public class QueryInfo implements Serializable, Cloneable {
         }
         return cmap;
     }
+
+    private boolean isConditionsEqual(Map<String, Condition> a, Map<String, Condition> b) {
+        if (a == b) {
+            return true;
+        }
+        if ((a == null || a.size() == 0) && (b == null || b.size() == 0)) {
+            return true;
+        }
+        if ((a == null || a.size() == 0) || (b == null || b.size() == 0)) {
+            return false;
+        }
+        if (a.size() != b.size()) {
+            return false;
+        }
+        boolean isSame = true;
+        for (Map.Entry<String, Condition> entry: a.entrySet()) {
+            if (!b.containsKey(entry.getKey())) {
+                isSame = false;
+                break;
+            }
+            Condition ac = entry.getValue();
+            Condition bc = b.get(entry.getKey());
+            if (ac == bc) {
+                continue;
+            } else if (ac == null || bc == null) {
+                isSame = false;
+                break;
+            }
+            if (!ac.equals(bc)) {
+                isSame = false;
+                break;
+            }
+        }
+        return isSame;
+    }
 }
+

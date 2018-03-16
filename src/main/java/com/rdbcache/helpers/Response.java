@@ -7,9 +7,10 @@
 package com.rdbcache.helpers;
 
 import com.rdbcache.models.KvPair;
+import org.springframework.http.ResponseEntity;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -24,18 +25,14 @@ public class Response  {
     private static DecimalFormat durationFormat = new DecimalFormat("#.######");
 
     public static ResponseEntity<Map<String, Object>> send(Context context, KvPairs pairs) {
-        return send(context, pairs, false, null);
-    }
-
-    public static ResponseEntity<Map<String, Object>> send(Context context, KvPairs pairs, Boolean batch) {
-        return send(context, pairs, batch, null);
+        return send(context, pairs, null);
     }
 
     public static ResponseEntity<Map<String, Object>> send(Context context, Map<String, Object> data) {
-        return send(context, null, false, data);
+        return send(context, null, data);
     }
 
-    public static ResponseEntity<Map<String, Object>> send(Context context, KvPairs pairs, Boolean batch, Map<String, Object> data) {
+    public static ResponseEntity<Map<String, Object>> send(Context context, KvPairs pairs,Map<String, Object> data) {
 
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         Long now = System.currentTimeMillis();
@@ -52,14 +49,14 @@ public class Response  {
                 } else {
                     map.put("data", data);
                 }
-            } else if (pairs.size() == 1 && !batch) {
+            } else if (pairs.size() == 1 && !context.isBatch()) {
                 KvPair pair = pairs.get(0);
                 map.put("key", pair.getId());
-                if (context.ifSendValue()) {
+                if (context.isSendValue()) {
                     map.put("data",pair.getMapValue());
                 }
             } else {
-                if (context.ifSendValue()) {
+                if (context.isSendValue()) {
                     Map<String, Object> dmap = new LinkedHashMap<String, Object>();
                     map.put("data", dmap);
                     for (KvPair pair : pairs) {

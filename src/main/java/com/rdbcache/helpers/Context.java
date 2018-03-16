@@ -8,8 +8,6 @@ package com.rdbcache.helpers;
 
 import com.rdbcache.Application;
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.models.KvPair;
 import com.rdbcache.models.Monitor;
 import com.rdbcache.models.StopWatch;
 
@@ -19,10 +17,14 @@ import java.util.List;
 
 public class Context {
 
+    private String action;
+
     private Monitor monitor;
 
     private Boolean sendValue = true;
-    
+
+    private Boolean batch = false;
+
     private String traceId;
 
     private Boolean monitorEnabled = false;
@@ -31,18 +33,22 @@ public class Context {
         this.sendValue = sendValue;
         traceId = Utils.generateId();
         monitor = new Monitor();
+        action = Thread.currentThread().getStackTrace()[2].getMethodName();
+    }
+
+    public Context(Boolean sendValue, Boolean batch) {
+        this.sendValue = sendValue;
+        this.batch = batch;
+        traceId = Utils.generateId();
+        monitor = new Monitor();
+        action = Thread.currentThread().getStackTrace()[2].getMethodName();
     }
 
     public Context(String traceId) {
         this.sendValue = false;
         this.traceId = traceId;
         monitor = new Monitor();
-    }
-
-    // for monitoring purpose
-    public Context(Monitor monitor) {
-        this.monitor = monitor;
-        traceId = monitor.getTraceId();
+        action = Thread.currentThread().getStackTrace()[2].getMethodName();
     }
 
     public void enableMonitor(HttpServletRequest request) {
@@ -59,6 +65,14 @@ public class Context {
         monitor.setTraceId(traceId);
     }
 
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
     public Monitor getMonitor() {
         return monitor;
     }
@@ -67,12 +81,20 @@ public class Context {
         this.monitor = monitor;
     }
 
-    public Boolean ifSendValue() {
+    public Boolean isSendValue() {
         return sendValue;
     }
 
     public void setSendValue(Boolean sendValue) {
         this.sendValue = sendValue;
+    }
+
+    public Boolean isBatch() {
+        return batch;
+    }
+
+    public void setBatch(Boolean batch) {
+        this.batch = batch;
     }
 
     public String getTraceId() {
