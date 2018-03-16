@@ -66,6 +66,18 @@ public class AsyncOps {
         });
     }
 
+    public void doUpdateToDbase(Context context, KvPairs pairs, AnyKey anyKey) {
+
+        LOGGER.trace("doUpateToDbase: " + pairs.size() + " table: " + anyKey.getKey().getTable());
+
+        Utils.getExcutorService().submit(() -> {
+
+            AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
+            context.closeMonitor();
+        });
+    }
+
     public void doPushOperations(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doPushOperations: " + pairs.size() + " table: " + anyKey.getKey().getTable());
@@ -127,7 +139,7 @@ public class AsyncOps {
 
                 try {
 
-                    if (AppCtx.getRedisRepo().updateIfExists(context, kvPairs, anyKey)) {
+                    if (AppCtx.getRedisRepo().updateIfExist(context, kvPairs, anyKey)) {
                         AppCtx.getDbaseRepo().save(context, kvPairs, anyKey);
                         AppCtx.getExpireOps().setExpireKey(context, kvPairs, anyKey);
                         continue;

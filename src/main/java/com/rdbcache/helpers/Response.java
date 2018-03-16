@@ -70,6 +70,8 @@ public class Response  {
                     map.put("data", keys);
                 }
             }
+        } else if (data != null) {
+            map.put("data", data);
         }
         String traceId = context.getTraceId();
         if ( traceId != null) {

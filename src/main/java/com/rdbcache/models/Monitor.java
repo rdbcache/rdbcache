@@ -15,6 +15,8 @@ import java.util.List;
 @Table(name="rdbcache_monitor")
 public class Monitor implements Serializable {
 
+    private static final long serialVersionUID = 20180316L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;

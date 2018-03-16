@@ -291,7 +291,7 @@ public class LocalCache extends Thread {
         put("data::" + key, map, ttl * 1000);
     }
 
-    public void updateData(String key, @NotNull Map<String, Object> update, KeyInfo keyInfo) {
+    public void updateData(String key, Map<String, Object> update, KeyInfo keyInfo) {
         if (dataMaxCacheTLL <= 0L || update.size() == 0) {
             return ;
         }

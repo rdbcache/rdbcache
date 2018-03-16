@@ -84,10 +84,11 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         LOGGER.trace("find pairs(" + pairs.size() + ") anyKey(" + anyKey.size() + ")");
 
         if (pairs.size() == 0 || pairs.getPair() == null) {
+            LOGGER.error("find(0) failed - nothing to find");
             return false;
         }
 
-        LOGGER.trace("find -> " + pairs.getPair().getId() + (pairs.size() == 1 ? "" : "..."));
+        LOGGER.trace("key: " + pairs.getPair().getId() + (pairs.size() == 1 ? "" : "..."));
 
         List<String> keys = new ArrayList<String>();
         List<String> redisKeys = new ArrayList<String>();
@@ -124,7 +125,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (foundAll) {
-            LOGGER.trace("found from local cache");
+            LOGGER.debug("find(" + pairs.size() + ") Ok - found from cache");
             return true;
         }
 
@@ -180,7 +181,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
 
             if (foundAll) {
-                LOGGER.trace("found from redis");
+                LOGGER.debug("find(" + pairs.size() + ") Ok - found from redis");
                 return true;
             }
         }
@@ -228,7 +229,11 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
         }
 
-        LOGGER.trace(foundAll ? "found from database" : "not found");
+        if (foundAll) {
+            LOGGER.debug("find(" + pairs.size() + ") Ok - found from database");
+        } else {
+            LOGGER.debug("find(" + pairs.size() + ") not found");
+        }
 
         return foundAll;
     }
@@ -240,11 +245,11 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 pairs.size() + ", save only supports anyKey size == pairs size");
 
         if (pairs.size() == 0 || anyKey.size() == 0) {
-            LOGGER.debug("save(" + pairs.size() + ") anyKey(" + anyKey.size() + ")");
+            LOGGER.debug("save(" + pairs.size() + ") anyKey(" + anyKey.size() + ") - nothing to save");
             return false;
         }
 
-        LOGGER.trace("save(" + pairs.size() + "): " + pairs.getPair().getId() + " keyInfo: " + anyKey.getAny().toString());
+        LOGGER.trace("save(" + pairs.size() + "): " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ") + anyKey.getAny().toString());
 
         List<String> todoKeys = new ArrayList<String>();
         List<KeyInfo> todoKeyInfos = new ArrayList<KeyInfo>();
@@ -257,7 +262,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             String key = pair.getId();
 
             if (key == null || key.length() == 0) {
-                LOGGER.debug("save invalid key");
+                LOGGER.trace("save(" + key + ") failed - invalid key");
                 continue;
             }
 
@@ -266,7 +271,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
 
             if (!keyInfo.getIsNew()) {
-                LOGGER.debug("save KeyInfo is not new, skip ...");
+                LOGGER.trace("save KeyInfo is not new, skip ...");
                 continue;
             }
 
@@ -274,6 +279,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             todoKeyInfos.add(keyInfo);
         }
         if (todoKeys.size() == 0) {
+            LOGGER.debug("save(" + pairs.size() + ") OK");
             return true;
         }
 
@@ -307,6 +313,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             if (stopWatch != null) stopWatch.stopNow();
         });
 
+        LOGGER.debug("save(" + pairs.size() + ") OK");
+
         return true;
     }
 
@@ -318,7 +326,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             return;
         }
 
-        LOGGER.trace("delete(" + pairs.size() + "): " + pairs.getPair().getId());
+        LOGGER.trace("delete(" + pairs.size() + "): " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
 
         if (enableLocalCache) {
             AppCtx.getLocalCache().removeKeyInfo(pairs);
@@ -337,5 +345,6 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         if (dbOps) {
             AppCtx.getKvPairRepo().delete(pairs);
         }
+        LOGGER.debug("delete(" + pairs.size() + ") Ok");
     }
 }

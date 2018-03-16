@@ -17,7 +17,9 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.*;
 
-public class QueryInfo implements Serializable, Cloneable {
+public class QueryInfo implements Serializable {
+
+    private static final long serialVersionUID = 20180316L;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryInfo.class);
 
@@ -32,7 +34,7 @@ public class QueryInfo implements Serializable, Cloneable {
 
     public QueryInfo(String table, Map<String, String[]> params) {
         this.table = table;
-        Parser.setConditions(this, params);
+        Parser.prepareConditions(this, params);
     }
 
     public QueryInfo(String table) {
@@ -134,33 +136,6 @@ public class QueryInfo implements Serializable, Cloneable {
         result = 31 * result + (limit != null ? limit.hashCode() : 0);
         result = 31 * result + (conditions != null ? conditions.hashCode() : 0);
         return result;
-    }
-
-    public QueryInfo clone() {
-        QueryInfo queryInfo = null; //new QueryInfo(table);
-        try {
-            queryInfo = (QueryInfo) super.clone();
-        } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
-            throw new ServerErrorException(e.getCause().getMessage());
-        }
-        if (conditions != null) queryInfo.conditions = cloneConditions();
-        return queryInfo;
-    }
-
-    private Map<String, Condition> cloneConditions() {
-        if (conditions == null) {
-            return null;
-        }
-        Map<String, Condition> cmap = new LinkedHashMap<String, Condition>();
-        if (conditions.size() == 0) {
-            return cmap;
-        }
-        for(Map.Entry<String, Condition> entry: conditions.entrySet()) {
-            Condition condition = entry.getValue();
-            cmap.put(entry.getKey(), condition.clone());
-        }
-        return cmap;
     }
 
     private boolean isConditionsEqual(Map<String, Condition> a, Map<String, Condition> b) {

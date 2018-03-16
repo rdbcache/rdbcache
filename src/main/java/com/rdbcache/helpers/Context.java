@@ -51,6 +51,13 @@ public class Context {
         action = Thread.currentThread().getStackTrace()[2].getMethodName();
     }
 
+    public Context() {
+        this.sendValue = false;
+        traceId = Utils.generateId();
+        monitor = new Monitor();
+        action = Thread.currentThread().getStackTrace()[2].getMethodName();
+    }
+
     public void enableMonitor(HttpServletRequest request) {
         monitorEnabled = true;
         monitor.setName(request.getRequestURI());

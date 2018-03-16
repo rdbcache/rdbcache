@@ -85,7 +85,7 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(key);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         if (key.equals("*")) {
             if (AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
@@ -138,12 +138,12 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2) {
 
-        Context context = new Context(false);
+        Context context = new Context();
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         KvPairs pairs = new KvPairs(key, value);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         if (enableLocalCache) {
 
@@ -183,12 +183,12 @@ public class RdbcacheApis {
             throw new BadRequestException("missing request body");
         }
 
-        Context context = new Context(false);
+        Context context = new Context();
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         KvPairs pairs = new KvPairs(key, value);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         if (enableLocalCache) {
 
@@ -227,12 +227,12 @@ public class RdbcacheApis {
         if (value == null || value.length() == 0) {
             throw new BadRequestException("missing request body");
         }
-        Context context = new Context(false);
+        Context context = new Context();
         AnyKey anyKey = Request.process(context, request, key, opt1, opt2);
 
         KvPairs pairs = new KvPairs(key, value);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         if (key.equals("*")) {
 
@@ -284,7 +284,7 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(key, value);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         KvPairs pairs2 = new KvPairs(key, value);
 
@@ -341,7 +341,7 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(key, value);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         KvPairs pairs2 = new KvPairs(key, value);
 
@@ -402,7 +402,7 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(keys);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         AppCtx.getRedisRepo().find(context, pairs, anyKey);
 
@@ -413,11 +413,11 @@ public class RdbcacheApis {
 
             if (!pair.hasContent()) {
 
-                AnyKey anyKey2 = new AnyKey(new KeyInfo());
-                KvPairs pairs2 = new KvPairs(pair);
+                AnyKey anyKeyNew = new AnyKey();
+                KvPairs pairsNew = new KvPairs(pair);
 
-                if (AppCtx.getKeyInfoRepo().find(context, pairs2, anyKey2) &&
-                    AppCtx.getDbaseRepo().find(context, pairs2, anyKey2)) {
+                if (AppCtx.getKeyInfoRepo().find(context, pairsNew, anyKeyNew) &&
+                    AppCtx.getDbaseRepo().find(context, pairsNew, anyKeyNew)) {
 
                     dbPairs.add(pair);
                 }
@@ -428,7 +428,7 @@ public class RdbcacheApis {
         }
 
         if (redisPairs.size() > 0) {
-            AppCtx.getAsyncOps().doSaveToDbase(context, redisPairs, anyKey);
+            AppCtx.getAsyncOps().doUpdateToDbase(context, redisPairs, anyKey);
         }
 
         if (dbPairs.size() > 0) {
@@ -476,7 +476,7 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(map);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         AppCtx.getAsyncOps().doPushOperations(context, pairs, anyKey);
 
@@ -504,12 +504,12 @@ public class RdbcacheApis {
             throw new BadRequestException("no * allowed as key");
         }
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         KvPairs pairs = new KvPairs(key);
 
-        LOGGER.trace("keys: " + pairs.getKeys().toString());
+        LOGGER.trace("key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         AppCtx.getAsyncOps().doDeleteFromRedis(context, pairs);
 
@@ -537,12 +537,12 @@ public class RdbcacheApis {
             throw new BadRequestException("no * allowed as key");
         }
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         KvPairs pairs = new KvPairs(keys);
 
-        LOGGER.trace("keys: " + pairs.getKeys().toString());
+        LOGGER.trace("key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         AppCtx.getAsyncOps().doDeleteFromRedis(context, pairs);
 
@@ -570,12 +570,12 @@ public class RdbcacheApis {
             throw new BadRequestException("no * allowed as key");
         }
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         KvPairs pairs = new KvPairs(key);
 
-        LOGGER.trace("keys: " + pairs.getKeys().toString());
+        LOGGER.trace("key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         AppCtx.getAsyncOps().doDeleteFromRedisAndDbase(context, pairs);
 
@@ -603,7 +603,7 @@ public class RdbcacheApis {
             throw new BadRequestException("no * allowed as key");
         }
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         KvPairs pairs = new KvPairs(keys);
@@ -642,8 +642,6 @@ public class RdbcacheApis {
         AnyKey anyKey = Request.process(context, request, null, opt1, opt2);
 
         KvPairs pairs = new KvPairs();
-
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
 
         if (!AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
@@ -690,7 +688,7 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(keys);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         if (!AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
@@ -739,7 +737,7 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs(list);
 
-        LOGGER.trace(anyKey.getAny().toString() + " keys: " + pairs.getKeys().toString());
+        LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
         AppCtx.getAsyncOps().doSaveAllToRedisAndSaveAllTodDbase(context, pairs, anyKey);
 
@@ -771,8 +769,6 @@ public class RdbcacheApis {
         Request.process(context, request);
 
         KvPairs pairs = new KvPairs();
-
-        LOGGER.trace("keys: " + pairs.getKeys().toString());
 
         KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(traceId, "trace"));
         if (pair != null) {
@@ -813,8 +809,6 @@ public class RdbcacheApis {
 
         KvPairs pairs = new KvPairs();
 
-        LOGGER.trace("keys: " + pairs.getKeys().toString());
-
         for (String referenced_id: traceIds) {
             KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(referenced_id, "trace"));
             if (pair != null) {
@@ -844,7 +838,7 @@ public class RdbcacheApis {
             HttpServletRequest request,
             @PathVariable Optional<String> opt) {
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         if (!opt.isPresent()) {

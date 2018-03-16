@@ -71,7 +71,9 @@ public class Parser {
 
     private static String opsSingleList[] = { "IS NOT NULL", "IS NULL", "IS NOT FALSE", "IS NOT TRUE", "IS TRUE", "IS FALSE"};
 
-    public static void setConditions(QueryInfo queryInfo, Map<String, String[]> params) {
+    // translate HTTP query string into structured conditions
+    //
+    public static void prepareConditions(QueryInfo queryInfo, Map<String, String[]> params) {
 
         Map<String, Condition> conditions = queryInfo.getConditions();
         if (conditions == null) {
@@ -132,73 +134,8 @@ public class Parser {
         }
     }
 
-    public static String getClause(QueryInfo queryInfo, List<Object> params, String defaultValue) {
-
-        Map<String, Condition> conditions = queryInfo.getConditions();
-        if (conditions == null || conditions.size() == 0) {
-            return null;
-        }
-        params.clear();
-
-        String clause = "";
-        int total = 0;
-        for (Map.Entry<String, Condition> entry: conditions.entrySet()) {
-            if (total > 0) {
-                clause += " AND ";
-            }
-            String ckey = entry.getKey();
-            Condition condition = entry.getValue();
-            int count = 0;
-            String exp = "";
-            for (Map.Entry<String, List<String>> opsEntry: condition.entrySet()) {
-                String ops = opsEntry.getKey();
-                if (count > 0) {
-                    exp += " AND ";
-                }
-                List<String> values = opsEntry.getValue();
-                String subExp = "";
-                if (values == null || values.size() == 0) {
-                    subExp += ckey + " = ?";
-                    params.add(defaultValue);
-                } else {
-                    int i = 0;
-                    for (; i < values.size(); i++) {
-                        String value = values.get(i);
-                        if (i > 0) {
-                            if (Arrays.asList(opsOrList).contains(ops)) {
-                                subExp += " OR ";
-                            } else {
-                                subExp += " AND ";
-                            }
-                        }
-                        if (Arrays.asList(opsSingleList).contains(ops)) {
-                            subExp += ckey + " " + ops;
-                        } else {
-                            subExp += ckey + " " + ops + " ?";
-                            if (value.length() > 0) {
-                                params.add(value);
-                            } else {
-                                params.add(defaultValue);
-                            }
-                        }
-                    }
-                }
-                exp += "(" + subExp + ")";
-                count++;
-            }
-            if (count > 1) {
-                clause += "(" + exp + ")";
-            } else {
-                clause += exp;
-            }
-            total++;
-        }
-
-        LOGGER.trace("where clause: " + clause + " params: " + params.toString());
-
-        return clause;
-    }
-
+    // translate query string to SQL where clause and parameters
+    //
     public static boolean prepareQueryClauseParams(Context context, KvPair pair, KeyInfo keyInfo) {
         QueryInfo queryInfo = keyInfo.getQueryInfo();
         if (queryInfo == null) {
@@ -224,12 +161,66 @@ public class Parser {
         }
         String key = null;
         if (pair != null) key = pair.getId();
-        String clause = getClause(queryInfo, params, key);
+        String clause = "";
+        int total = 0;
+        for (Map.Entry<String, Condition> entry: conditions.entrySet()) {
+            if (total > 0) {
+                clause += " AND ";
+            }
+            String ckey = entry.getKey();
+            Condition condition = entry.getValue();
+            int count = 0;
+            String exp = "";
+            for (Map.Entry<String, List<String>> opsEntry: condition.entrySet()) {
+                String ops = opsEntry.getKey();
+                if (count > 0) {
+                    exp += " AND ";
+                }
+                List<String> values = opsEntry.getValue();
+                String subExp = "";
+                if (values == null || values.size() == 0) {
+                    subExp += ckey + " = ?";
+                    params.add(key);
+                } else {
+                    int i = 0;
+                    for (; i < values.size(); i++) {
+                        String value = values.get(i);
+                        if (i > 0) {
+                            if (Arrays.asList(opsOrList).contains(ops)) {
+                                subExp += " OR ";
+                            } else {
+                                subExp += " AND ";
+                            }
+                        }
+                        if (Arrays.asList(opsSingleList).contains(ops)) {
+                            subExp += ckey + " " + ops;
+                        } else {
+                            subExp += ckey + " " + ops + " ?";
+                            if (value.length() > 0) {
+                                params.add(value);
+                            } else {
+                                params.add(key);
+                            }
+                        }
+                    }
+                }
+                exp += "(" + subExp + ")";
+                count++;
+            }
+            if (count > 1) {
+                clause += "(" + exp + ")";
+            } else {
+                clause += exp;
+            }
+            total++;
+        }
         keyInfo.setClause(clause);
         return (clause != null);
     }
 
-    public static boolean fetchStdClauseParams(Context context, KeyInfo keyInfo, Map<String, Object> map, String defaultValue) {
+    // prepare SQL where clause and parameters which use only primary key or unique indexes
+    //
+    public static boolean prepareStandardClauseParams(Context context, KvPair pair, KeyInfo keyInfo) {
         if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
             return false;
         }
@@ -243,43 +234,53 @@ public class Parser {
             keyInfo.setQueryKey(null);
             return false;
         }
-        List<Object> params = keyInfo.getParams();
-        if (params != null && params.size() == indexes.size()) {
-            String stdClause = "";
-            for (String indexKey : indexes) {
-                if (stdClause.length() > 0) {
-                    stdClause += " AND ";
-                }
-                stdClause += indexKey + " = ?";
-            }
-            if (stdClause.equals(keyInfo.getClause())) {
-                return true;
-            }
-        }
-        if (params == null) {
-            params = new ArrayList<Object>();
-            keyInfo.setParams(params);
-        } else {
-            params.clear();
-        }
+
+        String key = pair.getId();
+        Map<String, Object> map = pair.getData();
+        List<Object> stdParams = new ArrayList<Object>();
+        int stdParamsCount = 0;
         String stdClause = "";
+
+        // 1) to use data from pair to fill up params
+        //
+        boolean ready = true;
         for (String indexKey : indexes) {
             if (stdClause.length() > 0) {
                 stdClause += " AND ";
             }
             stdClause += indexKey + " = ?";
-            if (map.containsKey(indexKey)) {
-                params.add(map.get(indexKey));
-            } else if (defaultValue != null) {
-                params.add(defaultValue);
-            } else {
-                return false;
+            stdParamsCount++;
+            if (map != null && map.containsKey(indexKey)) {
+                stdParams.add(map.get(indexKey));
+            } else  {
+                stdParams.add(key);
+                ready = false;
             }
         }
+        if (ready) {
+            keyInfo.setClause(stdClause);
+            keyInfo.setParams(stdParams);
+            return true;
+        }
+
+        // 2) check if keyInfo is already ready
+        //
+        if (stdClause.equals(keyInfo.getClause())) {
+            List<Object> params = keyInfo.getParams();
+            if (params != null && params.size() == stdParamsCount) {
+                return true;
+            }
+        }
+
+        // 3) best effort
+        //
         keyInfo.setClause(stdClause);
+        keyInfo.setParams(stdParams);
         return true;
     }
 
+    // save query info to database
+    //
     public static void save(Context context, QueryInfo queryInfo) {
 
         KvPair queryPair = new KvPair(queryInfo.getKey(), "query", queryInfo.toMap());
@@ -294,7 +295,6 @@ public class Parser {
                 return;
             }
         }
-
         stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
         AppCtx.getKvPairRepo().save(queryPair);
         if (stopWatch != null) stopWatch.stopNow();

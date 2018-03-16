@@ -20,11 +20,13 @@ import java.util.Map;
 @Table(name="rdbcache_kv_pair")
 public class KvPair implements Serializable {
 
+    private static final long serialVersionUID = 20180316L;
+
     @EmbeddedId
     private KvIdType idType;
 
     @Transient
-    private Boolean uuid = false;
+    private Boolean isUuid = false;
 
     @Transient
     private Map<String, Object> data;
@@ -38,7 +40,7 @@ public class KvPair implements Serializable {
     public KvPair(String id, String type, String value) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId(), type);
-            uuid = true;
+            isUuid = true;
         } else {
             idType = new KvIdType(id, type);
         }
@@ -48,7 +50,7 @@ public class KvPair implements Serializable {
     public KvPair(String id, String type, Map<String, Object> data) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId(), type);
-            uuid = true;
+            isUuid = true;
         } else {
             idType = new KvIdType(id, type);
         }
@@ -58,7 +60,7 @@ public class KvPair implements Serializable {
     public KvPair(String id, String type) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId(), type);
-            uuid = true;
+            isUuid = true;
         } else {
             idType = new KvIdType(id, type);
         }
@@ -68,7 +70,7 @@ public class KvPair implements Serializable {
     public KvPair(String id, Object value) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId());
-            uuid = true;
+            isUuid = true;
         } else {
             idType = new KvIdType(id);
         }
@@ -78,7 +80,7 @@ public class KvPair implements Serializable {
     public KvPair(String id) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId());
-            uuid = true;
+            isUuid = true;
         } else {
             idType = new KvIdType(id);
         }
@@ -105,11 +107,19 @@ public class KvPair implements Serializable {
             idType = new KvIdType();
         }
         if (id.equals("*")) {
-            uuid = true;
             idType.setId(Utils.generateId());
+            isUuid = true;
         } else {
             idType.setId(id);
         }
+    }
+
+    public Boolean isUuid() {
+        return isUuid;
+    }
+
+    public void setIsUuid(Boolean isUuid) {
+        this.isUuid = isUuid;
     }
 
     public Date getCreatedAt() {
@@ -224,10 +234,6 @@ public class KvPair implements Serializable {
             return true;
         }
         return false;
-    }
-
-    public KvPair clone() {
-        return new KvPair(getId(), getType(), getValue());
     }
 
     @Override

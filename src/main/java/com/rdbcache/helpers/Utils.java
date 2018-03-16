@@ -180,7 +180,6 @@ public class Utils {
             } catch (Exception e) {
                 //e.printStackTrace();
             }
-            System.out.println("a = "+ad.toString()+" b = "+bd.toString());
             if (ad != null && bd != null && ad.equals(bd)) {
                 return true;
             }

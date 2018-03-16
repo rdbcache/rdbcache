@@ -22,6 +22,8 @@ import java.util.*;
 
 public class KeyInfo implements Serializable, Cloneable {
 
+    private static final long serialVersionUID = 20180316L;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyInfo.class);
 
     private String expire = PropCfg.getDefaultExpire();
@@ -84,16 +86,20 @@ public class KeyInfo implements Serializable, Cloneable {
         return params;
     }
 
+    public void setParams(List<Object> params) {
+        this.params = params;
+    }
+
+    public void clearParams() {
+        if (params != null) params.clear();
+    }
+
     public String getClause() {
         return clause;
     }
 
     public void setClause(String clause) {
         this.clause = clause;
-    }
-
-    public void setParams(List<Object> params) {
-        this.params = params;
     }
 
     public String getQueryKey() {
@@ -189,6 +195,12 @@ public class KeyInfo implements Serializable, Cloneable {
             e.printStackTrace();
             throw new ServerErrorException(e.getCause().getMessage());
         }
+        if (params != null) {
+            keyInfo.params = new ArrayList<>();
+            for (Object p: params) {
+                keyInfo.params.add(p);
+            }
+        }
         return keyInfo;
     }
 
@@ -197,7 +209,13 @@ public class KeyInfo implements Serializable, Cloneable {
         if (expire != null) map.put("expire", expire);
         if (table != null) map.put("table", table);
         if (clause != null) map.put("clause", clause);
-        if (params != null) map.put("params", params);
+        if (params != null) {
+            List<Object> ps = new ArrayList<>();
+            for (Object p: params) {
+                ps.add(p);
+            }
+            map.put("params", ps);
+        }
         if (queryKey != null) map.put("query_key", queryKey);
         return map;
     }
@@ -207,7 +225,13 @@ public class KeyInfo implements Serializable, Cloneable {
         if (map.containsKey("expire")) expire = (String) map.get("expire");
         if (map.containsKey("table")) table = (String) map.get("table");
         if (map.containsKey("clause")) clause = (String) map.get("clause");
-        if (map.containsKey("params")) params = (List<Object>) map.get("params");
+        if (map.containsKey("params")) {
+            List<Object> ps = (List<Object>) map.get("params");
+            params = new ArrayList<>();
+            for (Object p: ps) {
+                params.add(p);
+            }
+        }
         if (map.containsKey("query_key")) queryKey = (String) map.get("query_key");
         else queryKey = null;
     }

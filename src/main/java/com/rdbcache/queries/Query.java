@@ -96,7 +96,7 @@ public class Query {
                 ready = true;
             } else if (keyInfo.getQueryLimit() != null) {
                 ready = true;
-            } else if (Parser.fetchStdClauseParams(context, keyInfo, pair.getData(), pair.getId())) {
+            } else if (Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
                 ready = true;
             }
             if (!ready) {
@@ -154,21 +154,16 @@ public class Query {
                 Map<String, Object> columns = keyInfo.getColumns();
 
                 anyKey.clear();
-                KvPair pair = null;
                 for (int i = 0; i < list.size(); i++) {
 
                     if (i == pairs.size()) {
-                        pair = new KvPair(Utils.generateId());
-                        pairs.add(pair);
-                    } else {
-                        pair = pairs.get(i);
+                        pairs.add(new KvPair("*"));
                     }
 
-                    Map<String, Object> map = convertDbMap(columns, list.get(i));
-                    pair.setData(map);
+                    KvPair pair = pairs.get(i);
+                    pair.setData(convertDbMap(columns, list.get(i)));
 
-                    keyInfo.setParams(null);
-                    Parser.fetchStdClauseParams(context, keyInfo, pair.getData(), pair.getId());
+                    Parser.prepareStandardClauseParams(context, pair, keyInfo);
 
                     KeyInfo keyInfoNew = keyInfo.clone();
                     keyInfoNew.setIsNew(true);
@@ -208,12 +203,11 @@ public class Query {
             return false;
         }
 
-        KvPair pair  = pairs.getPair();
+        KvPair pair = pairs.getPair();
         Map<String, Object> map = pair.getData();
+
         params = new ArrayList<>();
-
         String fields = "", values = "";
-
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             params.add(entry.getValue());
             if (fields.length() != 0) {
@@ -285,9 +279,6 @@ public class Query {
             if (rowCount > 0) {
 
                 String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
-                if (autoIncKey != null && keyHolder.getKey() == null) {
-                    LOGGER.error("failed to get auto increment id from query");
-                }
                 if (autoIncKey != null && keyHolder.getKey() != null) {
                     String key = pair.getId();
                     String keyValue = String.valueOf(keyHolder.getKey());
@@ -300,8 +291,7 @@ public class Query {
                     }
                 }
 
-                keyInfo.setParams(null);
-                Parser.fetchStdClauseParams(context, keyInfo, map, pair.getId());
+                Parser.prepareStandardClauseParams(context, pair, keyInfo);
 
                 KeyInfo keyInfoNew = keyInfo.clone();
                 keyInfoNew.setIsNew(true);
@@ -350,7 +340,7 @@ public class Query {
         KvPair pair  = pairs.getPair();
         Map<String, Object> map = pair.getData();
 
-        if (!Parser.fetchStdClauseParams(context, keyInfo, map, pair.getId())) {
+        if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
             return false;
         }
 
@@ -385,6 +375,17 @@ public class Query {
 
             if (i > 0) {
 
+                if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
+
+                    allOk = false;
+
+                    String msg = "failed to update when calling prepareStandardClauseParams for " + pair.getId();
+                    LOGGER.error(msg);
+                    context.logTraceMessage(msg);
+
+                    continue;
+                }
+
                 List<Object> queryParams = keyInfo.getParams();
                 Map<String, Object> map = pair.getData();
                 params = new ArrayList<>();
@@ -397,10 +398,11 @@ public class Query {
                 }
 
                 params.addAll(queryParams);
-                Parser.fetchStdClauseParams(context, keyInfo, map, pair.getId());
                 String clause = keyInfo.getClause();
 
                 sql = "update " + table + " set " + updates + " where " + clause + " limit 1";
+
+                LOGGER.trace("sql: " + sql);
             }
 
             LOGGER.trace("params: " + params.toString());
@@ -457,7 +459,7 @@ public class Query {
         KvPair pair  = pairs.getPair();
         Map<String, Object> map = pair.getData();
 
-        if (!Parser.fetchStdClauseParams(context, keyInfo, map, pair.getId())) {
+        if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
             return false;
         }
 
@@ -482,7 +484,18 @@ public class Query {
             KvPair pair  = pairs.get(i);
 
             if (i > 0) {
+
+                if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
+
+                    String msg = "failed to delete when calling prepareStandardClauseParams for " + pair.getId();
+                    LOGGER.error(msg);
+                    context.logTraceMessage(msg);
+
+                    continue;
+                }
                 params = keyInfo.getParams();
+
+                LOGGER.trace("sql: " + sql);
             }
 
             LOGGER.trace("params: " + params.toString());

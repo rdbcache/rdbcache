@@ -13,6 +13,8 @@ import java.io.Serializable;
 @Table(name="rdbcache_stopwatch")
 public class StopWatch implements Serializable {
 
+    private static final long serialVersionUID = 20180316L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

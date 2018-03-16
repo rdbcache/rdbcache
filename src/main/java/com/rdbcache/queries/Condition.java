@@ -166,9 +166,4 @@ public class Condition extends HashMap<String, List<String>> {
             push(entry.getKey(), list);
         }
     }
-
-    public Condition clone() {
-        return (Condition) super.clone();
-    }
-
 }

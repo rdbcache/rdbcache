@@ -124,7 +124,7 @@ public class ExpireOps {
             String key = pair.getId();
 
             if (key == null || key.length() == 0) {
-                LOGGER.trace("setExpireKey invalid key");
+                LOGGER.warn("setExpireKey invalid key");
                 continue;
             }
 

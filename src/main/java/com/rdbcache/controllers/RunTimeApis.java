@@ -37,12 +37,12 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query-version-info",
+            "/v1/query/version-info",
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryVerionInfo(
             HttpServletRequest request) {
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         VersionInfo versionInfo = new VersionInfo();
@@ -59,14 +59,14 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query-configurations",
-            "/v1/query-configurations/{nameOpt}",
+            "/v1/query/configurations",
+            "/v1/query/configurations/{nameOpt}",
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryConfigurations(
             HttpServletRequest request,
             @PathVariable Optional<String> nameOpt) {
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         Map<String, Object> data = Utils.toMap(PropCfg.printConfigurations());
@@ -91,14 +91,14 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query-properties",
-            "/v1/query-properties/{nameOpt}",
+            "/v1/query/properties",
+            "/v1/query/properties/{nameOpt}",
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryProperties(
             HttpServletRequest request,
             @PathVariable Optional<String> nameOpt) {
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         Map<String, Object> data = new LinkedHashMap<String, Object>();
@@ -130,15 +130,15 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query-cache/{action}",
-            "/v1/query-cache/{action}/{keyOpt}"
+            "/v1/query/cache/{action}",
+            "/v1/query/cache/{action}/{keyOpt}"
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryCache(
             HttpServletRequest request,
             @PathVariable String action,
             @PathVariable Optional<String> keyOpt) {
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         String key = null;
@@ -196,14 +196,14 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query-app-ctx",
-            "/v1/query-app-ctx/{nameOpt}",
+            "/v1/query/app-ctx",
+            "/v1/query/app-ctx/{nameOpt}",
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryAppCtx(
             HttpServletRequest request,
             @PathVariable Optional<String> nameOpt) {
 
-        Context context = new Context(false);
+        Context context = new Context();
         Request.process(context, request);
 
         Map<String, Object> data = new LinkedHashMap<String, Object>();

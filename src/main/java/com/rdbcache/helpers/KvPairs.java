@@ -15,19 +15,11 @@ import java.util.Map;
 public class KvPairs extends ArrayList<KvPair>{
 
     public KvPairs(String id, String value) {
-        if (id.equals("*")) {
-            add(new KvPair(Utils.generateId(), "data", value));
-        } else {
-            add(new KvPair(id, "data", value));
-        }
+        add(new KvPair(id, "data", value));
     }
 
     public KvPairs(String id) {
-        if (id.equals("*")) {
-            add(new KvPair(Utils.generateId()));
-        } else {
-            add(new KvPair(id));
-        }
+        add(new KvPair(id));
     }
 
     public KvPairs(List list) {
@@ -40,13 +32,9 @@ public class KvPairs extends ArrayList<KvPair>{
                 if (map.containsKey("key")) {
                     String key = (String) map.get("key");
                     map.remove("key");
-                    if (key.equals("*")) {
-                        add(new KvPair(Utils.generateId(), map));
-                    } else {
-                        add(new KvPair(key, map));
-                    }
+                    add(new KvPair(key, map));
                 } else {
-                    add(new KvPair(Utils.generateId(), map));
+                    add(new KvPair("*", map));
                 }
             }
         }

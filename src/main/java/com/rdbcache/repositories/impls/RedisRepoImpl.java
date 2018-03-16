@@ -84,10 +84,11 @@ public class RedisRepoImpl implements RedisRepo {
     }
 
     @Override
-    public boolean ifExits(Context context, KvPairs pairs, AnyKey anyKey) {
+    public boolean ifExist(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("ifExits pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                " anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("ifExist pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
+                (pairs.size() > 1 ? " ... " : " ") +
+                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean foundAll = true;
 
@@ -99,6 +100,7 @@ public class RedisRepoImpl implements RedisRepo {
 
             if (enableLocalCache) {
                 if (AppCtx.getLocalCache().containsData(key)) {
+                    LOGGER.trace("ifExist found " + key + " from cache");
                     continue;
                 }
             }
@@ -112,16 +114,17 @@ public class RedisRepoImpl implements RedisRepo {
             }
         }
 
-        LOGGER.trace("ifExits returns " + foundAll);
+        LOGGER.debug("ifExist returns " + foundAll);
 
         return foundAll;
     }
 
     @Override
-    public boolean updateIfExists(Context context, KvPairs pairs, AnyKey anyKey) {
+    public boolean updateIfExist(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("updateIfExists pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                " anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("updateIfExist pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
+                (pairs.size() > 1 ? " ... " : " ") +
+                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean foundAll = true;
 
@@ -129,17 +132,28 @@ public class RedisRepoImpl implements RedisRepo {
             
             KvPair pair = pairs.get(i);
             String key = pair.getId();
-            String table = anyKey.getKey(i).getTable();
+
+            boolean found = false;
+            if (enableLocalCache) {
+                if (AppCtx.getLocalCache().containsData(key)) {
+                    found = true;
+                    LOGGER.trace("updateIfExist found " + key + " from cache");
+                }
+            }
 
             String hashKey = hdataPrefix + "::" + key;
 
-            StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
-            boolean result = AppCtx.getRedisTemplate().hasKey(hashKey);
-            if (stopWatch != null) stopWatch.stopNow();
+            if (!found) {
 
-            if (!result) {
-                foundAll = false;
-                continue;
+                StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
+                boolean result = AppCtx.getRedisTemplate().hasKey(hashKey);
+                if (stopWatch != null) stopWatch.stopNow();
+
+                if (!result) {
+                    foundAll = false;
+                    LOGGER.trace("updateIfExist can not find " + key + " from redis");
+                    continue;
+                }
             }
 
             if (enableLocalCache) {
@@ -148,7 +162,7 @@ public class RedisRepoImpl implements RedisRepo {
 
             Map<String, Object> map = pair.getData();
 
-            stopWatch = context.startStopWatch("redis", "hashOps.putAll");
+            StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
             try {
                 hashOps.putAll(hashKey, map);
                 if (stopWatch != null) stopWatch.stopNow();
@@ -169,7 +183,7 @@ public class RedisRepoImpl implements RedisRepo {
             }
         }
 
-        LOGGER.trace("updateIfExists returns " + foundAll);
+        LOGGER.debug("updateIfExist returns " + foundAll);
 
         return foundAll;
     }
@@ -178,7 +192,8 @@ public class RedisRepoImpl implements RedisRepo {
     public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("find pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                " anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+                (pairs.size() > 1 ? " ... " : " ") +
+                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean foundAll = true;
 
@@ -192,6 +207,9 @@ public class RedisRepoImpl implements RedisRepo {
 
             if (enableLocalCache) {
                 map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
+                if (map != null && map.size() > 0) {
+                    LOGGER.trace("find - found " + key + " from cache");
+                }
             }
 
             if (map == null) {
@@ -201,8 +219,11 @@ public class RedisRepoImpl implements RedisRepo {
                     map = hashOps.entries(hashKey);
                     if (stopWatch != null) stopWatch.stopNow();
 
-                    if (enableLocalCache) {
-                        AppCtx.getLocalCache().putData(key, map, anyKey.getAny());
+                    if (map != null && map.size() > 0) {
+                        LOGGER.trace("find - found " + key + " from redis");
+                        if (enableLocalCache) {
+                            AppCtx.getLocalCache().putData(key, map, anyKey.getAny());
+                        }
                     }
                 } catch (Exception e) {
                     if (stopWatch != null) stopWatch.stopNow();
@@ -219,13 +240,14 @@ public class RedisRepoImpl implements RedisRepo {
 
             if (map == null || map.size() == 0) {
                 foundAll = false;
+                LOGGER.trace("find - not found " + key);
                 continue;
             }
 
             pair.setData(map);
         }
 
-        LOGGER.trace("find returns " + foundAll);
+        LOGGER.debug("find returns " + foundAll);
 
         return foundAll;
     }
@@ -234,7 +256,8 @@ public class RedisRepoImpl implements RedisRepo {
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("save pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                " anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+                (pairs.size() > 1 ? " ... " : " ") +
+                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean savedAll = true;
 
@@ -281,7 +304,8 @@ public class RedisRepoImpl implements RedisRepo {
     public boolean findAndSave(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("findAndSave pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                " anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+                (pairs.size() > 1 ? " ... " : " ") +
+                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean allOk = true;
 
@@ -298,6 +322,9 @@ public class RedisRepoImpl implements RedisRepo {
 
             if (enableLocalCache) {
                 fmap = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
+                if (fmap != null && fmap.size() > 0) {
+                    LOGGER.trace("findAndSave - found " + key + " from cache");
+                }
             }
 
             StopWatch stopWatch = null;
@@ -307,6 +334,10 @@ public class RedisRepoImpl implements RedisRepo {
                     stopWatch = context.startStopWatch("redis", "hashOps.entries");
                     fmap = hashOps.entries(hashKey);
                     if (stopWatch != null) stopWatch.stopNow();
+
+                    if (fmap != null && fmap.size() > 0) {
+                        LOGGER.trace("findAndSave - found " + key + " from redis");
+                    }
                 } catch (Exception e) {
                     if (stopWatch != null) stopWatch.stopNow();
 
@@ -347,7 +378,7 @@ public class RedisRepoImpl implements RedisRepo {
             }
         }
 
-        LOGGER.trace("findAndSave returns " + allOk);
+        LOGGER.debug("findAndSave returns " + allOk);
 
         return allOk;
     }
@@ -356,7 +387,8 @@ public class RedisRepoImpl implements RedisRepo {
     public void delete(Context context, KvPairs pairs, AnyKey anyKey, boolean dbOps) {
 
         LOGGER.trace("findAndSave pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                " anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+                (pairs.size() > 1 ? " ... " : " ") +
+                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         if (enableLocalCache) {
             AppCtx.getLocalCache().removeKeyAndData(pairs);
@@ -388,5 +420,8 @@ public class RedisRepoImpl implements RedisRepo {
         if (stopWatch != null) stopWatch.stopNow();
 
         AppCtx.getKeyInfoRepo().delete(context, pairs, dbOps);
+
+        LOGGER.debug("delete done");
+
     }
 }

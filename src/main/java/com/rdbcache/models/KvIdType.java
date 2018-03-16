@@ -13,6 +13,8 @@ import java.util.Objects;
 @Embeddable
 public class KvIdType implements Serializable {
 
+    private static final long serialVersionUID = 20180316L;
+
     private String id;
 
     private String type = "data";
