@@ -147,8 +147,11 @@ public class DbaseRepoImpl implements DbaseRepo {
                 KvPairs pairsNew = new KvPairs(pairs.get(i));
                 KeyInfo keyInfo = anyKey.getAny(i);
 
-                keyInfo.clearParams();
+                if (i >= anyKey.size()) {
+                    keyInfo.clearParams();
+                }
                 AnyKey anyKeyNew = new AnyKey(keyInfo);
+
                 if (!saveOne(context, pairsNew, anyKeyNew)) {
                     LOGGER.debug("save saveOne failed: " + pairsNew.getPair().getId());
                     result = false;
@@ -327,7 +330,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 if (autoIncKey != null && !map.containsKey(autoIncKey)) {
                     map.put(autoIncKey, dbMap.get(autoIncKey));
                     if (enableLocalCache) {
-                        AppCtx.getLocalCache().updateData(key, map, keyInfo);
+                        AppCtx.getLocalCache().updateData(pair);
                     }
                     if (enableRedisCache) {
                         AppCtx.getRedisRepo().updateIfExist(context, new KvPairs(pair), new AnyKey(keyInfo));
@@ -397,7 +400,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         } else {
 
             QueryInfo queryInfo = keyInfo.getQueryInfo();
-            if (queryInfo == null) {                // no queryKey means no query
+            if (queryInfo == null) {               // no queryKey means no query
                 return false;
             }
             Map<String, Condition> conditions = queryInfo.getConditions();
@@ -440,12 +443,21 @@ public class DbaseRepoImpl implements DbaseRepo {
             }
 
             anyKey.clear();
-
+            int i = 0;
             for (KvPair dbPair : dbPairs) {
+
                 pairs.add(dbPair);
+
                 KeyInfo keyInfoNew = new KeyInfo(keyInfo.getExpire());
+                keyInfoNew.setQueryKey(keyInfo.getQueryKey());
                 keyInfoNew.setIsNew(true);
-                anyKey.add(keyInfo);
+
+                if (i < anyKey.size()) {
+                    anyKey.set(i, keyInfoNew);
+                } else {
+                    anyKey.add(keyInfoNew);
+                }
+                i++;
             }
 
             LOGGER.trace("kvFind(" + anyKey.size() + ") Ok - found from default table");

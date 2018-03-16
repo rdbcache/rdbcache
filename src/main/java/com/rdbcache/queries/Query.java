@@ -167,7 +167,12 @@ public class Query {
 
                     KeyInfo keyInfoNew = keyInfo.clone();
                     keyInfoNew.setIsNew(true);
-                    anyKey.add(keyInfoNew);
+
+                    if (i < anyKey.size()) {
+                        anyKey.set(i, keyInfoNew);
+                    } else {
+                        anyKey.add(keyInfoNew);
+                    }
 
                     LOGGER.trace("found " + pair.getId() + " from " + table);
                 }
@@ -284,7 +289,7 @@ public class Query {
                     String keyValue = String.valueOf(keyHolder.getKey());
                     map.put(autoIncKey, keyValue);
                     if (enableLocal) {
-                        AppCtx.getLocalCache().putData(key, map, keyInfo);
+                        AppCtx.getLocalCache().putData(pair, keyInfo);
                     }
                     if (enableRedis) {
                         AppCtx.getRedisRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));

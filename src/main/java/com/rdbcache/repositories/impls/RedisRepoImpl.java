@@ -131,6 +131,7 @@ public class RedisRepoImpl implements RedisRepo {
         for (int i = 0; i < pairs.size(); i++) {
             
             KvPair pair = pairs.get(i);
+            KeyInfo keyInfo = anyKey.getAny(i);
             String key = pair.getId();
 
             boolean found = false;
@@ -157,7 +158,7 @@ public class RedisRepoImpl implements RedisRepo {
             }
 
             if (enableLocalCache) {
-                AppCtx.getLocalCache().updatePairsData(pairs, anyKey);
+                AppCtx.getLocalCache().updateData(pair);
             }
 
             Map<String, Object> map = pair.getData();
@@ -200,8 +201,9 @@ public class RedisRepoImpl implements RedisRepo {
         for (int i = 0; i < pairs.size(); i++) {
 
             KvPair pair = pairs.get(i);
-            String key = pair.getId();
+            KeyInfo keyInfo = anyKey.getAny(i);
 
+            String key = pair.getId();
             String hashKey = hdataPrefix + "::" + key;
             Map<String, Object> map = null;
 
@@ -222,7 +224,7 @@ public class RedisRepoImpl implements RedisRepo {
                     if (map != null && map.size() > 0) {
                         LOGGER.trace("find - found " + key + " from redis");
                         if (enableLocalCache) {
-                            AppCtx.getLocalCache().putData(key, map, anyKey.getAny());
+                            AppCtx.getLocalCache().putData(pair, keyInfo);
                         }
                     }
                 } catch (Exception e) {
@@ -271,7 +273,7 @@ public class RedisRepoImpl implements RedisRepo {
 
             Map<String, Object> map = pair.getData();
             if (enableLocalCache) {
-                AppCtx.getLocalCache().putData(key, map, keyInfo);
+                AppCtx.getLocalCache().putData(pair, keyInfo);
             }
 
             StopWatch stopWatch = context.startStopWatch("redis", "hashOps.putAll");
@@ -349,7 +351,7 @@ public class RedisRepoImpl implements RedisRepo {
             }
 
             if (enableLocalCache) {
-                AppCtx.getLocalCache().putData(key, map, keyInfo);
+                AppCtx.getLocalCache().putData(pair, keyInfo);
             }
 
             try {

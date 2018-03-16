@@ -218,6 +218,17 @@ public class KvPair implements Serializable {
         data.clear();;
     }
 
+    public Map<String, Object> getDataClone() {
+        if (data == null) {
+            return null;
+        }
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry: data.entrySet()) {
+            map.put(entry.getKey(), entry.getValue());
+        }
+        return map;
+    }
+
     public Object getMapValue() {
         if (data == null) {
             return null;

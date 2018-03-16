@@ -147,7 +147,7 @@ public class RdbcacheApis {
 
         if (enableLocalCache) {
 
-            AppCtx.getLocalCache().putContextData(pairs, anyKey);
+            AppCtx.getLocalCache().putData(pairs, anyKey);
         }
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairs, anyKey);
@@ -192,7 +192,7 @@ public class RdbcacheApis {
 
         if (enableLocalCache) {
 
-            AppCtx.getLocalCache().putContextData(pairs, anyKey);
+            AppCtx.getLocalCache().putData(pairs, anyKey);
         }
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairs, anyKey);
@@ -241,8 +241,7 @@ public class RdbcacheApis {
         } else {
 
             if (enableLocalCache) {
-
-                AppCtx.getLocalCache().updatePairsData(pairs, anyKey);
+                AppCtx.getLocalCache().updateData(pairs);
             }
 
             AppCtx.getAsyncOps().doPutOperation(context, pairs, anyKey);

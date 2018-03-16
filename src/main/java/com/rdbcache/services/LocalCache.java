@@ -268,34 +268,36 @@ public class LocalCache extends Thread {
         }
     }
 
-    public void updatePairsData(KvPairs pairs, AnyKey anyKey) {
+    public void updateData(KvPairs pairs) {
         for (int i = 0; i < pairs.size(); i++) {
-            KvPair pair = pairs.get(i);
-            updateData(pair.getId(), pair.getData(), anyKey.getAny(i));
+            updateData(pairs.get(i));
         }
     }
 
-    public void putContextData(KvPairs pairs, AnyKey anyKey) {
+    public void updateData(KvPair pair) {
+        updateData(pair.getId(), pair.getData());
+    }
+
+    public void updateData(String key, Map<String, Object> update) {
+        if (dataMaxCacheTLL <= 0L || update.size() == 0) {
+            return ;
+        }
+        update("data::" + key, update);
+    }
+
+    public void putData(KvPairs pairs, AnyKey anyKey) {
         for (int i = 0; i < pairs.size(); i++) {
-            KvPair pair = pairs.get(i);
-            putData(pair.getId(), pair.getData(), anyKey.getAny(i));
+            putData(pairs.get(i), anyKey.getAny(i));
         }
     }
 
-    public void putData(String key, Map<String, Object> map, KeyInfo keyInfo) {
+    public void putData(KvPair pair, KeyInfo keyInfo) {
         if (dataMaxCacheTLL <= 0L) {
             return;
         }
         Long ttl = keyInfo.getTTL();
         if (ttl > dataMaxCacheTLL) ttl = dataMaxCacheTLL;
-        put("data::" + key, map, ttl * 1000);
-    }
-
-    public void updateData(String key, Map<String, Object> update, KeyInfo keyInfo) {
-        if (dataMaxCacheTLL <= 0L || update.size() == 0) {
-            return ;
-        }
-        update("data::" + key, update);
+        put("data::" + pair.getId(), pair.getDataClone(), ttl * 1000);
     }
 
     public Map<String, Object> getData(String key) {

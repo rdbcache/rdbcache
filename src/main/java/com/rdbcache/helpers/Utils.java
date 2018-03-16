@@ -201,10 +201,10 @@ public class Utils {
                 //e.printStackTrace();
             }
             if (al != null && bl != null && al.equals(bl)) {
+                System.out.println("4) true " + as + " ? " + bs);
                 return true;
             }
         }
-
         return false;
     }
 
