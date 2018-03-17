@@ -77,6 +77,9 @@ public class Response  {
         if ( traceId != null) {
             map.put("trace_id", traceId);
         }
+
+        LOGGER.info("200 Ok - " + context.getAction());
+
         return ResponseEntity.ok(map);
     }
 }

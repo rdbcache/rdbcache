@@ -33,7 +33,7 @@ public class Request {
     public static AnyKey process(Context context, HttpServletRequest request, String key,
                                  Optional<String> opt1, Optional<String> opt2) {
 
-        LOGGER.debug("URI: "+ request.getRequestURI());
+        LOGGER.info("URI: "+ request.getRequestURI());
 
         if (PropCfg.getEnableMonitor()) context.enableMonitor(request);
 

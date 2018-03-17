@@ -211,7 +211,7 @@ public class RedisRepoImpl implements RedisRepo {
             if (enableDataCache) {
                 map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
                 if (map != null && map.size() > 0) {
-                    LOGGER.trace("find - found " + key + " from cache");
+                    LOGGER.debug("find - found from cache " + key);
                 }
             }
 
@@ -223,7 +223,7 @@ public class RedisRepoImpl implements RedisRepo {
                     if (stopWatch != null) stopWatch.stopNow();
 
                     if (map != null && map.size() > 0) {
-                        LOGGER.trace("find - found " + key + " from redis");
+                        LOGGER.debug("find - found from redis " + key);
                         if (enableDataCache) {
                             AppCtx.getLocalCache().putData(pair, keyInfo);
                         }
@@ -243,14 +243,14 @@ public class RedisRepoImpl implements RedisRepo {
 
             if (map == null || map.size() == 0) {
                 foundAll = false;
-                LOGGER.trace("find - not found " + key);
+                LOGGER.debug("find - not found " + key);
                 continue;
             }
 
             pair.setData(map);
         }
 
-        LOGGER.debug("find returns " + foundAll);
+        LOGGER.trace("find returns " + foundAll);
 
         return foundAll;
     }
@@ -268,6 +268,7 @@ public class RedisRepoImpl implements RedisRepo {
 
             KvPair pair = pairs.get(i);
             String key = pair.getId();
+
             KeyInfo keyInfo = anyKey.getAny(i);
 
             String hashKey = hdataPrefix + "::" + key;
@@ -281,6 +282,8 @@ public class RedisRepoImpl implements RedisRepo {
             try {
                 hashOps.putAll(hashKey, map);
                 if (stopWatch != null) stopWatch.stopNow();
+
+                LOGGER.debug("save " + key);
 
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
@@ -324,9 +327,9 @@ public class RedisRepoImpl implements RedisRepo {
             Map<String, Object> fmap = null;
 
             if (enableDataCache) {
-                fmap = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
+                fmap = AppCtx.getLocalCache().getData(key);
                 if (fmap != null && fmap.size() > 0) {
-                    LOGGER.trace("findAndSave - found " + key + " from cache");
+                    LOGGER.debug("findAndSave - found from cache " + key);
                 }
             }
 
@@ -339,7 +342,7 @@ public class RedisRepoImpl implements RedisRepo {
                     if (stopWatch != null) stopWatch.stopNow();
 
                     if (fmap != null && fmap.size() > 0) {
-                        LOGGER.trace("findAndSave - found " + key + " from redis");
+                        LOGGER.debug("findAndSave - found from redis " + key);
                     }
                 } catch (Exception e) {
                     if (stopWatch != null) stopWatch.stopNow();
@@ -359,6 +362,8 @@ public class RedisRepoImpl implements RedisRepo {
                 stopWatch = context.startStopWatch("redis", "hashOps.putAll");
                 hashOps.putAll(hashKey, map);
                 if (stopWatch != null) stopWatch.stopNow();
+
+                LOGGER.debug("findAndSave - save " + key);
 
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
@@ -381,7 +386,7 @@ public class RedisRepoImpl implements RedisRepo {
             }
         }
 
-        LOGGER.debug("findAndSave returns " + allOk);
+        LOGGER.trace("findAndSave returns " + allOk);
 
         return allOk;
     }
@@ -415,6 +420,8 @@ public class RedisRepoImpl implements RedisRepo {
                 stopWatch = context.startStopWatch("redis", "redisTemplate.delete");
                 AppCtx.getRedisTemplate().delete(expKeys);
                 if (stopWatch != null) stopWatch.stopNow();
+
+                LOGGER.debug("delete " + key);
             }
         }
 
@@ -424,7 +431,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         AppCtx.getKeyInfoRepo().delete(context, pairs, dbOps);
 
-        LOGGER.debug("delete done");
+        LOGGER.trace("delete done");
 
     }
 }

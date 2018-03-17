@@ -125,7 +125,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (foundAll) {
-            LOGGER.debug("find(" + pairs.size() + ") Ok - found from cache");
+            LOGGER.debug("find - found from cache: " + pairs.getPair().getId() +
+                    (pairs.size() > 1 ? "..." : "") );
             return true;
         }
 
@@ -180,7 +181,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
 
             if (foundAll) {
-                LOGGER.debug("find(" + pairs.size() + ") Ok - found from redis");
+                LOGGER.debug("find - found from redis: " + pairs.getPair().getId() +
+                        (pairs.size() > 1 ? "..." : "") );
                 return true;
             }
         }
@@ -229,9 +231,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (foundAll) {
-            LOGGER.debug("find(" + pairs.size() + ") Ok - found from database");
+            LOGGER.debug("find - found: " + pairs.getPair().getId() + (pairs.size() > 1 ? "..." : "") );
         } else {
-            LOGGER.debug("find(" + pairs.size() + ") not found");
+            LOGGER.debug("find - not found: " + pairs.getPair().getId() + (pairs.size() > 1 ? "..." : "") );
         }
 
         return foundAll;
@@ -248,7 +250,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             return false;
         }
 
-        LOGGER.trace("save(" + pairs.size() + "): " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ") + anyKey.getAny().toString());
+        LOGGER.trace("save(" + pairs.size() + "): " + pairs.getPair().getId() +
+                (pairs.size() > 1 ? " ... " : " ") + anyKey.getAny().toString());
 
         for (int i = 0; i < pairs.size(); i++) {
 
@@ -287,7 +290,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             if (stopWatch != null) stopWatch.stopNow();
         }
 
-        LOGGER.debug("save(" + pairs.size() + ") OK");
+        LOGGER.debug("save Ok: " + pairs.getPair().getId() +
+                (pairs.size() > 1 ? " ... " : " "));
 
         return true;
     }
@@ -300,7 +304,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             return;
         }
 
-        LOGGER.trace("delete(" + pairs.size() + "): " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
+        LOGGER.trace("delete(" + pairs.size() + "): " + pairs.getPair().getId() +
+                (pairs.size() > 1 ? " ... " : " "));
 
         if (enableKeyCache) {
             AppCtx.getLocalCache().removeKeyInfo(pairs);
@@ -319,6 +324,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         if (dbOps) {
             AppCtx.getKvPairRepo().delete(pairs);
         }
-        LOGGER.debug("delete(" + pairs.size() + ") Ok");
+        LOGGER.debug("delete Ok: " + pairs.getPair().getId() +
+                (pairs.size() > 1 ? " ... " : " "));
     }
 }
