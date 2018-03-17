@@ -34,6 +34,7 @@ public class Application implements ApplicationRunner {
 
     public static VersionInfo versionInfo;
 
+    /*
     @Value("${spring.redis.url}")
     private String redisUrl;
 
@@ -50,10 +51,12 @@ public class Application implements ApplicationRunner {
     JdbcTemplate jdbcTemplate() {
         return new JdbcTemplate(dataSource);
     }
+    */
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
 
+        /*
         JedisConnectionFactory jedisConnectionFactory = (JedisConnectionFactory) redisConnectionFactory;
         HikariDataSource hikariDataSource = (HikariDataSource)dataSource;
 
@@ -64,6 +67,7 @@ public class Application implements ApplicationRunner {
         message += "\nconfigurations: " + PropCfg.printConfigurations();
 
         System.out.println(message);
+        */
     }
 
     public static void main(String[] args) {

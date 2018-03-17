@@ -215,7 +215,7 @@ public class LocalCache extends Thread {
         if (keyMinCacheTTL <= 0l) {
             return;
         }
-        Long ttl = keyInfo.getTTL();
+        Long ttl = keyInfo.getExpireTTL();
         if (ttl < keyMinCacheTTL) ttl = keyMinCacheTTL;
         put("key::" + key, keyInfo.toMap(), ttl * 1000);
     }
@@ -295,7 +295,7 @@ public class LocalCache extends Thread {
         if (dataMaxCacheTLL <= 0L) {
             return;
         }
-        Long ttl = keyInfo.getTTL();
+        Long ttl = keyInfo.getExpireTTL();
         if (ttl > dataMaxCacheTLL) ttl = dataMaxCacheTLL;
         put("data::" + pair.getId(), pair.getDataClone(), ttl * 1000);
     }

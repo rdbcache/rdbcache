@@ -6,6 +6,8 @@
 
 package com.rdbcache.helpers;
 
+import com.rdbcache.exceptions.ServerErrorException;
+import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
 
 import java.util.ArrayList;
@@ -54,14 +56,10 @@ public class KvPairs extends ArrayList<KvPair>{
     public KvPairs() {
     }
 
-    public List<KvPair> getPairs() {
-        return this;
-    }
-
-    public void setPairs(List<KvPair> pairs) {
+    public void setPairs(KvPairs pairs) {
         clear();
-        for (int i = 0; i < size(); i++) {
-            add(pairs.get(i));
+        for (KvPair pair: pairs) {
+            add(pair);
         }
     }
 
@@ -75,6 +73,16 @@ public class KvPairs extends ArrayList<KvPair>{
             return null;
         }
         return get(0);
+    }
+
+    public KvPair getAny(int index) {
+        if (index > size()) {
+            throw new ServerErrorException("getAny index out of range");
+        }
+        if (index == size()) {
+            add(new KvPair("*"));
+        }
+        return get(index);
     }
 
     public List<String> getKeys() {

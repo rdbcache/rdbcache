@@ -34,7 +34,7 @@ public class RedisRepoImpl implements RedisRepo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisRepoImpl.class);
 
-    private boolean enableLocalCache = true;
+    private boolean enableDataCache = true;
 
     private String hdataPrefix = PropCfg.getHdataPrefix();
     
@@ -54,17 +54,19 @@ public class RedisRepoImpl implements RedisRepo {
     public void handleEvent(ContextRefreshedEvent event) {
         hdataPrefix = PropCfg.getHdataPrefix();
         eventPrefix = PropCfg.getEventPrefix();
-        if (PropCfg.getKeyMinCacheTTL() <= 0l && PropCfg.getDataMaxCacheTLL() <= 0l) {
-            enableLocalCache = false;
+        if (PropCfg.getDataMaxCacheTLL() <= 0l) {
+            enableDataCache = false;
+        } else {
+            enableDataCache = true;
         }
     }
 
-    public boolean isEnableLocalCache() {
-        return enableLocalCache;
+    public boolean isEnableDataCache() {
+        return enableDataCache;
     }
 
-    public void setEnableLocalCache(boolean enableLocalCache) {
-        this.enableLocalCache = enableLocalCache;
+    public void setEnableDataCache(boolean enable) {
+        this.enableDataCache = enable;
     }
 
     public String getHdataPrefix() {
@@ -96,9 +98,9 @@ public class RedisRepoImpl implements RedisRepo {
 
             KvPair pair = pairs.get(i);
             String key = pair.getId();
-            String table = anyKey.getKey(i).getTable();
+            //String table = anyKey.getKey(i).getTable();
 
-            if (enableLocalCache) {
+            if (enableDataCache) {
                 if (AppCtx.getLocalCache().containsData(key)) {
                     LOGGER.trace("ifExist found " + key + " from cache");
                     continue;
@@ -131,11 +133,10 @@ public class RedisRepoImpl implements RedisRepo {
         for (int i = 0; i < pairs.size(); i++) {
             
             KvPair pair = pairs.get(i);
-            KeyInfo keyInfo = anyKey.getAny(i);
             String key = pair.getId();
 
             boolean found = false;
-            if (enableLocalCache) {
+            if (enableDataCache) {
                 if (AppCtx.getLocalCache().containsData(key)) {
                     found = true;
                     LOGGER.trace("updateIfExist found " + key + " from cache");
@@ -157,7 +158,7 @@ public class RedisRepoImpl implements RedisRepo {
                 }
             }
 
-            if (enableLocalCache) {
+            if (enableDataCache) {
                 AppCtx.getLocalCache().updateData(pair);
             }
 
@@ -173,7 +174,7 @@ public class RedisRepoImpl implements RedisRepo {
 
                 foundAll = false;
 
-                if (enableLocalCache) {
+                if (enableDataCache) {
                     AppCtx.getLocalCache().removeData(key);
                 }
 
@@ -207,7 +208,7 @@ public class RedisRepoImpl implements RedisRepo {
             String hashKey = hdataPrefix + "::" + key;
             Map<String, Object> map = null;
 
-            if (enableLocalCache) {
+            if (enableDataCache) {
                 map = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
                 if (map != null && map.size() > 0) {
                     LOGGER.trace("find - found " + key + " from cache");
@@ -223,7 +224,7 @@ public class RedisRepoImpl implements RedisRepo {
 
                     if (map != null && map.size() > 0) {
                         LOGGER.trace("find - found " + key + " from redis");
-                        if (enableLocalCache) {
+                        if (enableDataCache) {
                             AppCtx.getLocalCache().putData(pair, keyInfo);
                         }
                     }
@@ -272,7 +273,7 @@ public class RedisRepoImpl implements RedisRepo {
             String hashKey = hdataPrefix + "::" + key;
 
             Map<String, Object> map = pair.getData();
-            if (enableLocalCache) {
+            if (enableDataCache) {
                 AppCtx.getLocalCache().putData(pair, keyInfo);
             }
 
@@ -284,7 +285,7 @@ public class RedisRepoImpl implements RedisRepo {
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
 
-                if (enableLocalCache) {
+                if (enableDataCache) {
                     AppCtx.getLocalCache().removeData(key);
                 }
 
@@ -322,7 +323,7 @@ public class RedisRepoImpl implements RedisRepo {
             Map<String, Object> map = pair.getData();
             Map<String, Object> fmap = null;
 
-            if (enableLocalCache) {
+            if (enableDataCache) {
                 fmap = (Map<String, Object>) AppCtx.getLocalCache().getData(key);
                 if (fmap != null && fmap.size() > 0) {
                     LOGGER.trace("findAndSave - found " + key + " from cache");
@@ -350,7 +351,7 @@ public class RedisRepoImpl implements RedisRepo {
                 }
             }
 
-            if (enableLocalCache) {
+            if (enableDataCache) {
                 AppCtx.getLocalCache().putData(pair, keyInfo);
             }
 
@@ -362,7 +363,7 @@ public class RedisRepoImpl implements RedisRepo {
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
 
-                if (enableLocalCache) {
+                if (enableDataCache) {
                     AppCtx.getLocalCache().removeData(key);
                 }
 
@@ -392,7 +393,7 @@ public class RedisRepoImpl implements RedisRepo {
                 (pairs.size() > 1 ? " ... " : " ") +
                 "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
-        if (enableLocalCache) {
+        if (enableDataCache) {
             AppCtx.getLocalCache().removeKeyAndData(pairs);
         }
 

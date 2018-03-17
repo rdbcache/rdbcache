@@ -35,7 +35,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DbaseRepoImpl.class);
 
-    private boolean enableLocalCache = true;
+    private boolean enableDataCache = true;
 
     private boolean enableRedisCache = true;
 
@@ -51,17 +51,19 @@ public class DbaseRepoImpl implements DbaseRepo {
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
         enableDbFallback = PropCfg.getEnableDbFallback();
-        if (PropCfg.getKeyMinCacheTTL() <= 0l && PropCfg.getDataMaxCacheTLL() <= 0l) {
-            enableLocalCache = false;
+        if (PropCfg.getDataMaxCacheTLL() <= 0l) {
+            enableDataCache = false;
+        } else {
+            enableDataCache = true;
         }
     }
 
-    public boolean isEnableLocalCache() {
-        return enableLocalCache;
+    public boolean isEnableDataCache() {
+        return enableDataCache;
     }
 
-    public void setEnableLocalCache(boolean enableLocalCache) {
-        this.enableLocalCache = enableLocalCache;
+    public void setEnableDataCache(boolean enable) {
+        this.enableDataCache = enable;
     }
 
     public boolean isEnableRedisCache() {
@@ -97,10 +99,9 @@ public class DbaseRepoImpl implements DbaseRepo {
             }
         } else {
 
-
             Query query = new Query(context, jdbcTemplate, pairs, anyKey);
 
-            if (!query.pepareSelect() || !query.executeSelect()) {
+            if (!query.ifSelectOk() || !query.executeSelect()) {
                 if (enableDbFallback) {
                     if (!kvFind(context, pairs, anyKey)) {
                         String msg = "find fallbacked to default table failed: " + anyKey.size() + " record(s)";
@@ -118,8 +119,6 @@ public class DbaseRepoImpl implements DbaseRepo {
                 LOGGER.debug("found Ok: " + anyKey.size() + " record(s) from " + table);
             }
         }
-
-        AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
 
         return true;
     }
@@ -181,7 +180,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             Query query = new Query(context, jdbcTemplate, pairs, anyKey);
 
-            if (!query.prepareInsert() || !query.executeInsert(enableLocalCache, enableRedisCache)) {
+            if (!query.ifInsertOk() || !query.executeInsert(enableDataCache, enableRedisCache)) {
                 if (enableDbFallback) {
                     if (!kvSave(context, pairs, anyKey)) {
                         LOGGER.debug("insert fallbacked to kvSave failed: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
@@ -199,8 +198,6 @@ public class DbaseRepoImpl implements DbaseRepo {
                 LOGGER.debug("inserted Ok: " + anyKey.size() + " record(s) for " + table);
             }
         }
-
-        AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
 
         return true;
     }
@@ -223,7 +220,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             Query query = new Query(context, jdbcTemplate, pairs, anyKey);
 
-            if (!query.prepareUpdate() || !query.executeUpdate()) {
+            if (!query.ifUpdateOk() || !query.executeUpdate()) {
                 if (enableDbFallback) {
                     if (!kvSave(context, pairs, anyKey)) {
                         LOGGER.debug("update fallback to kvSave failed - " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
@@ -241,8 +238,6 @@ public class DbaseRepoImpl implements DbaseRepo {
                 LOGGER.debug("updated Ok: " + anyKey.size() + " record(s) from " + table);
             }
         }
-
-        AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
 
         return true;
     }
@@ -267,7 +262,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             Query query = new Query(context, jdbcTemplate, pairs, anyKey);
 
-            if (!query.prepareDelete() || !query.executeDelete()) {
+            if (!query.ifDeleteOk() || !query.executeDelete()) {
                 if (enableDbFallback) {
                     if (!kvDelete(context, pairs, anyKey)) {
                         LOGGER.debug("delete fallback to kvDelete failed: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
@@ -298,8 +293,6 @@ public class DbaseRepoImpl implements DbaseRepo {
         String key = pair.getId();
         String table = keyInfo.getTable();
 
-        LOGGER.trace("saveOne: " + key + " table: " +table);
-
         Map<String, Object> map = pair.getData();
 
         if (pair.isUuid()) {
@@ -329,7 +322,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
                 if (autoIncKey != null && !map.containsKey(autoIncKey)) {
                     map.put(autoIncKey, dbMap.get(autoIncKey));
-                    if (enableLocalCache) {
+                    if (enableDataCache) {
                         AppCtx.getLocalCache().updateData(pair);
                     }
                     if (enableRedisCache) {
@@ -447,17 +440,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             for (KvPair dbPair : dbPairs) {
 
                 pairs.add(dbPair);
-
-                KeyInfo keyInfoNew = new KeyInfo(keyInfo.getExpire());
-                keyInfoNew.setQueryKey(keyInfo.getQueryKey());
-                keyInfoNew.setIsNew(true);
-
-                if (i < anyKey.size()) {
-                    anyKey.set(i, keyInfoNew);
-                } else {
-                    anyKey.add(keyInfoNew);
-                }
-                i++;
+                anyKey.getAny(i++);
             }
 
             LOGGER.trace("kvFind(" + anyKey.size() + ") Ok - found from default table");

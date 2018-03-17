@@ -24,8 +24,6 @@ public class KeyInfo implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 20180316L;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KeyInfo.class);
-
     private String expire = PropCfg.getDefaultExpire();
 
     private String table;
@@ -63,7 +61,6 @@ public class KeyInfo implements Serializable, Cloneable {
     }
 
     public KeyInfo() {
-        isNew = true;
     }
 
     public String getExpire() {
@@ -110,7 +107,8 @@ public class KeyInfo implements Serializable, Cloneable {
         this.queryKey = queryKey;
     }
 
-    public Boolean getIsNew() {
+    @JsonIgnore
+    public Boolean isNew() {
         return isNew;
     }
 
@@ -118,7 +116,8 @@ public class KeyInfo implements Serializable, Cloneable {
         this.isNew = isNew;
     }
 
-    public List<String> getIndexes() {
+    @JsonIgnore
+    public List<String> getPrimaryIndexes() {
         if (indexes != null) {
             return indexes;
         }
@@ -141,10 +140,11 @@ public class KeyInfo implements Serializable, Cloneable {
         return indexes;
     }
 
-    public void setIndexes(List<String> indexes) {
+    public void setPrimaryIndexes(List<String> indexes) {
         this.indexes = indexes;
     }
 
+    @JsonIgnore
     public Map<String, Object> getColumns() {
         if (columns != null) {
             return columns;
@@ -163,6 +163,7 @@ public class KeyInfo implements Serializable, Cloneable {
         this.columns = columns;
     }
 
+    @JsonIgnore
     public QueryInfo getQueryInfo() {
         return query;
     }
@@ -175,7 +176,7 @@ public class KeyInfo implements Serializable, Cloneable {
     }
 
     @JsonIgnore
-    public Long getTTL() {
+    public Long getExpireTTL() {
         Long ttl = Long.valueOf(expire);
         if (ttl < 0l) return -ttl;
         return ttl;
@@ -188,20 +189,19 @@ public class KeyInfo implements Serializable, Cloneable {
     }
 
     public KeyInfo clone() {
-        KeyInfo keyInfo = null;
         try {
-            keyInfo = (KeyInfo) super.clone();
+            KeyInfo keyInfo = (KeyInfo) super.clone();
+            if (params != null) {
+                keyInfo.params = new ArrayList<>();
+                for (Object p: params) {
+                    keyInfo.params.add(p);
+                }
+            }
+            return keyInfo;
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
             throw new ServerErrorException(e.getCause().getMessage());
         }
-        if (params != null) {
-            keyInfo.params = new ArrayList<>();
-            for (Object p: params) {
-                keyInfo.params.add(p);
-            }
-        }
-        return keyInfo;
     }
 
     public Map<String, Object> toMap() {
@@ -235,31 +235,41 @@ public class KeyInfo implements Serializable, Cloneable {
         if (map.containsKey("query_key")) queryKey = (String) map.get("query_key");
         else queryKey = null;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         KeyInfo keyInfo = (KeyInfo) o;
-        return Objects.equals(expire, keyInfo.expire) &&
-                Objects.equals(table, keyInfo.table) &&
-                Objects.equals(clause, keyInfo.clause) &&
-                Objects.equals(params, keyInfo.params) &&
-                Objects.equals(queryKey, keyInfo.queryKey);
+
+        if (expire != null ? !expire.equals(keyInfo.expire) : keyInfo.expire != null) return false;
+        if (table != null ? !table.equals(keyInfo.table) : keyInfo.table != null) return false;
+        if (clause != null ? !clause.equals(keyInfo.clause) : keyInfo.clause != null) return false;
+        if (params != null ? !params.equals(keyInfo.params) : keyInfo.params != null) return false;
+        if (queryKey != null ? !queryKey.equals(keyInfo.queryKey) : keyInfo.queryKey != null) return false;
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(expire, table, indexes, clause, params, queryKey);
+        int result = expire != null ? expire.hashCode() : 0;
+        result = 31 * result + (table != null ? table.hashCode() : 0);
+        result = 31 * result + (clause != null ? clause.hashCode() : 0);
+        result = 31 * result + (params != null ? params.hashCode() : 0);
+        result = 31 * result + (queryKey != null ? queryKey.hashCode() : 0);
+        return result;
     }
 
     @Override
     public String toString() {
-        return "KeyInfo{" +
-                "isNew='" + isNew + '\'' +
-                ", table='" + table + '\'' +
-                ", expire='" + expire + '\'' +
+        return "KeyInfo(" +
+                isNew +
+                ", " + table +
+                ", " + expire +
+                (clause != null && clause.length() > 0 ? ", " + clause : "") +
+                (params != null && params.size() > 0 ? ", " + params.toString() : "") +
                 (query == null ? "" : ", " + query.toString()) +
-                '}';
+                ')';
     }
 }

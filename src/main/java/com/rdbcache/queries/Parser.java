@@ -20,8 +20,6 @@ import java.util.*;
 
 public class Parser {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Parser.class);
-
     private static String[] keyLastCharList = {"!", ">", "<"};
 
     private static String[] opsList = {
@@ -225,7 +223,7 @@ public class Parser {
         if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
             return false;
         }
-        List<String> indexes = keyInfo.getIndexes();
+        List<String> indexes = keyInfo.getPrimaryIndexes();
         if (indexes == null) {
             keyInfo.setClause(null);
             keyInfo.setQueryKey(null);

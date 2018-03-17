@@ -140,7 +140,7 @@ public class ExpireOps {
                     Collections.singletonList(expKey), context.getTraceId(), expire);
             if (stopWatch != null) stopWatch.stopNow();
 
-            if (result == 1 && keyInfo.getIsNew()) {
+            if (result == 1 && keyInfo.isNew()) {
                 AppCtx.getKeyInfoRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
             }
         }
@@ -223,7 +223,6 @@ public class ExpireOps {
             if (expire < 0) {
                 if (AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
-                    keyInfo.setIsNew(true);
                     AppCtx.getRedisRepo().save(context, pairs, anyKey);
                     setExpireKey(context, pairs, anyKey);
 

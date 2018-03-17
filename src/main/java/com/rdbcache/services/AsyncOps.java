@@ -85,7 +85,6 @@ public class AsyncOps {
         Utils.getExcutorService().submit(() -> {
 
             AnyKey anyKeyNew = new AnyKey();
-            //List<KeyInfo> keyInfos = new ArrayList<>();
             if (AppCtx.getKeyInfoRepo().find(context, pairs, anyKeyNew)) {
                 int i = 0;
                 for (KvPair pair : pairs) {
@@ -93,8 +92,8 @@ public class AsyncOps {
                     AnyKey akey = anyKeyNew.getAnyKey(i++);
                     AppCtx.getDbaseRepo().update(context, kvpPairs, akey);
                     AppCtx.getRedisRepo().save(context, kvpPairs, akey);
+                    AppCtx.getExpireOps().setExpireKey(context, kvpPairs, akey);
                 }
-                AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
             }
             context.closeMonitor();
         });
@@ -133,23 +132,28 @@ public class AsyncOps {
 
         Utils.getExcutorService().submit(() -> {
 
-            for (KvPair pair : pairs) {
+            for (int i = 0; i < pairs.size(); i++) {
+
+                KvPair pair = pairs.get(i);
+                KeyInfo keyInfo = anyKey.getAny(i);
 
                 KvPairs kvPairs = new KvPairs(pair);
+                AnyKey akey = new AnyKey(keyInfo);
 
                 try {
 
-                    if (AppCtx.getRedisRepo().updateIfExist(context, kvPairs, anyKey)) {
-                        AppCtx.getDbaseRepo().save(context, kvPairs, anyKey);
-                        AppCtx.getExpireOps().setExpireKey(context, kvPairs, anyKey);
+                    if (AppCtx.getRedisRepo().updateIfExist(context, kvPairs, akey)) {
+                        AppCtx.getDbaseRepo().save(context, kvPairs, akey);
+                        AppCtx.getExpireOps().setExpireKey(context, kvPairs, akey);
                         continue;
                     }
 
                     KvPairs dbPairs = new KvPairs(pair.getId());
-                    if (!AppCtx.getDbaseRepo().find(context, dbPairs, anyKey)) {
+                    if (!AppCtx.getDbaseRepo().find(context, dbPairs, akey)) {
 
-                        AppCtx.getRedisRepo().save(context, kvPairs, anyKey);
-                        AppCtx.getExpireOps().setExpireKey(context, kvPairs, anyKey);
+                        AppCtx.getDbaseRepo().save(context, kvPairs, akey);
+                        AppCtx.getRedisRepo().save(context, kvPairs, akey);
+                        AppCtx.getExpireOps().setExpireKey(context, kvPairs, akey);
 
                     } else {
 
@@ -157,7 +161,7 @@ public class AsyncOps {
                         Map<String, Object> dbMap = dbPair.getData();            // loaded from database
                         Map<String, Object> map = pair.getData();                // input
 
-                        if (anyKey.getKey().getTable() != null) {
+                        if (akey.getKey().getTable() != null) {
 
                             Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
 
@@ -180,14 +184,13 @@ public class AsyncOps {
 
                         pair.setData(dbMap);
 
-                        if (!AppCtx.getRedisRepo().save(context, kvPairs, anyKey)) {
+                        if (!AppCtx.getRedisRepo().save(context, kvPairs, akey)) {
                             LOGGER.error("failed to save to redis");
                             continue;
                         }
 
-                        AppCtx.getKeyInfoRepo().save(context, kvPairs, anyKey);
-                        AppCtx.getDbaseRepo().save(context, kvPairs, anyKey);
-                        AppCtx.getExpireOps().setExpireKey(context, kvPairs, anyKey);
+                        AppCtx.getDbaseRepo().save(context, kvPairs, akey);
+                        AppCtx.getExpireOps().setExpireKey(context, kvPairs, akey);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -207,7 +210,6 @@ public class AsyncOps {
 
                 KvPairs newPairs = new KvPairs(pair);
                 AnyKey anyKey = new AnyKey(new KeyInfo());
-                anyKey.getKey().setIsNew(false);
 
                 try {
                     if (!AppCtx.getKeyInfoRepo().find(context, newPairs, anyKey)) {
@@ -236,7 +238,6 @@ public class AsyncOps {
 
                 KvPairs newPairs = new KvPairs(pair);
                 AnyKey anyKey = new AnyKey(new KeyInfo());
-                anyKey.getKey().setIsNew(false);
 
                 try {
                     if (!AppCtx.getKeyInfoRepo().find(context, newPairs, anyKey)) {

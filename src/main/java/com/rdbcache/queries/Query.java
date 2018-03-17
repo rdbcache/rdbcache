@@ -68,7 +68,7 @@ public class Query {
         this.params = params;
     }
 
-    public boolean pepareSelect() {
+    public boolean ifSelectOk() {
 
         Assert.isTrue(anyKey.size() == 1, "anyKey.size() = " +
                 anyKey.size() + ", select only supports anyKey size == 1");
@@ -121,8 +121,6 @@ public class Query {
             sql += " limit " + limit;
         }
 
-        keyInfo.setIsNew(false);
-
         QueryInfo queryInfo = keyInfo.getQueryInfo();
         if (queryInfo != null) {
             keyInfo.setQueryInfo(null);
@@ -132,8 +130,6 @@ public class Query {
             });
         }
 
-        LOGGER.trace("sql: " + sql);
-
         return true;
     }
 
@@ -142,6 +138,7 @@ public class Query {
         KeyInfo keyInfo = anyKey.getAny();
         String table = keyInfo.getTable();
 
+        LOGGER.trace("sql: " + sql);
         LOGGER.trace("params: " + params.toString());
 
         StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
@@ -153,25 +150,17 @@ public class Query {
 
                 Map<String, Object> columns = keyInfo.getColumns();
 
-                anyKey.clear();
                 for (int i = 0; i < list.size(); i++) {
 
-                    if (i == pairs.size()) {
-                        pairs.add(new KvPair("*"));
-                    }
+                    KvPair pair = pairs.getAny(i);
+                    keyInfo = anyKey.getAny(i);
 
-                    KvPair pair = pairs.get(i);
-                    pair.setData(convertDbMap(columns, list.get(i)));
+                    pair.setData(AppCtx.getDbaseOps().convertDbMap(columns, list.get(i)));
 
-                    Parser.prepareStandardClauseParams(context, pair, keyInfo);
-
-                    KeyInfo keyInfoNew = keyInfo.clone();
-                    keyInfoNew.setIsNew(true);
-
-                    if (i < anyKey.size()) {
-                        anyKey.set(i, keyInfoNew);
-                    } else {
-                        anyKey.add(keyInfoNew);
+                    if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
+                        String msg = "failed when prepareStandardClauseParams for " + pair.getId();
+                        LOGGER.error(msg);
+                        context.logTraceMessage(msg);
                     }
 
                     LOGGER.trace("found " + pair.getId() + " from " + table);
@@ -191,7 +180,7 @@ public class Query {
         return false;
     }
 
-    public boolean prepareInsert() {
+    public boolean ifInsertOk() {
 
         Assert.isTrue(anyKey.size() == 1, "anyKey.size() = " +
                 anyKey.size() + ", insert only supports anyKey size == 1");
@@ -208,47 +197,36 @@ public class Query {
             return false;
         }
 
-        KvPair pair = pairs.getPair();
-        Map<String, Object> map = pair.getData();
-
-        params = new ArrayList<>();
-        String fields = "", values = "";
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            params.add(entry.getValue());
-            if (fields.length() != 0) {
-                fields += ", ";
-                values += ", ";
-            }
-            fields += entry.getKey();
-            values += "?";
-        }
-
-        sql = "insert into " + table + " (" + fields + ") values (" + values + ")";
-
-        LOGGER.trace("sql: " + sql);
-
         return true;
     }
 
     public boolean executeInsert(boolean enableLocal, boolean enableRedis) {
 
-        KeyInfo keyInfo = anyKey.getAny();
-        String table = keyInfo.getTable();
-
+        params = new ArrayList<>();
         boolean allOk = true;
 
         for (int i = 0; i < pairs.size(); i++) {
 
             KvPair pair  = pairs.get(i);
+            KeyInfo keyInfo = anyKey.getAny(i);
+
+            String table = keyInfo.getTable();
             Map<String, Object> map = pair.getData();
 
-            if (i > 0) {
-                params.clear();
-                for (Map.Entry<String, Object> entry : map.entrySet()) {
-                    params.add(entry.getValue());
+            String fields = "", values = "";
+            params.clear();
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                params.add(entry.getValue());
+                if (fields.length() != 0) {
+                    fields += ", ";
+                    values += ", ";
                 }
+                fields += entry.getKey();
+                values += "?";
             }
+            sql = "insert into " + table + " (" + fields + ") values (" + values + ")";
 
+            LOGGER.trace("sql: " + sql);
             LOGGER.trace("params: " + params.toString());
 
             int rowCount = 0;
@@ -285,7 +263,6 @@ public class Query {
 
                 String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
                 if (autoIncKey != null && keyHolder.getKey() != null) {
-                    String key = pair.getId();
                     String keyValue = String.valueOf(keyHolder.getKey());
                     map.put(autoIncKey, keyValue);
                     if (enableLocal) {
@@ -296,15 +273,12 @@ public class Query {
                     }
                 }
 
-                Parser.prepareStandardClauseParams(context, pair, keyInfo);
-
-                KeyInfo keyInfoNew = keyInfo.clone();
-                keyInfoNew.setIsNew(true);
-                if (i < anyKey.size()) {
-                    anyKey.setKey(i, keyInfoNew);
-                } else {
-                    anyKey.add(keyInfoNew);
+                if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
+                    String msg = "failed when prepareStandardClauseParams for " + pair.getId();
+                    LOGGER.error(msg);
+                    context.logTraceMessage(msg);
                 }
+
                 LOGGER.trace("inserted " + pair.getId() + " into " + table);
 
             } else {
@@ -312,20 +286,13 @@ public class Query {
                 allOk = false;
 
                 LOGGER.warn("failed to insert " + pair.getId() + " into " + table);
-
-                if (i == anyKey.size()) {
-                    KeyInfo keyInfoNew = new KeyInfo(keyInfo.getExpire());
-                    keyInfoNew.setIsNew(true);
-                    keyInfoNew.setQueryKey(null);
-                    anyKey.add(keyInfoNew);
-                }
             }
         }
 
         return allOk;
     }
 
-    public boolean prepareUpdate() {
+    public boolean ifUpdateOk() {
 
         Assert.isTrue(anyKey.size() == pairs.size(), anyKey.size() + " != " +
                 pairs.size() + ", update only supports anyKey size == pairs size");
@@ -342,74 +309,49 @@ public class Query {
             return false;
         }
 
-        KvPair pair  = pairs.getPair();
-        Map<String, Object> map = pair.getData();
-
-        if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
-            return false;
-        }
-
-        List<Object> queryParams = keyInfo.getParams();
-        String clause = keyInfo.getClause();
-        params = new ArrayList<>();
-
-        String updates = "";
-        for (Map.Entry<String, Object> entry: map.entrySet()) {
-            params.add(entry.getValue());
-            if (updates.length() != 0) updates += ", ";
-            updates += entry.getKey() + " = ?";
-        }
-
-        params.addAll(queryParams);
-        sql = "update " + table + " set " + updates + " where " + clause + " limit 1";
-
-        LOGGER.trace("sql: " + sql);
-
         return true;
     }
 
     public boolean executeUpdate() {
 
+        params = new ArrayList<>();
+
         boolean allOk = true;
 
         for (int i = 0; i < pairs.size(); i++) {
 
-            KeyInfo keyInfo = anyKey.getAny(i);
-            String table = keyInfo.getTable();
             KvPair pair  = pairs.get(i);
+            KeyInfo keyInfo = anyKey.getAny(i);
 
-            if (i > 0) {
+            String table = keyInfo.getTable();
 
-                if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
+            if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
 
-                    allOk = false;
+                allOk = false;
 
-                    String msg = "failed to update when calling prepareStandardClauseParams for " + pair.getId();
-                    LOGGER.error(msg);
-                    context.logTraceMessage(msg);
+                String msg = "failed to update when calling prepareStandardClauseParams for " + pair.getId();
+                LOGGER.error(msg);
+                context.logTraceMessage(msg);
 
-                    continue;
-                }
-
-                List<Object> queryParams = keyInfo.getParams();
-                Map<String, Object> map = pair.getData();
-                params = new ArrayList<>();
-
-                String updates = "";
-                for (Map.Entry<String, Object> entry: map.entrySet()) {
-                    params.add(entry.getValue());
-                    if (updates.length() != 0) updates += ", ";
-                    updates += entry.getKey() + " = ?";
-                }
-
-                params.addAll(queryParams);
-                String clause = keyInfo.getClause();
-
-                sql = "update " + table + " set " + updates + " where " + clause + " limit 1";
-
-                LOGGER.trace("sql: " + sql);
+                continue;
             }
 
+            Map<String, Object> map = pair.getData();
+
+            params.clear();
+            String updates = "";
+            for (Map.Entry<String, Object> entry: map.entrySet()) {
+                params.add(entry.getValue());
+                if (updates.length() != 0) updates += ", ";
+                updates += entry.getKey() + " = ?";
+            }
+
+            params.addAll(keyInfo.getParams());
+            String clause = keyInfo.getClause();
+
+            sql = "update " + table + " set " + updates + " where " + clause + " limit 1";
+
+            LOGGER.trace("sql: " + sql);
             LOGGER.trace("params: " + params.toString());
 
             StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.update");
@@ -444,7 +386,7 @@ public class Query {
         return allOk;
     }
 
-    public boolean prepareDelete() {
+    public boolean ifDeleteOk() {
 
         Assert.isTrue(anyKey.size() == pairs.size(), anyKey.size() + " != " +
                 pairs.size() + ", delete only supports anyKey size == pairs size");
@@ -461,20 +403,6 @@ public class Query {
             return false;
         }
 
-        KvPair pair  = pairs.getPair();
-        Map<String, Object> map = pair.getData();
-
-        if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
-            return false;
-        }
-
-        params = keyInfo.getParams();
-        String clause =  keyInfo.getClause();
-
-        sql = "delete from " + table + " where " + clause + " limit 1";
-
-        LOGGER.trace("sql: " + sql);
-
         return true;
     }
 
@@ -484,25 +412,25 @@ public class Query {
 
         for (int i = 0; i < pairs.size(); i++) {
 
-            KeyInfo keyInfo = anyKey.getAny(i);
-            String table = keyInfo.getTable();
             KvPair pair  = pairs.get(i);
+            KeyInfo keyInfo = anyKey.getAny(i);
 
-            if (i > 0) {
+            String table = keyInfo.getTable();
 
-                if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
+            if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
 
-                    String msg = "failed to delete when calling prepareStandardClauseParams for " + pair.getId();
-                    LOGGER.error(msg);
-                    context.logTraceMessage(msg);
+                String msg = "failed to delete when calling prepareStandardClauseParams for " + pair.getId();
+                LOGGER.error(msg);
+                context.logTraceMessage(msg);
 
-                    continue;
-                }
-                params = keyInfo.getParams();
-
-                LOGGER.trace("sql: " + sql);
+                continue;
             }
+            params = keyInfo.getParams();
+            String clause =  keyInfo.getClause();
 
+            sql = "delete from " + table + " where " + clause + " limit 1";
+
+            LOGGER.trace("sql: " + sql);
             LOGGER.trace("params: " + params.toString());
 
             StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.delete");
@@ -553,30 +481,5 @@ public class Query {
             }
         }
         return limit;
-    }
-
-    private Map<String, Object> convertDbMap(Map<String, Object> columns, Map<String, Object> dbMap) {
-
-        for (Map.Entry<String, Object> entry: dbMap.entrySet()) {
-
-            String key = entry.getKey();
-            Map<String, Object> attributes = (Map<String, Object>) columns.get(key);
-            if (attributes == null) {
-                continue;
-            }
-            String type = (String) attributes.get("Type");
-            if (type == null) {
-                continue;
-            }
-            Object value = entry.getValue();
-            if (value == null) {
-                continue;
-            }
-            if (Arrays.asList("timestamp", "datetime", "date", "time", "year(4)").contains(type)) {
-                assert value instanceof Date : "convertDbMap " + key + " is not instance of Date";
-                dbMap.put(key, AppCtx.getDbaseOps().formatDate(type, (Date) value));
-            }
-        }
-        return dbMap;
     }
 }

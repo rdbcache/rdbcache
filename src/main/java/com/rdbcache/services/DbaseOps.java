@@ -293,6 +293,33 @@ public class DbaseOps {
         return null;
     }
 
+    private static List<String> timeTypes = Arrays.asList("timestamp", "datetime", "date", "time", "year(4)");
+
+    public Map<String, Object> convertDbMap(Map<String, Object> columns, Map<String, Object> dbMap) {
+
+        for (Map.Entry<String, Object> entry: dbMap.entrySet()) {
+
+            String key = entry.getKey();
+            Map<String, Object> attributes = (Map<String, Object>) columns.get(key);
+            if (attributes == null) {
+                continue;
+            }
+            String type = (String) attributes.get("Type");
+            if (type == null) {
+                continue;
+            }
+            Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
+            if (timeTypes.contains(type)) {
+                assert value instanceof Date : "convertDbMap " + key + " is not instance of Date";
+                dbMap.put(key, formatDate(type, (Date) value));
+            }
+        }
+        return dbMap;
+    }
+
     // get list of tables
     //
     public Map<String, Object> fetchTableList(Context context) {

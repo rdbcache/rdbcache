@@ -58,7 +58,7 @@ public class Request {
             assignOption(context, opt2.get(), opts);
         }
 
-        if (keyInfo.getIsNew()) {
+        if (keyInfo.isNew()) {
             if (opts[1] != null) {
                 keyInfo.setTable(opts[1]);
             }

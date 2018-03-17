@@ -21,8 +21,8 @@ public class AnyKey extends ArrayList<KeyInfo> {
         add(keyInfo);
     }
 
-    public AnyKey(List<KeyInfo> keyInfos) {
-        for (KeyInfo keyInfo: keyInfos) {
+    public AnyKey(AnyKey anyKey) {
+        for (KeyInfo keyInfo: anyKey) {
             add(keyInfo);
         }
     }
@@ -54,16 +54,17 @@ public class AnyKey extends ArrayList<KeyInfo> {
     }
 
     public KeyInfo getAny(int index) {
+        if (index > size()) {
+            throw new ServerErrorException("getAny index out of range");
+        }
         if (size() == 0) {
             KeyInfo keyInfo = new KeyInfo();
+            keyInfo.setIsNew(true);
             add(keyInfo);
-            return keyInfo;
-        }
-        if (size() == 1) {
-            return get(0);
-        }
-        if (index >= size()) {
-            throw new ServerErrorException("getAny index out of range");
+        } else if (index == size()) {
+            KeyInfo keyInfo = get(0).clone();
+            keyInfo.setIsNew(true);
+            add(keyInfo);
         }
         return get(index);
     }

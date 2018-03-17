@@ -21,8 +21,6 @@ public class QueryInfo implements Serializable {
 
     private static final long serialVersionUID = 20180316L;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(QueryInfo.class);
-
     private String table;
 
     private Map<String, Condition> conditions = new LinkedHashMap<String, Condition>();
@@ -50,7 +48,7 @@ public class QueryInfo implements Serializable {
 
     public String getKey() {
         if (key == null) {
-            key = DigestUtils.md5Hex(table + Utils.toJson(conditions) + (limit == null ? "" : limit.toString()));
+            key = DigestUtils.md5Hex(table + toString());
         }
         return key;
     }
@@ -69,10 +67,6 @@ public class QueryInfo implements Serializable {
 
     public void setConditions(Map<String, Condition> conditions) {
         this.conditions = conditions;
-    }
-
-    public void setConditions(String key, String value) {
-        conditions.put(key, new Condition(value));
     }
 
     public Integer getLimit() {
@@ -113,8 +107,14 @@ public class QueryInfo implements Serializable {
 
     @Override
     public String toString() {
-        return (limit == null ? "" : "limit=" + limit + ",") +
-                (conditions == null ? "" : Utils.toJson(conditions));
+        String s2 = "";
+        if (conditions != null) {
+            s2 = Utils.toJson(conditions).replace("\":", ": ");
+            s2 = s2.replace("\"", "");
+        }
+        String s1 = (limit == null ? "" : "limit: " + limit);
+        if (s1.length() > 0) return s1 + ". " + s2;
+        else return s2;
     }
 }
 

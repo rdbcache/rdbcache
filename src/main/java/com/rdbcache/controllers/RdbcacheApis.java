@@ -36,7 +36,7 @@ public class RdbcacheApis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RdbcacheApis.class);
 
-    private boolean enableLocalCache = true;
+    private boolean enableDataCache = true;
 
     @PostConstruct
     public void init() {
@@ -44,17 +44,19 @@ public class RdbcacheApis {
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        if (PropCfg.getKeyMinCacheTTL() <= 0l && PropCfg.getDataMaxCacheTLL() <= 0l) {
-            enableLocalCache = false;
+        if (PropCfg.getDataMaxCacheTLL() <= 0l) {
+            enableDataCache = false;
+        } else {
+            enableDataCache = true;
         }
     }
 
-    public boolean isEnableLocalCache() {
-        return enableLocalCache;
+    public boolean isEnableDataCache() {
+        return enableDataCache;
     }
 
-    public void setEnableLocalCache(boolean enableLocalCache) {
-        this.enableLocalCache = enableLocalCache;
+    public void setEnableDataCache(boolean enable) {
+        this.enableDataCache = enable;
     }
 
     /**
@@ -145,8 +147,7 @@ public class RdbcacheApis {
 
         LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
-        if (enableLocalCache) {
-
+        if (enableDataCache) {
             AppCtx.getLocalCache().putData(pairs, anyKey);
         }
 
@@ -190,8 +191,7 @@ public class RdbcacheApis {
 
         LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
-        if (enableLocalCache) {
-
+        if (enableDataCache) {
             AppCtx.getLocalCache().putData(pairs, anyKey);
         }
 
@@ -240,7 +240,7 @@ public class RdbcacheApis {
 
         } else {
 
-            if (enableLocalCache) {
+            if (enableDataCache) {
                 AppCtx.getLocalCache().updateData(pairs);
             }
 
