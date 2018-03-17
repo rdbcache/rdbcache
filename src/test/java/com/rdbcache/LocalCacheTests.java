@@ -34,6 +34,7 @@ public class LocalCacheTests {
     }
 
     @Test
+    @Disabled("for save time purposes")
     void timeToLiveTest() {
         assertNotNull(localCache);
         try {
@@ -56,6 +57,7 @@ public class LocalCacheTests {
     }
 
     @Test
+    @Disabled("for save time purposes")
     void refreshableTest() {
         assertNotNull(localCache);
         long start = System.currentTimeMillis();

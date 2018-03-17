@@ -28,7 +28,7 @@ import java.util.*;
 
 @RestController
 @Profile({"dev", "test", "prod"})
-public class RunTimeApis {
+public class RTQueryApis {
 
     /**
      * query version info
@@ -37,7 +37,7 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query/version-info",
+            "/rtquery/v1/version-info",
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryVerionInfo(
             HttpServletRequest request) {
@@ -59,8 +59,8 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query/configurations",
-            "/v1/query/configurations/{nameOpt}",
+            "/rtquery/v1/configurations",
+            "/rtquery/v1/configurations/{nameOpt}",
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryConfigurations(
             HttpServletRequest request,
@@ -91,8 +91,8 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query/properties",
-            "/v1/query/properties/{nameOpt}",
+            "/rtquery/v1/properties",
+            "/rtquery/v1/properties/{nameOpt}",
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryProperties(
             HttpServletRequest request,
@@ -130,8 +130,8 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query/cache/{action}",
-            "/v1/query/cache/{action}/{keyOpt}"
+            "/rtquery/v1/cache/{action}",
+            "/rtquery/v1/cache/{action}/{keyOpt}"
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryCache(
             HttpServletRequest request,
@@ -196,8 +196,8 @@ public class RunTimeApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/query/app-ctx",
-            "/v1/query/app-ctx/{nameOpt}",
+            "/rtquery/v1/app-ctx",
+            "/rtquery/v1/app-ctx/{nameOpt}",
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryAppCtx(
             HttpServletRequest request,

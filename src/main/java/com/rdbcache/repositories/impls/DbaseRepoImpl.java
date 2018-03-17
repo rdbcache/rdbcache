@@ -438,7 +438,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 keyInfo.setQueryInfo(null);
                 Utils.getExcutorService().submit(() -> {
                     Thread.yield();
-                    Parser.save(context, queryInfo);
+                    Parser.saveQuery(context, queryInfo);
                 });
             }
 

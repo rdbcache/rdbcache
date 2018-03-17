@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class Condition extends HashMap<String, List<String>> {
+public class Condition extends LinkedHashMap<String, List<String>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Condition.class);
 

@@ -196,7 +196,7 @@ public class Parser {
                             subExp += ckey + " " + ops;
                         } else {
                             subExp += ckey + " " + ops + " ?";
-                            if (value.length() > 0) {
+                            if (value != null) {
                                 params.add(value);
                             } else {
                                 params.add(key);
@@ -215,10 +215,11 @@ public class Parser {
             total++;
         }
         keyInfo.setClause(clause);
-        return (clause != null);
+
+        return true;
     }
 
-    // prepare SQL where clause and parameters which use only primary key or unique indexes
+    // prepare SQL where clause and parameters which use primary key or unique indexes
     //
     public static boolean prepareStandardClauseParams(Context context, KvPair pair, KeyInfo keyInfo) {
         if (keyInfo.getTable() == null || keyInfo.getQueryKey() == null) {
@@ -241,7 +242,7 @@ public class Parser {
         int stdParamsCount = 0;
         String stdClause = "";
 
-        // 1) to use data from pair to fill up params
+        // 1) to get std clause and a flesh copy of params from pair data
         //
         boolean ready = true;
         for (String indexKey : indexes) {
@@ -263,7 +264,7 @@ public class Parser {
             return true;
         }
 
-        // 2) check if keyInfo is already ready
+        // 2) check if params is already there
         //
         if (stdClause.equals(keyInfo.getClause())) {
             List<Object> params = keyInfo.getParams();
@@ -272,7 +273,7 @@ public class Parser {
             }
         }
 
-        // 3) best effort
+        // 3) the last offer
         //
         keyInfo.setClause(stdClause);
         keyInfo.setParams(stdParams);
@@ -281,7 +282,7 @@ public class Parser {
 
     // save query info to database
     //
-    public static void save(Context context, QueryInfo queryInfo) {
+    public static void saveQuery(Context context, QueryInfo queryInfo) {
 
         KvPair queryPair = new KvPair(queryInfo.getKey(), "query", queryInfo.toMap());
         KvIdType idType = queryPair.getIdType();

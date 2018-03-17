@@ -70,9 +70,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/get/{key}",
-            "/v1/get/{key}/{opt1}",
-            "/v1/get/{key}/{opt1}/{opt2}"
+            "/rdbcache/v1/get/{key}",
+            "/rdbcache/v1/get/{key}/{opt1}",
+            "/rdbcache/v1/get/{key}/{opt1}/{opt2}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> get_get(
             HttpServletRequest request,
@@ -127,9 +127,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/set/{key}/{value}",
-            "/v1/set/{key}/{value}/{opt1}",
-            "/v1/set/{key}/{value}/{opt1}/{opt2}"
+            "/rdbcache/v1/set/{key}/{value}",
+            "/rdbcache/v1/set/{key}/{value}/{opt1}",
+            "/rdbcache/v1/set/{key}/{value}/{opt1}/{opt2}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> set_get(
             HttpServletRequest request,
@@ -168,9 +168,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/set/{key}",
-            "/v1/set/{key}/{opt1}",
-            "/v1/set/{key}/{opt1}/{opt2}"
+            "/rdbcache/v1/set/{key}",
+            "/rdbcache/v1/set/{key}/{opt1}",
+            "/rdbcache/v1/set/{key}/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> set_post(
             HttpServletRequest request,
@@ -213,9 +213,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/put/{key}",
-            "/v1/put/{key}/{opt1}",
-            "/v1/put/{key}/{opt1}/{opt2}"
+            "/rdbcache/v1/put/{key}",
+            "/rdbcache/v1/put/{key}/{opt1}",
+            "/rdbcache/v1/put/{key}/{opt1}/{opt2}"
         }, method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<?> put_post(
             HttpServletRequest request,
@@ -264,9 +264,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/getset/{key}/{value}",
-            "/v1/getset/{key}/{value}/{opt1}",
-            "/v1/getset/{key}/{value}/{opt1}/{opt2}"
+            "/rdbcache/v1/getset/{key}/{value}",
+            "/rdbcache/v1/getset/{key}/{value}/{opt1}",
+            "/rdbcache/v1/getset/{key}/{value}/{opt1}/{opt2}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> getset_get(
             HttpServletRequest request,
@@ -320,9 +320,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/getset/{key}",
-            "/v1/getset/{key}/{opt1}",
-            "/v1/getset/{key}/{opt1}/{opt2}"
+            "/rdbcache/v1/getset/{key}",
+            "/rdbcache/v1/getset/{key}/{opt1}",
+            "/rdbcache/v1/getset/{key}/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> getset_post(
             HttpServletRequest request,
@@ -376,9 +376,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/pull",
-            "/v1/pull/{opt1}",
-            "/v1/pull/{opt1}/{opt2}"
+            "/rdbcache/v1/pull",
+            "/rdbcache/v1/pull/{opt1}",
+            "/rdbcache/v1/pull/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> pull_post(
             HttpServletRequest request,
@@ -450,9 +450,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/push",
-            "/v1/push/{opt1}",
-            "/v1/push/{opt1}/{opt2}"
+            "/rdbcache/v1/push",
+            "/rdbcache/v1/push/{opt1}",
+            "/rdbcache/v1/push/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> push_post(
             HttpServletRequest request,
@@ -493,7 +493,7 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/delkey/{key}"
+            "/rdbcache/v1/delkey/{key}"
     }, method = {RequestMethod.GET, RequestMethod.DELETE})
     public ResponseEntity<?> delkey_get(
             HttpServletRequest request,
@@ -526,7 +526,7 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/delkey"
+            "/rdbcache/v1/delkey"
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delkey_post(
             HttpServletRequest request,
@@ -559,7 +559,7 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/delall/{key}"
+            "/rdbcache/v1/delall/{key}"
     }, method = RequestMethod.GET)
     public ResponseEntity<?> delall_get(
             HttpServletRequest request,
@@ -592,7 +592,7 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/delall"
+            "/rdbcache/v1/delall"
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delall_post(
             HttpServletRequest request,
@@ -624,9 +624,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/select",
-            "/v1/select/{opt1}",
-            "/v1/select/{opt1}/{opt2}"
+            "/rdbcache/v1/select",
+            "/rdbcache/v1/select/{opt1}",
+            "/rdbcache/v1/select/{opt1}/{opt2}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> select_get(
             HttpServletRequest request,
@@ -668,9 +668,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/select",
-            "/v1/select/{opt1}",
-            "/v1/select/{opt1}/{opt2}"
+            "/rdbcache/v1/select",
+            "/rdbcache/v1/select/{opt1}",
+            "/rdbcache/v1/select/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> select_post(
             HttpServletRequest request,
@@ -714,9 +714,9 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/save",
-            "/v1/save/{opt1}",
-            "/v1/save/{opt1}/{opt2}"
+            "/rdbcache/v1/save",
+            "/rdbcache/v1/save/{opt1}",
+            "/rdbcache/v1/save/{opt1}/{opt2}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> save_post(
             HttpServletRequest request,
@@ -754,7 +754,7 @@ public class RdbcacheApis {
      *
      */
     @RequestMapping(value = {
-            "/v1/trace/{traceId}"
+            "/rdbcache/v1/trace/{traceId}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> trace_get(
             HttpServletRequest request,
@@ -787,7 +787,7 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/trace"
+            "/rdbcache/v1/trace"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> trace_post(
             HttpServletRequest request,
@@ -830,8 +830,8 @@ public class RdbcacheApis {
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/v1/flush-cache",
-            "/v1/flush-cache/{opt}"
+            "/rdbcache/v1/flush-cache",
+            "/rdbcache/v1/flush-cache/{opt}"
     }, method = RequestMethod.GET)
     public ResponseEntity<?> flushcache_get(
             HttpServletRequest request,

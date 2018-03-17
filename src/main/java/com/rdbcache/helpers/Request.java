@@ -69,7 +69,6 @@ public class Request {
             if (params != null && params.size() > 0) {
                 QueryInfo queryInfo = new QueryInfo(keyInfo.getTable(), params);
                 keyInfo.setQueryInfo(queryInfo);
-                keyInfo.setQueryKey(queryInfo.getKey());
             }
         } else {
             if (opts[0] != null && !opts[0].equals(keyInfo.getExpire())) {
