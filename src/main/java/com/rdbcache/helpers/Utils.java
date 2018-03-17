@@ -9,6 +9,7 @@ package com.rdbcache.helpers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.IOException;
 import java.util.*;
@@ -31,6 +32,7 @@ public class Utils {
     public static ObjectMapper getObjectMapper() {
         if (null != mapper) return mapper;
         mapper = new ObjectMapper();
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         return mapper;
     }
 

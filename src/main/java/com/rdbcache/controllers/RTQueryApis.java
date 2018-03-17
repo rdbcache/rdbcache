@@ -7,6 +7,7 @@
 package com.rdbcache.controllers;
 
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,53 +127,36 @@ public class RTQueryApis {
      *
      * @param request HttpServletRequest
      * @param action config, table, key and data
-     * @param keyOpt, optional for specific key
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/rtquery/v1/cache/{action}",
-            "/rtquery/v1/cache/{action}/{keyOpt}"
+            "/rtquery/v1/cache/{action}"
     }, method = RequestMethod.GET)
     public ResponseEntity<?> queryCache(
             HttpServletRequest request,
-            @PathVariable String action,
-            @PathVariable Optional<String> keyOpt) {
+            @PathVariable String action) {
 
         Context context = new Context();
         Request.process(context, request);
 
-        String key = null;
-        if (keyOpt.isPresent()) key = keyOpt.get();
+        Map<String, Object> data = null;
 
-        Map<String, Object> data = new LinkedHashMap<>();
-        if (action.equals("config")) {
-            if (key == null || key.equals("keyMinCacheTTL")) {
+        try {
+            if (action.equals("config")) {
+                data = new LinkedHashMap<>();
                 data.put("keyMinCacheTTL", PropCfg.getKeyMinCacheTTL());
-            }
-            if (key == null || key.equals("dataMaxCacheTLL")) {
                 data.put("dataMaxCacheTLL", PropCfg.getDataMaxCacheTLL());
-            }
-            if (key == null || key.equals("tableInfoCacheTTL")) {
                 data.put("tableInfoCacheTTL", PropCfg.getTableInfoCacheTTL());
+            } else if (action.equals("table")) {
+                data = AppCtx.getLocalCache().listAllTables();
+            } else if (action.equals("key")) {
+                data = AppCtx.getLocalCache().listAllKeyInfos();
+            } else if (action.equals("data")) {
+                data = AppCtx.getLocalCache().listAllData();
             }
-        } else if (action.equals("table")) {
-            if (key == null) {
-                AppCtx.getLocalCache().listAllTables(data);
-            } else {
-                AppCtx.getLocalCache().getTable(key, data);
-            }
-        } else if (action.equals("key")) {
-            if (key == null) {
-                AppCtx.getLocalCache().listAllKeyInfos(data);
-            } else {
-                AppCtx.getLocalCache().getKeyInfo(key, data);
-            }
-        } else if (action.equals("data")) {
-            if (key == null) {
-                AppCtx.getLocalCache().listAllData(data);
-            } else {
-                AppCtx.getLocalCache().getData(key, data);
-            }
+        } catch (Exception e) {
+            String msg = e.getCause().getMessage();
+            throw new ServerErrorException(msg);
         }
 
         return Response.send(context, data);

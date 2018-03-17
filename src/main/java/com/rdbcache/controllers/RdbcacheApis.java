@@ -36,27 +36,12 @@ public class RdbcacheApis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RdbcacheApis.class);
 
-    private boolean enableDataCache = true;
-
     @PostConstruct
     public void init() {
     }
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
-        if (PropCfg.getDataMaxCacheTLL() <= 0l) {
-            enableDataCache = false;
-        } else {
-            enableDataCache = true;
-        }
-    }
-
-    public boolean isEnableDataCache() {
-        return enableDataCache;
-    }
-
-    public void setEnableDataCache(boolean enable) {
-        this.enableDataCache = enable;
     }
 
     /**
@@ -147,10 +132,6 @@ public class RdbcacheApis {
 
         LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
 
-        if (enableDataCache) {
-            AppCtx.getLocalCache().putData(pairs, anyKey);
-        }
-
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairs, anyKey);
 
         return Response.send(context, pairs);
@@ -190,10 +171,6 @@ public class RdbcacheApis {
         KvPairs pairs = new KvPairs(key, value);
 
         LOGGER.trace(anyKey.getAny().toString() + " key: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ..." : ""));
-
-        if (enableDataCache) {
-            AppCtx.getLocalCache().putData(pairs, anyKey);
-        }
 
         AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairs, anyKey);
 
@@ -239,10 +216,6 @@ public class RdbcacheApis {
             AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairs, anyKey);
 
         } else {
-
-            if (enableDataCache) {
-                AppCtx.getLocalCache().updateData(pairs);
-            }
 
             AppCtx.getAsyncOps().doPutOperation(context, pairs, anyKey);
         }

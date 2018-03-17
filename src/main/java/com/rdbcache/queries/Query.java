@@ -158,7 +158,7 @@ public class Query {
                     pair.setData(AppCtx.getDbaseOps().convertDbMap(columns, list.get(i)));
 
                     if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
-                        String msg = "failed when prepareStandardClauseParams for " + pair.getId();
+                        String msg = "executeSelect failed when prepareStandardClauseParams for " + pair.getId();
                         LOGGER.error(msg);
                         context.logTraceMessage(msg);
                     }
@@ -274,7 +274,7 @@ public class Query {
                 }
 
                 if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
-                    String msg = "failed when prepareStandardClauseParams for " + pair.getId();
+                    String msg = "executeInsert failed when prepareStandardClauseParams for " + pair.getId();
                     LOGGER.error(msg);
                     context.logTraceMessage(msg);
                 }
@@ -326,13 +326,10 @@ public class Query {
             String table = keyInfo.getTable();
 
             if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
-
                 allOk = false;
-
-                String msg = "failed to update when calling prepareStandardClauseParams for " + pair.getId();
+                String msg = "executeUpdate failed when calling prepareStandardClauseParams for " + pair.getId();
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
-
                 continue;
             }
 
@@ -418,11 +415,9 @@ public class Query {
             String table = keyInfo.getTable();
 
             if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
-
-                String msg = "failed to delete when calling prepareStandardClauseParams for " + pair.getId();
+                String msg = "executeDelete failed when calling prepareStandardClauseParams for " + pair.getId();
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
-
                 continue;
             }
             params = keyInfo.getParams();

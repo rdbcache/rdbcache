@@ -129,6 +129,10 @@ public class AppCtx {
         return localCache;
     }
 
+    public static void setLocalCache(LocalCache cache) {
+        localCache = cache;
+    }
+
     public static TaskQueue getTaskQueue() {
         if (taskQueue == null) {
             try {

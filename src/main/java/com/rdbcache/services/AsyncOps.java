@@ -7,13 +7,12 @@
 package com.rdbcache.services;
 
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.AnyKey;
-import com.rdbcache.helpers.Context;
-import com.rdbcache.helpers.KvPairs;
-import com.rdbcache.helpers.Utils;
+import com.rdbcache.helpers.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
@@ -29,6 +28,10 @@ public class AsyncOps {
     @PostConstruct
     public void init() {
 
+    }
+
+    @EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
     }
 
     public void doSetExpKey(Context context, KvPairs pairs, AnyKey anyKey) {

@@ -248,26 +248,6 @@ public class LocalCache extends Thread {
         data.put("key::"+key, getKeyInfo(key));
     }
 
-    public void listAllKeyInfos(Map<String, Object> map) {
-        Set<String> keys = cache.keySet();
-        for (String key: keys) {
-            if (key == null) continue;
-            if (key.startsWith("key::")) {
-                map.put(key, get(key));
-            }
-        }
-    }
-
-    public void removeAllKeyInfos() {
-        Set<String> keys = cache.keySet();
-        for (String key: keys) {
-            if (key == null) continue;
-            if (key.startsWith("key::")) {
-                cache.remove(key);
-            }
-        }
-    }
-
     public void updateData(KvPairs pairs) {
         for (int i = 0; i < pairs.size(); i++) {
             updateData(pairs.get(i));
@@ -326,21 +306,41 @@ public class LocalCache extends Thread {
         }
     }
 
-    public void getData(String key, Map<String, Object> data) {
-        if (key.startsWith("data::")) {
-            key = key.substring(6, key.length());
+    public Map<String, Object> listAllKeyInfos() {
+        Map<String, Object> map = new LinkedHashMap<>();
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (key == null) continue;
+            if (key.startsWith("key::")) {
+                map.put(key, get(key));
+            }
         }
-        data.put("data::"+key, getData(key));
+        return map;
     }
 
-    public void listAllData(Map<String, Object> map) {
+    public void removeAllKeyInfos() {
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (key == null) continue;
+            if (key.startsWith("key::")) {
+                cache.remove(key);
+            }
+        }
+    }
+
+    public Map<String, Object> listAllData() {
+        Map<String, Object> map = new LinkedHashMap<>();
         Set<String> keys = cache.keySet();
         for (String key: keys) {
             if (key == null) continue;
             if (key.startsWith("data::")) {
-                map.put(key, get(key));
+                Object value = get(key);
+                if (value != null) {
+                    map.put(key, value);
+                }
             }
         }
+        return map;
     }
 
     public void removeAllData() {
@@ -353,14 +353,8 @@ public class LocalCache extends Thread {
         }
     }
 
-    public void getTable(String key, Map<String, Object> data) {
-        if (key.startsWith("table_")) {
-            key = key.substring(6, key.length());
-        }
-        data.put("table_"+key, get("table_"+key));
-    }
-
-    public void listAllTables(Map<String, Object> map) {
+    public Map<String, Object> listAllTables() {
+        Map<String, Object> map = new LinkedHashMap<>();
         Set<String> keys = cache.keySet();
         for (String key: keys) {
             if (key == null) continue;
@@ -368,6 +362,7 @@ public class LocalCache extends Thread {
                 map.put(key, get(key));
             }
         }
+        return map;
     }
 
     public void removeAllTables() {
