@@ -7,18 +7,34 @@
 package com.rdbcache.services;
 
 import com.rdbcache.configs.AppCtx;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.stereotype.Service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 
 @Service
 public class RedisOps {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisOps.class);
+
+    @PostConstruct
+    public void init() {
+    }
+
+    @org.springframework.context.event.EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
+    }
 
     // make sure config set notify-keyspace-events Ex
     //

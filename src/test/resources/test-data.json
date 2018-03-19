@@ -1,0 +1,20 @@
+{
+  "data::01a089f3ab704c1aaecdbe13777538e0" : {
+    "id" : 12466,
+    "email" : "mike@example.com",
+    "name" : "Mike A.",
+    "dob" : "1977-01-01"
+  },
+  "data::9783634dd01a4860a394852a461f405e" : {
+    "id" : 12468,
+    "email" : "david@example.com",
+    "name" : "David C.",
+    "dob" : "1979-11-08"
+  },
+  "data::0f064186a4fb4db8b6dfdc822cde0d58" : {
+    "id" : 12467,
+    "email" : "kevin@example.com",
+    "name" : "Kevin B.",
+    "dob" : "1980-07-21"
+  }
+}

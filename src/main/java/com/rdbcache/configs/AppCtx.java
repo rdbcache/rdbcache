@@ -7,6 +7,7 @@
 package com.rdbcache.configs;
 
 import com.rdbcache.controllers.RdbcacheApis;
+import com.rdbcache.helpers.VersionInfo;
 import com.rdbcache.repositories.*;
 import com.rdbcache.repositories.impls.DbaseRepoImpl;
 import com.rdbcache.repositories.impls.KeyInfoRepoImpl;
@@ -24,6 +25,8 @@ import javax.sql.DataSource;
 public class AppCtx {
 
     private static ApplicationContext ctx;
+
+    private static VersionInfo versionInfo;
 
     private static RdbcacheApis rdbcacheApis;
 
@@ -55,12 +58,23 @@ public class AppCtx {
 
     private static StringRedisTemplate redisTemplate;
 
+    public static ApplicationContext getApplicationContext() {
+        return ctx;
+    }
+
     public static void setApplicationContext(ApplicationContext ctx) {
         AppCtx.ctx = ctx;
     }
 
-    public static ApplicationContext getApplicationContext() {
-        return ctx;
+    public static VersionInfo getVersionInfo() {
+        if (versionInfo == null) {
+            versionInfo = new VersionInfo();
+        }
+        return versionInfo;
+    }
+
+    public static void setVersionInfo(VersionInfo versionInfo) {
+        AppCtx.versionInfo = versionInfo;
     }
 
     public static RdbcacheApis getRdbcacheApis() {
@@ -74,6 +88,10 @@ public class AppCtx {
         return rdbcacheApis;
     }
 
+    public static void setRdbcacheApis(RdbcacheApis rdbcacheApis) {
+        AppCtx.rdbcacheApis = rdbcacheApis;
+    }
+
     public static AsyncOps getAsyncOps() {
         if (asyncOps == null) {
             try {
@@ -83,6 +101,10 @@ public class AppCtx {
             }
         }
         return asyncOps;
+    }
+
+    public static void setAsyncOps(AsyncOps asyncOps) {
+        AppCtx.asyncOps = asyncOps;
     }
 
     public static DbaseOps getDbaseOps() {
@@ -96,6 +118,10 @@ public class AppCtx {
         return dbaseOps;
     }
 
+    public static void setDbaseOps(DbaseOps dbaseOps) {
+        AppCtx.dbaseOps = dbaseOps;
+    }
+
     public static ExpireOps getExpireOps() {
         if (expireOps == null) {
             try {
@@ -107,6 +133,10 @@ public class AppCtx {
         return expireOps;
     }
 
+    public static void setExpireOps(ExpireOps expireOps) {
+        AppCtx.expireOps = expireOps;
+    }
+
     public static RedisOps getRedisOps() {
         if (redisOps == null) {
             try {
@@ -116,6 +146,10 @@ public class AppCtx {
             }
         }
         return redisOps;
+    }
+
+    public static void setRedisOps(RedisOps redisOps) {
+        AppCtx.redisOps = redisOps;
     }
 
     public static LocalCache getLocalCache() {
@@ -144,6 +178,10 @@ public class AppCtx {
         return taskQueue;
     }
 
+    public static void setTaskQueue(TaskQueue taskQueue) {
+        AppCtx.taskQueue = taskQueue;
+    }
+
     public static DbaseRepo getDbaseRepo() {
         if (dbaseRepo == null) {
             try {
@@ -153,6 +191,10 @@ public class AppCtx {
             }
         }
         return dbaseRepo;
+    }
+
+    public static void setDbaseRepo(DbaseRepo dbaseRepo) {
+        AppCtx.dbaseRepo = dbaseRepo;
     }
 
     public static DbaseRepoImpl getDbaseRepoImpl() {
@@ -175,6 +217,10 @@ public class AppCtx {
         return keyInfoRepo;
     }
 
+    public static void setKeyInfoRepo(KeyInfoRepo keyInfoRepo) {
+        AppCtx.keyInfoRepo = keyInfoRepo;
+    }
+
     public static KeyInfoRepoImpl getKeyInfoRepoImpl() {
         try {
             return ctx.getBean(KeyInfoRepoImpl.class);
@@ -195,6 +241,10 @@ public class AppCtx {
         return kvPairRepo;
     }
 
+    public static void setKvPairRepo(KvPairRepo kvPairRepo) {
+        AppCtx.kvPairRepo = kvPairRepo;
+    }
+
     public static MonitorRepo getMonitorRepo() {
         if (monitorRepo == null) {
             try {
@@ -206,6 +256,10 @@ public class AppCtx {
         return monitorRepo;
     }
 
+    public static void setMonitorRepo(MonitorRepo monitorRepo) {
+        AppCtx.monitorRepo = monitorRepo;
+    }
+
     public static RedisRepo getRedisRepo() {
         if (redisRepo == null) {
             try {
@@ -215,6 +269,10 @@ public class AppCtx {
             }
         }
         return redisRepo;
+    }
+
+    public static void setRedisRepo(RedisRepo redisRepo) {
+        AppCtx.redisRepo = redisRepo;
     }
 
     public static RedisRepoImpl getRedisRepoImpl() {
@@ -237,6 +295,10 @@ public class AppCtx {
         return stopWatchRepo;
     }
 
+    public static void setStopWatchRepo(StopWatchRepo stopWatchRepo) {
+        AppCtx.stopWatchRepo = stopWatchRepo;
+    }
+
     public static JdbcTemplate getJdbcTemplate() {
         if (jdbcTemplate == null) {
             try {
@@ -256,6 +318,10 @@ public class AppCtx {
         return template.getDataSource();
     }
 
+    public static void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        AppCtx.jdbcTemplate = jdbcTemplate;
+    }
+
     public static StringRedisTemplate getRedisTemplate() {
         if (redisTemplate == null) {
             try {
@@ -265,6 +331,10 @@ public class AppCtx {
             }
         }
         return redisTemplate;
+    }
+
+    public static void setRedisTemplate(StringRedisTemplate redisTemplate) {
+        AppCtx.redisTemplate = redisTemplate;
     }
 
     public static JedisConnectionFactory getJedisConnectionFactory() {

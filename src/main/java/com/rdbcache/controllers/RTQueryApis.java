@@ -46,7 +46,7 @@ public class RTQueryApis {
         Context context = new Context();
         Request.process(context, request);
 
-        VersionInfo versionInfo = new VersionInfo();
+        VersionInfo versionInfo = AppCtx.getVersionInfo();
 
         Map<String, Object> data = Utils.getObjectMapper().convertValue(versionInfo, Map.class);
 

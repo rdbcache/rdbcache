@@ -39,10 +39,6 @@ public class QueryInfo implements Serializable {
         this.table = table;
     }
 
-    public QueryInfo(Map<String, Object> map) {
-        fromMap(map);
-    }
-
     public QueryInfo() {
     }
 
@@ -75,34 +71,6 @@ public class QueryInfo implements Serializable {
 
     public void setLimit(Integer limit) {
         this.limit = limit;
-    }
-
-    public void fromMap(Map<String, Object> map) {
-        if (map.containsKey("table")) table = (String) map.get("table");
-        if (map.containsKey("limit")) limit = Integer.valueOf(map.get("limit").toString());
-        if (map.containsKey("conditions")) {
-            Map<String, Object> cmap = (Map<String, Object>) map.get("conditions");
-            if (conditions == null) conditions = new LinkedHashMap<>();
-            for(Map.Entry<String, Object> entry: cmap.entrySet()) {
-                conditions.put(entry.getKey(), new Condition((Map<String, Object>) entry.getValue()));
-            }
-        }
-    }
-
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        if (table != null) map.put("table", table);
-        if (limit != null) map.put("limit", limit);
-        if (conditions != null) {
-            Map<String, Object> cmap = new LinkedHashMap<String, Object>();
-            map.put("conditions", cmap);
-            for (Map.Entry<String, Condition> entry: conditions.entrySet()) {
-                Condition condition = entry.getValue();
-                Map<String, Object> tmap = condition.toMap();
-                cmap.put(entry.getKey(), tmap);
-            }
-        }
-        return map;
     }
 
     @Override

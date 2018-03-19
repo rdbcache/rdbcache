@@ -107,40 +107,7 @@ public class TaskQueue extends Thread {
 
                 if (!isRunning) break;
 
-                LOGGER.debug("Received Task: " + task);
-
-                String[] parts = task.split("::");
-
-                if (parts.length < 3) {
-                    LOGGER.error("invalid task format");
-                    continue;
-                }
-
-                String action = parts[0];
-                String key = parts[1];
-                String traceId = parts[2];
-
-                Context context = new Context(traceId);
-                if (enableMonitor) context.enableMonitor(task, "queue", action);
-
-                KvPairs pairs = new KvPairs(key);
-
-                AnyKey anyKey = new AnyKey();
-                if (!AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
-                    String msg = "keyInfo not found";
-                    LOGGER.error(msg);
-                    context.logTraceMessage(msg);
-                    continue;
-                }
-
-                KeyInfo keyInfo = anyKey.getAny();
-
-                //...
-
-                String msg = "unknown task action:" + action;
-                LOGGER.error(msg);
-                context.logTraceMessage(msg);
-                context.stopFirstStopWatch();
+                onReceiveTask(task);
 
             } catch (RedisConnectionFailureException e) {
 
@@ -161,9 +128,49 @@ public class TaskQueue extends Thread {
                 LOGGER.error(msg);
                 e.printStackTrace();
             }
+
+
         }
 
         isRunning = false;
 
+    }
+
+    public void onReceiveTask(String task) {
+
+        LOGGER.debug("Received Task: " + task);
+
+        String[] parts = task.split("::");
+
+        if (parts.length < 3) {
+            LOGGER.error("invalid task format");
+            return;
+        }
+
+        String action = parts[0];
+        String key = parts[1];
+        String traceId = parts[2];
+
+        Context context = new Context(traceId);
+        if (enableMonitor) context.enableMonitor(task, "queue", action);
+
+        KvPairs pairs = new KvPairs(key);
+
+        AnyKey anyKey = new AnyKey();
+        if (!AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
+            String msg = "keyInfo not found";
+            LOGGER.error(msg);
+            context.logTraceMessage(msg);
+            return;
+        }
+
+        KeyInfo keyInfo = anyKey.getAny();
+
+        //...
+
+        String msg = "unknown task action:" + action;
+        LOGGER.error(msg);
+        context.logTraceMessage(msg);
+        context.stopFirstStopWatch();
     }
 }

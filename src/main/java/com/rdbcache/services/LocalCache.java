@@ -217,13 +217,13 @@ public class LocalCache extends Thread {
         }
         Long ttl = keyInfo.getExpireTTL();
         if (ttl < keyMinCacheTTL) ttl = keyMinCacheTTL;
-        put("key::" + key, keyInfo.toMap(), ttl * 1000);
+        put("key::" + key, Utils.getObjectMapper().convertValue(keyInfo, Map.class), ttl * 1000);
     }
 
     public KeyInfo getKeyInfo(String key) {
         Map<String, Object> map = get("key::" + key);
         if (map == null) return null;
-        KeyInfo keyInfo = new KeyInfo(map);
+        KeyInfo keyInfo = Utils.getObjectMapper().convertValue(map, KeyInfo.class);
         return keyInfo;
     }
 

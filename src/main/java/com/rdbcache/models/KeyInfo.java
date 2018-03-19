@@ -56,10 +56,6 @@ public class KeyInfo implements Serializable, Cloneable {
         this.expire = expire;
     }
 
-    public KeyInfo(Map<String, Object> map) {
-        fromMap(map);
-    }
-
     public KeyInfo() {
     }
 
@@ -202,38 +198,6 @@ public class KeyInfo implements Serializable, Cloneable {
             e.printStackTrace();
             throw new ServerErrorException(e.getCause().getMessage());
         }
-    }
-
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        if (expire != null) map.put("expire", expire);
-        if (table != null) map.put("table", table);
-        if (clause != null) map.put("clause", clause);
-        if (params != null) {
-            List<Object> ps = new ArrayList<>();
-            for (Object p: params) {
-                ps.add(p);
-            }
-            map.put("params", ps);
-        }
-        if (queryKey != null) map.put("query_key", queryKey);
-        return map;
-    }
-
-    public void fromMap(Map<String, Object> map) {
-        if (map == null) return;
-        if (map.containsKey("expire")) expire = (String) map.get("expire");
-        if (map.containsKey("table")) table = (String) map.get("table");
-        if (map.containsKey("clause")) clause = (String) map.get("clause");
-        if (map.containsKey("params")) {
-            List<Object> ps = (List<Object>) map.get("params");
-            params = new ArrayList<>();
-            for (Object p: ps) {
-                params.add(p);
-            }
-        }
-        if (map.containsKey("query_key")) queryKey = (String) map.get("query_key");
-        else queryKey = null;
     }
 
     @Override

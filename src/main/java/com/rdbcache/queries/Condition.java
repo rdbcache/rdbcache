@@ -17,10 +17,6 @@ public class Condition extends LinkedHashMap<String, List<String>> {
         push(ops, values);
     }
 
-    public Condition(Map<String, Object> map) {
-        fromMap(map);
-    }
-
     public void push(String ops, String[] values) {
         if (values == null || values.length == 0) {
             return;
@@ -48,31 +44,6 @@ public class Condition extends LinkedHashMap<String, List<String>> {
         }
         if (!list.contains(value)) {
             list.add(value);
-        }
-    }
-
-    public Map<String, Object> toMap() {
-        Map<String, Object> newMap = new LinkedHashMap<String, Object>();
-        for(Map.Entry<String, List<String>> entry: entrySet()) {
-            List<String> values = (List<String>) entry.getValue();
-            List<String> list = new ArrayList<String>();
-            for (String value: values) {
-                list.add(value);
-            }
-            newMap.put(entry.getKey(), list);
-        }
-        return newMap;
-    }
-
-    public void fromMap(Map<String, Object> mapNew) {
-        if (mapNew == null || mapNew.size() == 0) return;
-        for (Map.Entry<String, Object> entry: mapNew.entrySet()) {
-            List<String> values = (List<String>) entry.getValue();
-            List<String> list = new ArrayList<String>();
-            for (String value: values) {
-                list.add(value);
-            }
-            put(entry.getKey(), list);
         }
     }
 }

@@ -1,12 +1,10 @@
-package com.rdbcache;
+package com.rdbcache.helpers;
 
 import com.rdbcache.helpers.Utils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -14,24 +12,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-public class UtilsTests {
-
-    @BeforeAll
-    static void initAll() {
-    }
-
-    @BeforeEach
-    void init() {
-    }
+public class UtilsTest {
 
     @Test
-    void succeedingTest() {
-    }
-
-    @Test
-    void toMapTestWithAssociateArray() {
+    public void toMapTestWithAssociateArray() {
         String json = "{\"a\":1,\"b\":\"c\"}";
         Map<String, Object> map = Utils.toMap(json);
         Map<String, Object> newMap = new LinkedHashMap<>();
@@ -41,7 +25,7 @@ public class UtilsTests {
     }
 
     @Test
-    void toMapTestWithArray() {
+    public void toMapTestWithArray() {
         String json = "[\"a\",\"b\",\"c\"]";
         Map<String, Object> map = Utils.toMap(json);
         Map<String, Object> newMap = new LinkedHashMap<>();
@@ -52,7 +36,7 @@ public class UtilsTests {
     }
 
     @Test
-    void toJsonTestWithAssociateArray() {
+    public void toJsonTestWithAssociateArray() {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("a", 1);
         map.put("b", "c");
@@ -61,7 +45,7 @@ public class UtilsTests {
     }
 
     @Test
-    void toJsonTestWithArray() {
+    public void toJsonTestWithArray() {
         List<String> list = new ArrayList<>();
         list.add("a");
         list.add("b");
@@ -71,7 +55,7 @@ public class UtilsTests {
     }
 
     @Test
-    void toPrettyJsonTestWithAssociateArray() {
+    public void toPrettyJsonTestWithAssociateArray() {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("a", 1);
         map.put("b", "c");
@@ -80,7 +64,7 @@ public class UtilsTests {
     }
 
     @Test
-    void toPrettyJsonTestWithArray() {
+    public void toPrettyJsonTestWithArray() {
         List<String> list = new ArrayList<>();
         list.add("a");
         list.add("b");
@@ -90,7 +74,7 @@ public class UtilsTests {
     }
 
     @Test
-    void generateIdTest() {
+    public void generateIdTest() {
         String id = Utils.generateId();
         assertEquals(id.indexOf("-"), -1);
         assertEquals(id.indexOf(" "), -1);
@@ -98,7 +82,7 @@ public class UtilsTests {
     }
 
     @Test
-    void isValueEqualsTest() {
+    public void isValueEqualsTest() {
         assertTrue(Utils.isValueEquals(null, null));
         assertFalse(Utils.isValueEquals(null, ""));
         assertFalse(Utils.isValueEquals("", null));
@@ -137,7 +121,7 @@ public class UtilsTests {
     }
 
     @Test
-    void mapChangesAfterUpdateTest() {
+    public void mapChangesAfterUpdateTest() {
 
         Map<String, Object> changes = new LinkedHashMap<>();
         assertFalse(Utils.mapChangesAfterUpdate(null, null, changes));
@@ -162,7 +146,7 @@ public class UtilsTests {
     }
 
     @Test
-    void isMapEqualsTest() {
+    public void isMapEqualsTest() {
         Map<String, Object> mapA = null, mapB = null;
 
         assertTrue(Utils.isMapEquals(mapA, mapB));
@@ -187,13 +171,5 @@ public class UtilsTests {
         mapB.put("c", 3);
 
         assertTrue(Utils.isMapEquals(mapA, mapB));
-    }
-
-    @AfterEach
-    void tearDown() {
-    }
-
-    @AfterAll
-    static void tearDownAll() {
     }
 }

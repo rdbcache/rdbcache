@@ -1,0 +1,42 @@
+{
+  "table_list": {
+    "tables": ["user_table"]
+  },
+  "table_auto_inc_column": {
+    "user_table": "id"
+  },
+  "table_indexes::user_table": {
+    "PRIMARY": ["id"],
+    "email": ["email"]
+  },
+  "table_columns::user_table": {
+    "id": {
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": null,
+      "Extra": "auto_increment"
+    },
+    "email": {
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "UNI",
+      "Default": null,
+      "Extra": ""
+    },
+    "name": {
+      "Type": "varchar(32)",
+      "Null": "YES",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    },
+    "dob": {
+      "Type": "date",
+      "Null": "YES",
+      "Key": "",
+      "Default": null,
+      "Extra": ""
+    }
+  }
+}

@@ -174,7 +174,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                             AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
                         }
                         int index = keys.indexOf(key);
-                        anyKey.setKey(index, keyInfo);
+                        anyKey.set(index, keyInfo);
                         keys.set(index, null);
                     }
                 }
@@ -198,10 +198,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             if (dbPair == null) continue;
 
             String key = dbPair.getId();
-            KeyInfo keyInfo = new KeyInfo(dbPair.getData());
+            KeyInfo keyInfo = Utils.getObjectMapper().convertValue(dbPair.getData(), KeyInfo.class);
 
             int index = keys.indexOf(key);
-            anyKey.setKey(index, keyInfo);
+            anyKey.set(index, keyInfo);
             keys.set(index, null);
 
             if (enableKeyCache) {
@@ -286,7 +286,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
 
             StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-            AppCtx.getKvPairRepo().save(new KvPair(key, "info", keyInfo.toMap()));
+            AppCtx.getKvPairRepo().save(new KvPair(key, "info", 
+                Utils.getObjectMapper().convertValue(keyInfo, Map.class)));
             if (stopWatch != null) stopWatch.stopNow();
         }
 

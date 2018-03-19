@@ -12,6 +12,7 @@ import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
@@ -78,6 +79,10 @@ public class ExpireOps {
         eventPrefix = PropCfg.getEventPrefix();
         enableMonitor = PropCfg.getEnableMonitor();
         eventLockTimeout = PropCfg.getEventLockTimeout();
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
     }
 
     public String getEventPrefix() {

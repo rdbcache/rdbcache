@@ -8,6 +8,7 @@ package com.rdbcache.queries;
 
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.Context;
+import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
@@ -282,7 +283,8 @@ public class Parser {
     //
     public static void saveQuery(Context context, QueryInfo queryInfo) {
 
-        KvPair queryPair = new KvPair(queryInfo.getKey(), "query", queryInfo.toMap());
+        KvPair queryPair = new KvPair(queryInfo.getKey(), "query",
+                Utils.getObjectMapper().convertValue(queryInfo, Map.class));
         KvIdType idType = queryPair.getIdType();
 
         StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");

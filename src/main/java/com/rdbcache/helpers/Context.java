@@ -127,7 +127,7 @@ public class Context {
         monitorEnabled = false;
 
         monitor.stopNow();
-        monitor.setBuiltInfo(Application.versionInfo.getBriefInfo());
+        monitor.setBuiltInfo(AppCtx.getVersionInfo().getBriefInfo());
 
         Monitor result = AppCtx.getMonitorRepo().save(monitor);
         if (result == null) {

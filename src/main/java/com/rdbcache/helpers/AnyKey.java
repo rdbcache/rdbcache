@@ -14,39 +14,23 @@ import java.util.List;
 
 public class AnyKey extends ArrayList<KeyInfo> {
 
-    public AnyKey() {
-    }
-
     public AnyKey(KeyInfo keyInfo) {
         add(keyInfo);
     }
 
-    public AnyKey(AnyKey anyKey) {
-        for (KeyInfo keyInfo: anyKey) {
-            add(keyInfo);
-        }
-    }
-
-    public KeyInfo getKey() {
-        return getKey(0);
-    }
-
-    public KeyInfo getKey(int index) {
-        if (index >= size()) {
-            return null;
-        }
-        return get(index);
+    public AnyKey() {
     }
 
     public void setKey(KeyInfo keyInfo) {
-        set(0, keyInfo);
+        clear();
+        add(keyInfo);
     }
 
-    public void setKey(int index, KeyInfo keyInfo) {
-        if (index >= size()) {
-            throw new ServerErrorException("setKey index out of range");
+    public KeyInfo getKey() {
+        if (size() == 0) {
+            return null;
         }
-        set(index, keyInfo);
+        return get(0);
     }
 
     public KeyInfo getAny() {
@@ -67,9 +51,5 @@ public class AnyKey extends ArrayList<KeyInfo> {
             add(keyInfo);
         }
         return get(index);
-    }
-
-    public AnyKey getAnyKey(int index) {
-        return new AnyKey(getAny(index));
     }
 }

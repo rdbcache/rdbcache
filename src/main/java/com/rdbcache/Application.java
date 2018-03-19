@@ -6,6 +6,7 @@
 
 package com.rdbcache;
 
+import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.PropCfg;
 import com.rdbcache.helpers.VersionInfo;
 
@@ -31,8 +32,6 @@ import java.io.PrintStream;
 public class Application implements ApplicationRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Application.class);
-
-    public static VersionInfo versionInfo;
 
     /*
     @Value("${spring.redis.url}")
@@ -72,12 +71,10 @@ public class Application implements ApplicationRunner {
 
     public static void main(String[] args) {
 
-        versionInfo = new VersionInfo();
-
         if (args != null && args.length > 0) {
             for (int i = 0; i < args.length; i++) {
                 if (args[i].equals("-v") || args[i].equals("--version")) {
-                    System.out.println("\n" + versionInfo.getFullInfo() + "\n");
+                    System.out.println("\n" + AppCtx.getVersionInfo().getFullInfo() + "\n");
                     return;
                 }
             }
@@ -88,7 +85,7 @@ public class Application implements ApplicationRunner {
         app.setBanner(new Banner() {
             @Override
             public void printBanner(Environment environment, Class<?> aClass, PrintStream printStream) {
-                printStream.println("\n" + versionInfo.getFullInfo() + "\n");
+                printStream.println("\n" + AppCtx.getVersionInfo().getFullInfo() + "\n");
             }
         });
 

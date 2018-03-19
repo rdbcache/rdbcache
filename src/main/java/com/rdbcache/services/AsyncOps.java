@@ -11,6 +11,7 @@ import com.rdbcache.helpers.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -27,11 +28,14 @@ public class AsyncOps {
 
     @PostConstruct
     public void init() {
-
     }
 
     @EventListener
     public void handleEvent(ContextRefreshedEvent event) {
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
     }
 
     public void doSetExpKey(Context context, KvPairs pairs, AnyKey anyKey) {
@@ -92,7 +96,7 @@ public class AsyncOps {
                 int i = 0;
                 for (KvPair pair : pairs) {
                     KvPairs kvpPairs = new KvPairs(pair);
-                    AnyKey akey = anyKeyNew.getAnyKey(i++);
+                    AnyKey akey = new AnyKey(anyKeyNew.getAny(i++));
                     AppCtx.getDbaseRepo().update(context, kvpPairs, akey);
                     AppCtx.getRedisRepo().save(context, kvpPairs, akey);
                     AppCtx.getExpireOps().setExpireKey(context, kvpPairs, akey);
