@@ -14,10 +14,10 @@ import com.rdbcache.repositories.impls.KeyInfoRepoImpl;
 import com.rdbcache.repositories.impls.RedisRepoImpl;
 import com.rdbcache.services.*;
 import org.springframework.context.ApplicationContext;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 import redis.clients.jedis.JedisPoolConfig;
 
 import javax.sql.DataSource;
@@ -78,7 +78,7 @@ public class AppCtx {
     }
 
     public static RdbcacheApis getRdbcacheApis() {
-        if (rdbcacheApis == null) {
+        if (ctx != null && rdbcacheApis == null) {
             try {
                 rdbcacheApis = ctx.getBean(RdbcacheApis.class);
             } catch (Exception e) {
@@ -93,7 +93,7 @@ public class AppCtx {
     }
 
     public static AsyncOps getAsyncOps() {
-        if (asyncOps == null) {
+        if (ctx != null && asyncOps == null) {
             try {
                 asyncOps = ctx.getBean(AsyncOps.class);
             } catch (Exception e) {
@@ -108,7 +108,7 @@ public class AppCtx {
     }
 
     public static DbaseOps getDbaseOps() {
-        if (dbaseOps == null) {
+        if (ctx != null && dbaseOps == null) {
             try {
                 dbaseOps = ctx.getBean(DbaseOps.class);
             } catch (Exception e) {
@@ -123,7 +123,7 @@ public class AppCtx {
     }
 
     public static ExpireOps getExpireOps() {
-        if (expireOps == null) {
+        if (ctx != null && expireOps == null) {
             try {
                 expireOps = ctx.getBean(ExpireOps.class);
             } catch (Exception e) {
@@ -138,7 +138,7 @@ public class AppCtx {
     }
 
     public static RedisOps getRedisOps() {
-        if (redisOps == null) {
+        if (ctx != null && redisOps == null) {
             try {
                 redisOps = ctx.getBean(RedisOps.class);
             } catch (Exception e) {
@@ -153,7 +153,7 @@ public class AppCtx {
     }
 
     public static LocalCache getLocalCache() {
-        if (localCache == null) {
+        if (ctx != null && localCache == null) {
             try {
                 localCache = ctx.getBean(LocalCache.class);
             } catch (Exception e) {
@@ -168,7 +168,7 @@ public class AppCtx {
     }
 
     public static TaskQueue getTaskQueue() {
-        if (taskQueue == null) {
+        if (ctx != null && taskQueue == null) {
             try {
                 taskQueue = ctx.getBean(TaskQueue.class);
             } catch (Exception e) {
@@ -183,7 +183,7 @@ public class AppCtx {
     }
 
     public static DbaseRepo getDbaseRepo() {
-        if (dbaseRepo == null) {
+        if (ctx != null && dbaseRepo == null) {
             try {
                 dbaseRepo = ctx.getBean(DbaseRepo.class);
             } catch (Exception e) {
@@ -207,7 +207,7 @@ public class AppCtx {
     }
 
     public static KeyInfoRepo getKeyInfoRepo() {
-        if (keyInfoRepo == null) {
+        if (ctx != null && keyInfoRepo == null) {
             try {
                 keyInfoRepo = ctx.getBean(KeyInfoRepo.class);
             } catch (Exception e) {
@@ -231,7 +231,7 @@ public class AppCtx {
     }
 
     public static KvPairRepo getKvPairRepo() {
-        if (kvPairRepo == null) {
+        if (ctx != null && kvPairRepo == null) {
             try {
                 kvPairRepo = ctx.getBean(KvPairRepo.class);
             } catch (Exception e) {
@@ -246,7 +246,7 @@ public class AppCtx {
     }
 
     public static MonitorRepo getMonitorRepo() {
-        if (monitorRepo == null) {
+        if (ctx != null && monitorRepo == null) {
             try {
                 monitorRepo = ctx.getBean(MonitorRepo.class);
             } catch (Exception e) {
@@ -261,7 +261,7 @@ public class AppCtx {
     }
 
     public static RedisRepo getRedisRepo() {
-        if (redisRepo == null) {
+        if (ctx != null && redisRepo == null) {
             try {
                 redisRepo = ctx.getBean(RedisRepo.class);
             } catch (Exception e) {
@@ -285,7 +285,7 @@ public class AppCtx {
     }
 
     public static StopWatchRepo getStopWatchRepo() {
-        if (stopWatchRepo == null) {
+        if (ctx != null && stopWatchRepo == null) {
             try {
                 stopWatchRepo = ctx.getBean(StopWatchRepo.class);
             } catch (Exception e) {
@@ -300,7 +300,7 @@ public class AppCtx {
     }
 
     public static JdbcTemplate getJdbcTemplate() {
-        if (jdbcTemplate == null) {
+        if (ctx != null && jdbcTemplate == null) {
             try {
                 jdbcTemplate = (JdbcTemplate) ctx.getBean("jdbcTemplate");
             } catch (Exception e) {
@@ -323,7 +323,7 @@ public class AppCtx {
     }
 
     public static StringRedisTemplate getRedisTemplate() {
-        if (redisTemplate == null) {
+        if (ctx != null && redisTemplate == null) {
             try {
                 redisTemplate = (StringRedisTemplate) ctx.getBean("redisTemplate");
             } catch (Exception e) {
@@ -352,5 +352,4 @@ public class AppCtx {
 
         return factory.getPoolConfig();
     }
-
 }

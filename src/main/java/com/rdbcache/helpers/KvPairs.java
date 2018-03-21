@@ -7,7 +7,6 @@
 package com.rdbcache.helpers;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
 
 import java.util.ArrayList;

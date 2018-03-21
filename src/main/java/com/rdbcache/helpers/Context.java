@@ -6,13 +6,13 @@
 
 package com.rdbcache.helpers;
 
-import com.rdbcache.Application;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.Monitor;
 import com.rdbcache.models.StopWatch;
+import com.rdbcache.repositories.MonitorRepo;
+import com.rdbcache.repositories.StopWatchRepo;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Context {
@@ -127,10 +127,23 @@ public class Context {
         monitorEnabled = false;
 
         monitor.stopNow();
-        monitor.setBuiltInfo(AppCtx.getVersionInfo().getBriefInfo());
+        VersionInfo versionInfo = AppCtx.getVersionInfo();
+        if (versionInfo != null) {
+            monitor.setBuiltInfo(versionInfo.getBriefInfo());
+        }
 
-        Monitor result = AppCtx.getMonitorRepo().save(monitor);
+        MonitorRepo monitorRepo = AppCtx.getMonitorRepo();
+        if (monitorRepo == null) {
+            return false;
+        }
+
+        Monitor result = monitorRepo.save(monitor);
         if (result == null) {
+            return false;
+        }
+
+        StopWatchRepo stopWatchRepo = AppCtx.getStopWatchRepo();
+        if (stopWatchRepo == null) {
             return false;
         }
 
@@ -138,7 +151,7 @@ public class Context {
         if (watches != null && watches.size() > 0) {
             for (StopWatch watch: watches) {
                 watch.setMonitorId(result.getId());
-                AppCtx.getStopWatchRepo().save(watch);
+                stopWatchRepo.save(watch);
             }
         }
         return true;

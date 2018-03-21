@@ -7,15 +7,13 @@
 package com.rdbcache.models;
 
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.PropCfg;
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.exceptions.ServerErrorException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.rdbcache.queries.QueryInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.*;
@@ -184,6 +182,7 @@ public class KeyInfo implements Serializable, Cloneable {
         return query.getLimit();
     }
 
+    @Override
     public KeyInfo clone() {
         try {
             KeyInfo keyInfo = (KeyInfo) super.clone();

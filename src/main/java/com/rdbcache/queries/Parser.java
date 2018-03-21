@@ -14,6 +14,7 @@ import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
 
+import com.rdbcache.repositories.KvPairRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -281,23 +282,28 @@ public class Parser {
 
     // save query info to database
     //
-    public static void saveQuery(Context context, QueryInfo queryInfo) {
+    public static boolean saveQuery(Context context, QueryInfo queryInfo) {
 
-        KvPair queryPair = new KvPair(queryInfo.getKey(), "query",
-                Utils.getObjectMapper().convertValue(queryInfo, Map.class));
+        KvPairRepo kvPairRepo = AppCtx.getKvPairRepo();
+        if (kvPairRepo == null) {
+            return false;
+        }
+
+        KvPair queryPair = new KvPair(queryInfo.getKey(), "query", Utils.toMap(queryInfo));
         KvIdType idType = queryPair.getIdType();
 
         StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
-        KvPair dbPair = AppCtx.getKvPairRepo().findOne(idType);
+        KvPair dbPair = kvPairRepo.findOne(idType);
         if (stopWatch != null) stopWatch.stopNow();
 
-        if (dbPair != null) {
-            if (queryPair.getValue().equals(dbPair.getValue())) {
-                return;
-            }
+        if (queryPair.getData().equals(dbPair.getData())) {
+            return true;
         }
+
         stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-        AppCtx.getKvPairRepo().save(queryPair);
+        kvPairRepo.save(queryPair);
         if (stopWatch != null) stopWatch.stopNow();
+
+        return true;
     }
 }

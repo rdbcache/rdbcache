@@ -1,0 +1,23 @@
+{
+  "01a089f3ab704c1aaecdbe13777538e0" : {
+    "expire" : "30",
+    "table" : "user_table",
+    "clause" : "id = ?",
+    "params" : [ 12466 ],
+    "query_key" : "1e44ca12f7ec6d2ee835c94bdc2c01dc"
+  },
+  "9783634dd01a4860a394852a461f405e" : {
+    "expire" : "30",
+    "table" : "user_table",
+    "clause" : "id = ?",
+    "params" : [ 12468 ],
+    "query_key" : "1e44ca12f7ec6d2ee835c94bdc2c01dc"
+  },
+  "0f064186a4fb4db8b6dfdc822cde0d58" : {
+    "expire" : "30",
+    "table" : "user_table",
+    "clause" : "id = ?",
+    "params" : [ 12467 ],
+    "query_key" : "1e44ca12f7ec6d2ee835c94bdc2c01dc"
+  }
+}

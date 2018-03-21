@@ -7,6 +7,7 @@
 package com.rdbcache.controllers;
 
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.*;
 
@@ -48,7 +49,7 @@ public class RTQueryApis {
 
         VersionInfo versionInfo = AppCtx.getVersionInfo();
 
-        Map<String, Object> data = Utils.getObjectMapper().convertValue(versionInfo, Map.class);
+        Map<String, Object> data = Utils.toMap(versionInfo);
 
         return Response.send(context, data);
     }

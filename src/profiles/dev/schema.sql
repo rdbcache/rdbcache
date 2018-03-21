@@ -2,8 +2,6 @@ CREATE TABLE IF NOT EXISTS rdbcache_kv_pair (
   id varchar(255) not null,
   type varchar(16) not null,
   value text,
-  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id, type)
 );
 
@@ -187,20 +185,6 @@ CREATE TABLE IF NOT EXISTS tb2 (
   name varchar(32),
   dob date,
   PRIMARY KEY (id)
-);
-
-CREATE TABLE IF NOT EXISTS tb3 (
-  name varchar(32),
-  dv decimal(10, 4),
-  fv real(10, 4),
-  iv integer,
-  bv boolean,
-  t1v time,
-  t2v date,
-  t3v datetime,
-  t4v timestamp,
-  t5v year,
-  UNIQUE KEY (name)
 );
 
 CREATE TABLE IF NOT EXISTS user_table (

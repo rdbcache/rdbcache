@@ -6,6 +6,7 @@
 
 package com.rdbcache.services;
 
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.KeyInfo;
@@ -217,13 +218,13 @@ public class LocalCache extends Thread {
         }
         Long ttl = keyInfo.getExpireTTL();
         if (ttl < keyMinCacheTTL) ttl = keyMinCacheTTL;
-        put("key::" + key, Utils.getObjectMapper().convertValue(keyInfo, Map.class), ttl * 1000);
+        put("key::" + key, Utils.toMap(keyInfo), ttl * 1000);
     }
 
     public KeyInfo getKeyInfo(String key) {
         Map<String, Object> map = get("key::" + key);
         if (map == null) return null;
-        KeyInfo keyInfo = Utils.getObjectMapper().convertValue(map, KeyInfo.class);
+        KeyInfo keyInfo = Utils.toPojo(map, KeyInfo.class);
         return keyInfo;
     }
 

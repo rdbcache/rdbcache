@@ -8,54 +8,54 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
+
 import static org.junit.Assert.*;
 
 public class KvPairsTest {
 
     @Test
-    public void listConstructor() {
+    public void listConstructor1() {
 
-        {
-            List<String> list = new ArrayList<>();
-            list.add("key0");
-            list.add("key1");
-            list.add("key2");
-            KvPairs pairs = new KvPairs(list);
+        List<String> list = new ArrayList<>();
+        list.add("key0");
+        list.add("key1");
+        list.add("key2");
+        KvPairs pairs = new KvPairs(list);
 
-            assertEquals(3, pairs.size());
-            assertEquals(list, pairs.getKeys());
+        assertEquals(3, pairs.size());
+        assertEquals(list, pairs.getKeys());
+
+    }
+
+    @Test
+    public void listConstructor2() {
+
+        List<Map<String, Object>> list = new ArrayList<>();
+
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("k00", Utils.toMap("{\"kk00\": 0}"));
+        map.put("k01", Utils.toMap("{\"kk01\": 1}"));
+        map.put("k02", Utils.toMap("{\"kk02\": 2}"));
+        list.add(map);
+        map = new LinkedHashMap<>();
+        map.put("k10", Utils.toMap("{\"kk10\": 0}"));
+        map.put("k11", Utils.toMap("{\"kk11\": 1}"));
+        map.put("k12", Utils.toMap("{\"kk12\": 2}"));
+        list.add(map);
+        map = new LinkedHashMap<>();
+        map.put("k20", Utils.toMap("{\"kk20\": 0}"));
+        map.put("k21", Utils.toMap("{\"kk21\": 1}"));
+        map.put("k22", Utils.toMap("{\"kk22\": 2}"));
+        list.add(map);
+
+        KvPairs pairs = new KvPairs(list);
+        assertEquals(3, pairs.size());
+        for (int i = 0; i < 3; i++) {
+            KvPair pair = pairs.get(i);
+            map = pair.getData();
+            assertTrue(pair.isUuid());
+            assertEquals(3, map.size());
         }
-
-        {
-            List<Map<String, Object>> list = new ArrayList<>();
-
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("k00", Utils.toMap("{\"kk00\": 0}"));
-            map.put("k01", Utils.toMap("{\"kk01\": 1}"));
-            map.put("k02", Utils.toMap("{\"kk02\": 2}"));
-            list.add(map);
-            map = new LinkedHashMap<>();
-            map.put("k10", Utils.toMap("{\"kk10\": 0}"));
-            map.put("k11", Utils.toMap("{\"kk11\": 1}"));
-            map.put("k12", Utils.toMap("{\"kk12\": 2}"));
-            list.add(map);
-            map = new LinkedHashMap<>();
-            map.put("k20", Utils.toMap("{\"kk20\": 0}"));
-            map.put("k21", Utils.toMap("{\"kk21\": 1}"));
-            map.put("k22", Utils.toMap("{\"kk22\": 2}"));
-            list.add(map);
-
-            KvPairs pairs = new KvPairs(list);
-            assertEquals(3, pairs.size());
-            for (int i = 0; i < 3; i++) {
-                KvPair pair = pairs.get(i);
-                map = pair.getData();
-                assertTrue(pair.isUuid());
-                assertEquals(3, map.size());
-            }
-        }
-
     }
 
     @Test

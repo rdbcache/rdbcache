@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AppCtxConfig {
-
     @Bean
     public AppCtxAware appCtxAware() {
         return new AppCtxAware();

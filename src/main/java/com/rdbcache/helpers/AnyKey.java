@@ -10,7 +10,6 @@ import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.models.KeyInfo;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class AnyKey extends ArrayList<KeyInfo> {
 

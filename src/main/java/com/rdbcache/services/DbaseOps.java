@@ -7,12 +7,13 @@
 package com.rdbcache.services;
 
 import com.rdbcache.exceptions.ServerErrorException;
-import com.rdbcache.helpers.PropCfg;
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -32,6 +33,8 @@ public class DbaseOps {
 
     private Long tableInfoCacheTTL = PropCfg.getTableInfoCacheTTL();
 
+    private String databaseType = "h2";
+
     @PostConstruct
     public void init() {
     }
@@ -43,6 +46,12 @@ public class DbaseOps {
 
     @EventListener
     public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
+        String dbaseUrl = PropCfg.getDatasourceUrl();
+        if (dbaseUrl.startsWith("jdbc:h2:")) {
+            databaseType = "h2";
+        } else if (dbaseUrl.startsWith("jdbc:mysql:")) {
+            databaseType = "mysql";
+        }
         setDefaultToDbTimeZone();
         cacheAllTablesInfo();
     }
@@ -55,16 +64,12 @@ public class DbaseOps {
         this.tableInfoCacheTTL = tableInfoCacheTTL;
     }
 
-    public void setDefaultToDbTimeZone() {
+    public String getDatabaseType() {
+        return databaseType;
+    }
 
-        String timezone = fetchDbTimeZone();
-
-        if (timezone == null) {
-            LOGGER.error("failed to get database timezone");
-            timezone = "UTC";
-        }
-
-        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
+    public void setDatabaseType(String databaseType) {
+        this.databaseType = databaseType;
     }
 
     synchronized public void logTraceMessage(String traceId, String message, StackTraceElement[] trace) {
@@ -99,104 +104,82 @@ public class DbaseOps {
         AppCtx.getKvPairRepo().save(pair);
     }
 
-    public Map<String, Object> getTableList(Context context) {
+    public List<String> getTableList(Context context) {
 
-        Map<String, Object> map = AppCtx.getLocalCache().get("table_list");
-        if (map != null) {
-            return map;
+        Map<String, Object> tablesMap = AppCtx.getLocalCache().get("table_list");
+        if (tablesMap != null) {
+            return (List<String>) tablesMap.get("tables");
         }
-        map = AppCtx.getLocalCache().put("table_list", tableInfoCacheTTL * 1000L, () -> {
-            Map<String, Object> map2 = fetchTableList(context);
-            if (map2 == null) {
+
+        tablesMap = AppCtx.getLocalCache().put("table_list", tableInfoCacheTTL * 1000L, () -> {
+            List<String> tables = fetchTableList(context);
+            if (tables == null) {
                 LOGGER.error("failed to get table list");
             }
-            return map2;
+            Map<String, Object> map = new HashMap<>();
+            map.put("tables", tables);
+            return map;
         });
-        if (map == null) {
+        if (tablesMap == null) {
             throw new ServerErrorException("failed to get table list");
         }
 
-        return map;
+        return (List<String>) tablesMap.get("tables");
     }
 
     public Map<String, Object> getTableColumns(Context context, String table) {
 
-        Map<String, Object> map = map = (Map<String, Object>) AppCtx.getLocalCache().get("table_columns::" + table);
-        if (map != null) {
-            return map;
+        Map<String, Object> columns = (Map<String, Object>) AppCtx.getLocalCache().get("table_columns::" + table);
+        if (columns != null) {
+            return columns;
         }
 
-        Object object = AppCtx.getLocalCache().put("table_columns::" + table, tableInfoCacheTTL * 1000L, () -> {
-            Map<String, Object> map2 = fetchTableColumns(context, table);
-            if (map2 == null) {
+        columns = AppCtx.getLocalCache().put("table_columns::" + table, tableInfoCacheTTL * 1000L, () -> {
+            Map<String, Object> map = fetchTableColumns(context, table);
+            if (map == null) {
                 String msg = "failed to get table columns";
                 LOGGER.error(msg);
                 if (context != null) {
                     context.logTraceMessage(msg);
                 }
             }
-            return map2;
+            return map;
         });
-        if (object == null) {
+
+        if (columns == null) {
             throw new ServerErrorException("failed to get table columns");
         }
 
-        map = (Map<String, Object>) object;
-
-        return map;
+        return columns;
     }
 
     public String getTableAutoIncColumn(Context context, String table) {
 
+        Map<String, Object> columns = (Map<String, Object>) AppCtx.getLocalCache().get("table_auto_inc_columns");
+        if (columns != null) {
+            if (table == null) return null;
+            return (String) columns.get(table);
+        }
+
+        columns = AppCtx.getLocalCache().put("table_auto_inc_columns", tableInfoCacheTTL * 1000L, () -> {
+            Map<String, Object> map = fetchTableAutoIncrementColumns(context);
+            if (map == null) {
+                String msg = "failed to get table auto increment column map";
+                LOGGER.error(msg);
+                if (context != null) {
+                    context.logTraceMessage(msg);
+                }
+            }
+            return map;
+        });
+
+        if (columns == null) {
+            throw new ServerErrorException("failed to get table auto increment column map");
+        }
+
         if (table == null) return null;
-
-        Map<String, Object> map = map = (Map<String, Object>) AppCtx.getLocalCache().get("table_auto_inc_column");
-        if (map != null) {
-            return (String) map.get(table);
-        }
-
-        Object object = AppCtx.getLocalCache().put("table_auto_inc_column", tableInfoCacheTTL * 1000L, () -> {
-            Map<String, Object> map2 = fetchTableAutoIncrementColumn(context);
-            if (map2 == null) {
-                String msg = "failed to get table auto increment column map";
-                LOGGER.error(msg);
-                if (context != null) {
-                    context.logTraceMessage(msg);
-                }
-            }
-            return map2;
-        });
-        if (object == null) {
-            throw new ServerErrorException("failed to get table auto increment column map");
-        }
-
-        map = (Map<String, Object>) object;
-
-        return (String) map.get(table);
+        return (String) columns.get(table);
     }
-
-    public void cacheTableAutoIncColumn(Context context) {
-
-        Map<String, Object> map = map = (Map<String, Object>) AppCtx.getLocalCache().get("table_auto_inc_column");
-        if (map != null) {
-            return;
-        }
-
-        Object object = AppCtx.getLocalCache().put("table_auto_inc_column", tableInfoCacheTTL * 1000L, () -> {
-            Map<String, Object> map2 = fetchTableAutoIncrementColumn(context);
-            if (map2 == null) {
-                String msg = "failed to get table auto increment column map";
-                LOGGER.error(msg);
-                if (context != null) {
-                    context.logTraceMessage(msg);
-                }
-            }
-            return map2;
-        });
-        if (object == null) {
-            throw new ServerErrorException("failed to get table auto increment column map");
-        }
-   }
 
     public Map<String, Object> getTableIndexes(Context context, String table) {
 
@@ -206,15 +189,15 @@ public class DbaseOps {
         }
 
         Object object = AppCtx.getLocalCache().put("table_indexes::" + table, tableInfoCacheTTL * 1000L, () -> {
-            Map<String, Object> map2 = fetchTableIndexes(context, table);
-            if (map2 == null) {
+            Map<String, Object> indexes = fetchTableUniqueIndexes(context, table);
+            if (indexes == null) {
                 String msg = "failed to get table indexes";
                 LOGGER.error(msg);
                 if (context != null) {
                     context.logTraceMessage(msg);
                 }
             }
-            return map2;
+            return indexes;
         });
         if (object == null) {
             throw new ServerErrorException("failed to get table indexes");
@@ -227,13 +210,12 @@ public class DbaseOps {
 
     public void cacheAllTablesInfo() {
 
-        Map<String, Object> map = getTableList(null);
-        List<String> tables = (List<String>) map.get("tables");
+        List<String> tables = getTableList(null);
         for (String table: tables) {
             getTableColumns(null, table);
             getTableIndexes(null, table);
         }
-        cacheTableAutoIncColumn(null);
+        getTableAutoIncColumn(null, null);
     }
 
     public String getFieldType(Context context, Map<String, Object> tableInfo, String field) {
@@ -242,7 +224,7 @@ public class DbaseOps {
         if (attributes == null) {
             return null;
         }
-        return (String) attributes.get("Type");
+        return (String) attributes.get("type");
     }
 
     public String formatDate(String type, Date date) {
@@ -266,11 +248,26 @@ public class DbaseOps {
         return null;
     }
 
-    // get database time zone
+    public void setDefaultToDbTimeZone() {
+
+        String timezone = "UTC";
+
+        if (databaseType.equals("mysql")) {
+            String tz = fetchMysqlDbTimeZone();
+            if (tz != null) {
+                timezone = tz;
+            }
+        }
+
+        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
+    }
+
+    // get database time zone from mysql
     //
-    public String fetchDbTimeZone() {
+    public String fetchMysqlDbTimeZone() {
 
         try {
+
             String sql = "SELECT @@global.time_zone as GLOBAL, @@system_time_zone as SYSTEM, @@session.time_zone as SESSION";
 
             List<Map<String, Object>> list = AppCtx.getJdbcTemplate().queryForList(sql);
@@ -320,21 +317,65 @@ public class DbaseOps {
         return dbMap;
     }
 
-    // get list of tables
+    // get list of tables from mysql
     //
-    public Map<String, Object> fetchTableList(Context context) {
+    public List<String> fetchTableList(Context context) {
+        if (databaseType.equals("mysql")) {
+            return fetchMysqlTableList(context);
+        }
+        if (databaseType.equals("h2")) {
+            return fetchH2TableList(context);
+        }
+        throw new ServerErrorException("database type not supported");
+    }
+
+    // get list of tables from mysql
+    //
+    private List<String> fetchMysqlTableList(Context context) {
 
         String sql = "SHOW TABLES";
 
         StopWatch stopWatch = null;
-        if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
         try {
+            if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
             List<String> tables = AppCtx.getJdbcTemplate().queryForList(sql, String.class);
             if (stopWatch != null) stopWatch.stopNow();
 
-            Map<String, Object> map = new HashMap<>();
-            map.put("tables", tables);
-            return map;
+            return tables;
+        } catch (Exception e) {
+            if (stopWatch != null) stopWatch.stopNow();
+
+            String msg = e.getCause().getMessage();
+            LOGGER.error(msg);
+            if (context != null) {
+                context.logTraceMessage(msg);
+            }
+            e.printStackTrace();
+        }
+        throw new ServerErrorException("failed to get database table list");
+    }
+
+    // get list of tables from h2
+    //
+    private List<String> fetchH2TableList(Context context) {
+
+        String sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES";
+
+        List<String> tables = new ArrayList<>();
+
+        StopWatch stopWatch = null;
+        try {
+            if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
+            List<Map<String, Object>> list = AppCtx.getJdbcTemplate().queryForList(sql);
+            if (stopWatch != null) stopWatch.stopNow();
+
+            for (Map<String, Object> map: list) {
+                if ("TABLE".equals(map.get("TABLE_TYPE"))) {
+                    tables.add((String) map.get("TABLE_NAME"));
+                }
+            }
+
+            return tables;
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
 
@@ -351,24 +392,151 @@ public class DbaseOps {
     // get table columns info
     //
     public Map<String, Object> fetchTableColumns(Context context, String table) {
+        if (databaseType.equals("mysql")) {
+            return fetchMysqlTableColumns(context, table);
+        }
+        if (databaseType.equals("h2")) {
+            return fetchH2TableColumns(context, table);
+        }
+        throw new ServerErrorException("database type not supported");
+    }
 
-        if (table != null) {
+    // get table columns info from mysql
+    //
+    private Map<String, Object> fetchMysqlTableColumns(Context context, String table) {
 
-            Map<String, Object> map = new LinkedHashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+
+        String sql = "SHOW COLUMNS FROM " + table;
+
+        StopWatch stopWatch = null;
+        try {
+            if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
+            List<Map<String, Object>> columns = AppCtx.getJdbcTemplate().queryForList(sql);
+            if (stopWatch != null) stopWatch.stopNow();
+            for (int i = 0; i < columns.size(); i++) {
+                Map<String, Object> column = columns.get(i);
+                String field = (String) column.get("Field");
+                String type = (String) column.get("Type");
+                String s = (String) column.get("Null");
+                Boolean nullable = false;
+                if (s != null && s.equalsIgnoreCase("yes")) {
+                    nullable = true;
+                }
+                String defValue = (String) column.get("Default");
+                String extra = (String) column.get("Extra");
+                if (extra != null && extra.equals("auto_increment")) {
+                    defValue = "auto_increment";
+                }
+                Map<String, Object> colMap = new LinkedHashMap<>();
+                colMap.put("type", type);
+                colMap.put("nullable", nullable);
+                colMap.put("default", defValue);
+                map.put(field, colMap);
+            }
+            return map;
+        } catch (Exception e) {
+            if (stopWatch != null) stopWatch.stopNow();
+
+            String msg = e.getCause().getMessage();
+            LOGGER.error(msg);
+            if (context != null) {
+                context.logTraceMessage(msg);
+            }
+            e.printStackTrace();
+        }
+
+        throw new ServerErrorException("failed to get database table columns");
+    }
+
+    // get table columns info from h2
+    //
+    public Map<String, Object> fetchH2TableColumns(Context context, String table) {
+
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+
+        String sql = "SELECT COLUMN_NAME, TYPE_NAME, IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS where TABLE_NAME = '" + table + "'";
+
+        StopWatch stopWatch = null;
+        try {
+            if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
+            List<Map<String, Object>> columns = AppCtx.getJdbcTemplate().queryForList(sql);
+            if (stopWatch != null) stopWatch.stopNow();
+            for (int i = 0; i < columns.size(); i++) {
+                Map<String, Object> column = columns.get(i);
+                String field = (String) column.get("COLUMN_NAME");
+                String type = (String) column.get("TYPE_NAME");
+                String s = (String) column.get("IS_NULLABLE");
+                Boolean nullable = false;
+                if (s != null && s.equalsIgnoreCase("yes")) {
+                    nullable = true;
+                }
+                String defValue = (String) column.get("COLUMN_DEFAULT");
+                if (defValue != null && defValue.startsWith("(NEXT VALUE FOR PUBLIC.SYSTEM_SEQUENCE_")) {
+                    defValue = "auto_increment";
+                }
+                Map<String, Object> colMap = new LinkedHashMap<>();
+                colMap.put("type", type);
+                colMap.put("nullable", nullable);
+                colMap.put("default", defValue);
+                map.put(field, colMap);
+            }
+            return map;
+        } catch (Exception e) {
+            if (stopWatch != null) stopWatch.stopNow();
+
+            String msg = e.getCause().getMessage();
+            LOGGER.error(msg);
+            if (context != null) {
+                context.logTraceMessage(msg);
+            }
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    // get auto increment column per table
+    //
+    private Map<String, Object> fetchTableAutoIncrementColumns(Context context) {
+
+        if (databaseType.equals("mysql")) {
+            return fetchMysqlTableAutoIncrementColumns(context);
+        }
+        if (databaseType.equals("h2")) {
+            return fetchH2TableAutoIncrementColumns(context);
+        }
+        throw new ServerErrorException("database type not supported");
+    }
+
+    // get auto increment column per table from mysql
+    //
+    private Map<String, Object> fetchMysqlTableAutoIncrementColumns(Context context) {
+
+        Map<String, Object> autoIncMap = new LinkedHashMap<>();
+
+        List<String> tables = getTableList(context);
+        for (String table: tables) {
+
             String sql = "SHOW COLUMNS FROM " + table;
 
             StopWatch stopWatch = null;
-            if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
             try {
+                if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
                 List<Map<String, Object>> columns = AppCtx.getJdbcTemplate().queryForList(sql);
                 if (stopWatch != null) stopWatch.stopNow();
-                for (int i = 0; i < columns.size(); i++) {
-                    Map<String, Object> column = columns.get(i);
-                    String field = (String) column.get("Field");
-                    column.remove("Field");
-                    map.put(field, column);
+
+                if (columns != null) {
+                    for (Map<String, Object> column: columns) {
+                        String extra = (String) column.get("Extra");
+                        if (extra.equals("auto_increment")) {
+                            String field = (String) column.get("Field");
+                            autoIncMap.put(table, field);
+                            break;
+                        }
+                    }
+                } else {
+                    throw new ServerErrorException("failed to get columns");
                 }
-                return map;
             } catch (Exception e) {
                 if (stopWatch != null) stopWatch.stopNow();
 
@@ -378,67 +546,131 @@ public class DbaseOps {
                     context.logTraceMessage(msg);
                 }
                 e.printStackTrace();
-            }
-        }
-        throw new ServerErrorException("failed to get database table columns");
-    }
-
-    // get auto increment column per table
-    //
-    public Map<String, Object> fetchTableAutoIncrementColumn(Context context) {
-
-        Map<String, Object> autoIncMap = new LinkedHashMap<>();
-        List<String> tables = (List<String>) getTableList(context).get("tables");
-        for (String table: tables) {
-            Map<String, Object> map = getTableColumns(context, table);
-            for (Map.Entry<String, Object> entry: map.entrySet()) {
-                Map<String, Object> cmap = (Map<String, Object>) entry.getValue();
-                String extra = (String) cmap.get("Extra");
-                if (extra.equals("auto_increment")) {
-                    autoIncMap.put(table, entry.getKey());
-                }
             }
         }
         return autoIncMap;
     }
 
-    // get table indexes info
+    // get auto increment column per table from h2
     //
-    public Map<String, Object> fetchTableIndexes(Context context, String table) {
+    public Map<String, Object> fetchH2TableAutoIncrementColumns(Context context) {
 
-        if (table != null) {
+        Map<String, Object> autoIncMap = new LinkedHashMap<>();
 
-            String sql = "SHOW INDEXES FROM " + table + "  WHERE Non_unique = false";
+        String sql = "SELECT TABLE_NAME, COLUMN_NAME, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE COLUMN_DEFAULT IS NOT NULL";
 
-            StopWatch stopWatch = null;
+        StopWatch stopWatch = null;
+        try {
             if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
-            try {
-                List<Map<String, Object>> indexes = AppCtx.getJdbcTemplate().queryForList(sql);
-                if (stopWatch != null) stopWatch.stopNow();
-
-                Map<String, Object> map = new LinkedHashMap<String, Object>();
-                for (int i = 0; i < indexes.size(); i++) {
-                    Map<String, Object> index = indexes.get(i);
-                    String key_name = (String) index.get("Key_name");
-                    List<String> columns = (List<String>) map.get(key_name);
-                    if (columns == null) {
-                        columns = new ArrayList<String>();
-                        map.put(key_name, columns);
-                    }
-                    columns.add((String) index.get("Column_name"));
+            List<Map<String, Object>> columns = AppCtx.getJdbcTemplate().queryForList(sql);
+            if (stopWatch != null) stopWatch.stopNow();
+            for (int i = 0; i < columns.size(); i++) {
+                Map<String, Object> column = columns.get(i);
+                String defaultValue = (String) column.get("COLUMN_DEFAULT");
+                if (defaultValue.startsWith("(NEXT VALUE FOR PUBLIC.SYSTEM_SEQUENCE_")) {
+                    String table = (String) column.get("TABLE_NAME");
+                    String field = (String) column.get("COLUMN_NAME");
+                    autoIncMap.put(table, field);
                 }
-                return map;
-            } catch (Exception e) {
-                if (stopWatch != null) stopWatch.stopNow();
-
-                String msg = e.getCause().getMessage();
-                LOGGER.error(msg);
-                if (context != null) {
-                    context.logTraceMessage(msg);
-                }
-                e.printStackTrace();
             }
+        } catch (Exception e) {
+            if (stopWatch != null) stopWatch.stopNow();
+
+            String msg = e.getCause().getMessage();
+            LOGGER.error(msg);
+            if (context != null) {
+                context.logTraceMessage(msg);
+            }
+            e.printStackTrace();
         }
+        return autoIncMap;
+    }
+
+    // get table unique indexes info
+    //
+    public Map<String, Object> fetchTableUniqueIndexes(Context context, String table) {
+        if (databaseType.equals("mysql")) {
+            return fetchMysqlTableUniqueIndexes(context, table);
+        }
+        if (databaseType.equals("h2")) {
+            return fetchH2TableUniqueIndexes(context, table);
+        }
+        throw new ServerErrorException("database type not supported");
+    }
+
+    // get table unique indexes info from mysql
+    //
+    private Map<String, Object> fetchMysqlTableUniqueIndexes(Context context, String table) {
+
+        String sql = "SHOW INDEXES FROM " + table + "  WHERE Non_unique = false";
+
+        StopWatch stopWatch = null;
+        try {
+            if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
+            List<Map<String, Object>> indexes = AppCtx.getJdbcTemplate().queryForList(sql);
+            if (stopWatch != null) stopWatch.stopNow();
+
+            Map<String, Object> map = new LinkedHashMap<String, Object>();
+            for (int i = 0; i < indexes.size(); i++) {
+                Map<String, Object> index = indexes.get(i);
+                String key_name = (String) index.get("Key_name");
+                List<String> columns = (List<String>) map.get(key_name);
+                if (columns == null) {
+                    columns = new ArrayList<String>();
+                    map.put(key_name, columns);
+                }
+                columns.add((String) index.get("Column_name"));
+            }
+            return map;
+        } catch (Exception e) {
+            if (stopWatch != null) stopWatch.stopNow();
+
+            String msg = e.getCause().getMessage();
+            LOGGER.error(msg);
+            if (context != null) {
+                context.logTraceMessage(msg);
+            }
+            e.printStackTrace();
+        }
+
+        throw new ServerErrorException("failed to get database table indexes");
+    }
+
+    // get table unique indexes info from h2
+    //
+    private Map<String, Object> fetchH2TableUniqueIndexes(Context context, String table) {
+
+        String sql = "SELECT TABLE_NAME, COLUMN_NAME, PRIMARY_KEY, INDEX_NAME, ORDINAL_POSITION FROM INFORMATION_SCHEMA.INDEXES WHERE NON_UNIQUE = 'FALSE' AND TABLE_NAME = '" + table + "'";
+
+        StopWatch stopWatch = null;
+        try {
+            if (context != null) stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
+            List<Map<String, Object>> indexes = AppCtx.getJdbcTemplate().queryForList(sql);
+            if (stopWatch != null) stopWatch.stopNow();
+
+            Map<String, Object> map = new LinkedHashMap<String, Object>();
+            for (int i = 0; i < indexes.size(); i++) {
+                Map<String, Object> index = indexes.get(i);
+                String key_name = (String) index.get("INDEX_NAME");
+                List<String> columns = (List<String>) map.get(key_name);
+                if (columns == null) {
+                    columns = new ArrayList<String>();
+                    map.put(key_name, columns);
+                }
+                columns.add((String) index.get("COLUMN_NAME"));
+            }
+            return map;
+        } catch (Exception e) {
+            if (stopWatch != null) stopWatch.stopNow();
+
+            String msg = e.getCause().getMessage();
+            LOGGER.error(msg);
+            if (context != null) {
+                context.logTraceMessage(msg);
+            }
+            e.printStackTrace();
+        }
+
         throw new ServerErrorException("failed to get database table indexes");
     }
 }

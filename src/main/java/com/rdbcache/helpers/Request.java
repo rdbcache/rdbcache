@@ -7,6 +7,7 @@
 package com.rdbcache.helpers;
 
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.queries.QueryInfo;
@@ -98,8 +99,7 @@ public class Request {
             return;
         }
         if (opts[1] == null) {
-            Map<String, Object> map = AppCtx.getDbaseOps().getTableList(context);
-            List<String> tables = (List<String>) map.get("tables");
+            List<String> tables = AppCtx.getDbaseOps().getTableList(context);
             if (tables.contains(opt)) {
                 opts[1] = opt;
                 return;

@@ -2,7 +2,9 @@ package com.rdbcache.controllers;
 
 import com.google.common.io.CharStreams;
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.Utils;
+import com.rdbcache.services.DbaseOps;
 import com.rdbcache.services.LocalCache;
 
 import org.junit.Test;
@@ -17,7 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -34,7 +38,8 @@ import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringRunner.class)
-@WebMvcTest(value = RTQueryApis.class, secure = false)
+@WebMvcTest(value = {RTQueryApis.class, PropCfg.class}, secure = false)
+@TestPropertySource(locations="classpath:test.properties")
 @PrepareForTest(AppCtx.class)
 public class RTQueryApisTest {
 
@@ -166,22 +171,18 @@ public class RTQueryApisTest {
     public void retrieveLocalCacheTable() throws Exception {
 
         try {
-
             InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test-table.json");
-
             assertNotNull(inputStream);
-
             String text = null;
             try (final Reader reader = new InputStreamReader(inputStream)) {
                 text = CharStreams.toString(reader);
             }
-
             assertNotNull(text);
+            Map<String, Object> testTable = Utils.toMap(text);
+            assertNotNull(testTable);
 
-            Mockito.when(localCache.listAllTables()).thenReturn(Utils.toMap(text));
-
+            Mockito.when(localCache.listAllTables()).thenReturn(testTable);
             PowerMockito.mockStatic(AppCtx.class);
-
             BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
 
             RequestBuilder requestBuilder = MockMvcRequestBuilders.
@@ -219,21 +220,29 @@ public class RTQueryApisTest {
 
         try {
             InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test-keys.json");
-
             assertNotNull(inputStream);
-
             String text = null;
             try (final Reader reader = new InputStreamReader(inputStream)) {
                 text = CharStreams.toString(reader);
             }
-
             assertNotNull(text);
+            Map<String, Object> testKeys = Utils.toMap(text);
+            assertNotNull(testKeys);
 
-            Mockito.when(localCache.listAllKeyInfos()).thenReturn(Utils.toMap(text));
+            //Mockito.when(localCache.listAllKeyInfos()).thenReturn(testKeys);
+            //PowerMockito.mockStatic(AppCtx.class);
+            //BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
 
-            PowerMockito.mockStatic(AppCtx.class);
-
-            BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
+            // try different way
+            //
+            LocalCache cache = new LocalCache();
+            cache.init();
+            cache.handleEvent(null);
+            //cache.handleApplicationReadyEvent(null);
+            for (Map.Entry<String, Object> entry: testKeys.entrySet()) {
+                cache.put(entry.getKey(), (Map<String, Object>) entry.getValue());
+            }
+            AppCtx.setLocalCache(cache);
 
             RequestBuilder requestBuilder = MockMvcRequestBuilders.
                     get("/rtquery/v1/cache/key").
@@ -272,18 +281,16 @@ public class RTQueryApisTest {
             InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test-data.json");
 
             assertNotNull(inputStream);
-
             String text = null;
             try (final Reader reader = new InputStreamReader(inputStream)) {
                 text = CharStreams.toString(reader);
             }
-
             assertNotNull(text);
+            Map<String, Object> testData = Utils.toMap(text);
+            assertNotNull(testData);
 
-            Mockito.when(localCache.listAllData()).thenReturn(Utils.toMap(text));
-
+            Mockito.when(localCache.listAllData()).thenReturn(testData);
             PowerMockito.mockStatic(AppCtx.class);
-
             BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
 
             RequestBuilder requestBuilder = MockMvcRequestBuilders.

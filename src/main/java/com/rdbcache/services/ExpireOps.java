@@ -6,6 +6,7 @@
 
 package com.rdbcache.services;
 
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.*;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.KeyInfo;
@@ -28,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import java.util.Collections;
-import java.util.List;
 
 @Service
 public class ExpireOps {

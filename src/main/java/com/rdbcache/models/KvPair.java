@@ -6,6 +6,7 @@
 
 package com.rdbcache.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Utils;
@@ -25,17 +26,12 @@ public class KvPair implements Serializable {
     @EmbeddedId
     private KvIdType idType;
 
+    @JsonIgnore
     @Transient
     private Boolean isUuid = false;
 
     @Transient
     private Map<String, Object> data;
-
-    @Column(insertable = false, updatable = false)
-    private Date createdAt;
-
-    @Column(insertable = false, updatable = false)
-    private Date updatedAt;
 
     public KvPair(String id, String type, String value) {
         if (id.equals("*")) {
@@ -114,28 +110,13 @@ public class KvPair implements Serializable {
         }
     }
 
+    @JsonIgnore
     public Boolean isUuid() {
         return isUuid;
     }
 
     public void setIsUuid(Boolean isUuid) {
         this.isUuid = isUuid;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public String getType() {
@@ -150,6 +131,7 @@ public class KvPair implements Serializable {
         idType.setType(type);
     }
 
+    @JsonIgnore
     public KvIdType getIdType() {
         return idType;
     }
@@ -158,6 +140,7 @@ public class KvPair implements Serializable {
         this.idType = idType;
     }
 
+    @JsonIgnore
     @Access(AccessType.PROPERTY)
     public String getValue() {
         if (data == null) {
@@ -218,6 +201,7 @@ public class KvPair implements Serializable {
         data.clear();;
     }
 
+    @JsonIgnore
     public Map<String, Object> getDataClone() {
         if (data == null) {
             return null;
@@ -229,6 +213,7 @@ public class KvPair implements Serializable {
         return map;
     }
 
+    @JsonIgnore
     public Object getMapValue() {
         if (data == null) {
             return null;
@@ -253,5 +238,23 @@ public class KvPair implements Serializable {
                 "idType='" + idType.toString() + '\'' +
                 ", value='" + getValue() + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        KvPair pair = (KvPair) o;
+
+        if (idType != null ? !idType.equals(pair.idType) : pair.idType != null) return false;
+        return data != null ? data.equals(pair.data) : pair.data == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = idType != null ? idType.hashCode() : 0;
+        result = 31 * result + (data != null ? data.hashCode() : 0);
+        return result;
     }
 }

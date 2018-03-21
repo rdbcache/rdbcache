@@ -8,7 +8,7 @@ package com.rdbcache.services;
 
 import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.KvPairs;
-import com.rdbcache.helpers.PropCfg;
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.KeyInfo;

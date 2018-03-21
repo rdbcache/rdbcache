@@ -9,34 +9,26 @@
     "PRIMARY": ["id"],
     "email": ["email"]
   },
-  "table_columns::user_table": {
-    "id": {
-      "Type": "int(11)",
-      "Null": "NO",
-      "Key": "PRI",
-      "Default": null,
-      "Extra": "auto_increment"
+  "table_columns::user_table" : {
+    "id" : {
+      "type" : "int(11)",
+      "nullable" : false,
+      "default" : "auto_increment"
     },
-    "email": {
-      "Type": "varchar(255)",
-      "Null": "YES",
-      "Key": "UNI",
-      "Default": null,
-      "Extra": ""
+    "email" : {
+      "type" : "varchar(255)",
+      "nullable" : true,
+      "default" : null
     },
-    "name": {
-      "Type": "varchar(32)",
-      "Null": "YES",
-      "Key": "",
-      "Default": null,
-      "Extra": ""
+    "name" : {
+      "type" : "varchar(32)",
+      "nullable" : true,
+      "default" : null
     },
-    "dob": {
-      "Type": "date",
-      "Null": "YES",
-      "Key": "",
-      "Default": null,
-      "Extra": ""
+    "dob" : {
+      "type" : "date",
+      "nullable" : true,
+      "default" : null
     }
   }
 }

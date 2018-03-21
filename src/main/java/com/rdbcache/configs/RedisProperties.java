@@ -11,7 +11,6 @@ import redis.clients.jedis.JedisPoolConfig;
 
 import java.net.URL;
 
-@Configuration
 @ComponentScan(basePackages = { "com.rdbcache.*" })
 @ConfigurationProperties(prefix = "spring.redis")
 @PropertySources({

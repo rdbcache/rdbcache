@@ -7,8 +7,7 @@
 package com.rdbcache.repositories.impls;
 
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.PropCfg;
-import com.rdbcache.exceptions.ServerErrorException;
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.*;
 import com.rdbcache.queries.Parser;

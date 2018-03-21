@@ -4,14 +4,13 @@
  * @license http://rdbcache.com/license/
  */
 
-package com.rdbcache.helpers;
+package com.rdbcache.configs;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.stereotype.Component;
 
-@Component
+@Configuration
 public class PropCfg {
 
     private static String activeProfile = "prod";
@@ -41,6 +40,8 @@ public class PropCfg {
     private static Boolean enableDbFallback = false;
 
     private static Long dataMaxCacheTLL = 60L;
+
+    private static String datasourceUrl;
 
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertyConfig() {
@@ -179,6 +180,17 @@ public class PropCfg {
         return dataMaxCacheTLL;
     }
 
+    @Value("${spring.datasource.url}")
+    public void setDatasourceUrl(String url) {
+        if (url != null && url.length() > 0) {
+            datasourceUrl = url;
+        }
+    }
+
+    public static String getDatasourceUrl() {
+        return datasourceUrl;
+    }
+
     public static String printConfigurations() {
         return "{"+
           "\"hdataPrefix\": \"" + hdataPrefix + "\", " +
@@ -193,7 +205,8 @@ public class PropCfg {
           "\"maxCacheSize\": \"" + maxCacheSize.toString() + "\", " +
           "\"cacheRecycleSecs\": \"" + cacheRecycleSecs.toString() + "\", " +
           "\"enableDbFallback\": \"" + enableDbFallback.toString() + "\", " +
-          "\"dataMaxCacheTLL\": \"" + dataMaxCacheTLL.toString() + "\""+
+          "\"dataMaxCacheTLL\": \"" + dataMaxCacheTLL.toString() + "\", "+
+          "\"datasourceUrl\": \"" + datasourceUrl + "\""+
            "}";
     }
 }

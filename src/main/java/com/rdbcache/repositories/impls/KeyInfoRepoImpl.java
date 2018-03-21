@@ -7,7 +7,7 @@
 package com.rdbcache.repositories.impls;
 
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.helpers.PropCfg;
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.*;
 import com.rdbcache.repositories.KeyInfoRepo;
@@ -198,7 +198,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             if (dbPair == null) continue;
 
             String key = dbPair.getId();
-            KeyInfo keyInfo = Utils.getObjectMapper().convertValue(dbPair.getData(), KeyInfo.class);
+            KeyInfo keyInfo = Utils.toPojo(dbPair.getData(), KeyInfo.class);
 
             int index = keys.indexOf(key);
             anyKey.set(index, keyInfo);
@@ -286,8 +286,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
 
             StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-            AppCtx.getKvPairRepo().save(new KvPair(key, "info", 
-                Utils.getObjectMapper().convertValue(keyInfo, Map.class)));
+            AppCtx.getKvPairRepo().save(new KvPair(key, "info", Utils.toMap(keyInfo)));
             if (stopWatch != null) stopWatch.stopNow();
         }
 

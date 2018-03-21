@@ -53,7 +53,7 @@ public class KvIdType implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         KvIdType kvIdType = (KvIdType) o;
         return Objects.equals(id, kvIdType.id) &&
-                Objects.equals(type, kvIdType.type);
+               Objects.equals(type, kvIdType.type);
     }
 
     @Override

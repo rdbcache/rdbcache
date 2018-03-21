@@ -186,7 +186,6 @@ public class Monitor implements Serializable {
         return mainDuration;
     }
 
-    //@OneToMany
     @Transient
     private List<StopWatch> watches;
 

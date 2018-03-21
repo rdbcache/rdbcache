@@ -19,7 +19,6 @@ public class StopWatch implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //@ManyToOne
     private Long monitorId;
 
     private String type;

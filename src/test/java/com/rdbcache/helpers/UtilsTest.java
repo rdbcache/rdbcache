@@ -2,6 +2,7 @@ package com.rdbcache.helpers;
 
 import com.rdbcache.helpers.Utils;
 
+import com.rdbcache.models.KeyInfo;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
@@ -15,7 +16,7 @@ import java.util.Map;
 public class UtilsTest {
 
     @Test
-    public void toMapTestWithAssociateArray() {
+    public void toMapTestWithAssociateArrayJson() {
         String json = "{\"a\":1,\"b\":\"c\"}";
         Map<String, Object> map = Utils.toMap(json);
         Map<String, Object> newMap = new LinkedHashMap<>();
@@ -25,7 +26,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void toMapTestWithArray() {
+    public void toMapTestWithArrayJson() {
         String json = "[\"a\",\"b\",\"c\"]";
         Map<String, Object> map = Utils.toMap(json);
         Map<String, Object> newMap = new LinkedHashMap<>();
@@ -33,6 +34,48 @@ public class UtilsTest {
         newMap.put("1", "b");
         newMap.put("2", "c");
         assertEquals(map, newMap);
+    }
+
+    @Test
+    public void toMapTestWithArray() {
+        List<String> list = new ArrayList<>();
+        list.add("a");
+        list.add("b");
+        list.add("c");
+        Map<String, Object> map = Utils.toMap(list);
+        Map<String, Object> newMap = new LinkedHashMap<>();
+        newMap.put("0", "a");
+        newMap.put("1", "b");
+        newMap.put("2", "c");
+        assertEquals(map, newMap);
+    }
+
+    @Test
+    public void toMapTestWithMap() {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("0", "a");
+        map.put("1", "b");
+        map.put("2", "c");
+        Map<String, Object> newMap = Utils.toMap(map);
+        assertFalse(newMap == map);
+        assertEquals(map, newMap);
+    }
+
+    @Test
+    public void toMapTestWithPojo() {
+        KeyInfo keyInfo = new KeyInfo("100", "table");
+        Map<String, Object> map = Utils.toMap(keyInfo);
+        String json = "{\"expire\":\"100\",\"table\":\"table\",\"clause\":\"\",\"params\":null,\"query_key\":\"\"}";
+        Map<String, Object> newMap = Utils.toMap(json);
+        assertEquals(map, newMap);
+    }
+
+    @Test
+    public void toPojoTest() {
+        KeyInfo keyInfo1 = new KeyInfo("100", "table");
+        Map<String, Object> map = Utils.toMap(keyInfo1);
+        KeyInfo keyInfo2 = Utils.toPojo(map, KeyInfo.class);
+        assertEquals(keyInfo1, keyInfo2);
     }
 
     @Test
