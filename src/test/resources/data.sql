@@ -1,18 +1,9 @@
-delete from employees;
-
-delete from departments;
-
 delete from user_table;
+insert into user_table (email, name, dob) values ('mike@example.com', 'Mike A.', '1977-01-01');
+insert into user_table (email, name, dob) values ('kevin@example.com', 'Kevin B.', '1980-07-21');
+insert into user_table (email, name, dob) values ('david@example.com', 'David C.', '1979-11-08');
 
-INSERT INTO departments VALUES ('d005','Development');
-INSERT INTO departments VALUES ('d002','Finance');
-INSERT INTO departments VALUES ('d003','Human Resources');
-INSERT INTO departments VALUES ('d001','Marketing');
-INSERT INTO departments VALUES ('d004','Production');
-INSERT INTO departments VALUES ('d006','Quality Management');
-INSERT INTO departments VALUES ('d007','Sales');
-INSERT INTO departments VALUES ('d008','Research');
-
+delete from employees;
 INSERT INTO employees VALUES (10072,'1952-05-15','Hironoby','Sidou','F','1988-07-21');
 INSERT INTO employees VALUES (10073,'1954-02-23','Shir','McClurg','M','1991-12-01');
 INSERT INTO employees VALUES (10074,'1955-08-28','Mokhtar','Bernatsky','F','1990-08-13');
@@ -49,7 +40,3 @@ INSERT INTO employees VALUES(110420,'1963-07-27','Oscar','Ghazalie','M','1992-02
 INSERT INTO employees VALUES(110567,'1964-04-25','Leon','DasSarma','F','1986-10-21');
 INSERT INTO employees VALUES(110854,'1960-08-19','Dung','Pesch','M','1989-06-09');
 INSERT INTO employees VALUES(111133,'1955-03-16','Hauke','Zhang','M','1986-12-30');
-
-insert into user_table ('email', 'name', 'dob') values ('mike@example.com', 'Mike A.', "1977-01-01");
-insert into user_table ('email', 'name', 'dob') values ('kevin@example.com', 'Kevin B.', "1980-07-21");
-insert into user_table ('email', 'name', 'dob') values ('david@example.com', 'David C.', "1979-11-08");
