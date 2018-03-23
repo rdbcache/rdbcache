@@ -31,7 +31,7 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(value = {PropCfg.class}, secure = false)
+@WebMvcTest(secure = false)
 @ContextConfiguration(classes = {Configurations.class})
 public class RdbcacheApisTest {
 
