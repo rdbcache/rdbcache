@@ -279,31 +279,4 @@ public class Parser {
         keyInfo.setParams(stdParams);
         return true;
     }
-
-    // save query info to database
-    //
-    public static boolean saveQuery(Context context, QueryInfo queryInfo) {
-
-        KvPairRepo kvPairRepo = AppCtx.getKvPairRepo();
-        if (kvPairRepo == null) {
-            return false;
-        }
-
-        KvPair queryPair = new KvPair(queryInfo.getKey(), "query", Utils.toMap(queryInfo));
-        KvIdType idType = queryPair.getIdType();
-
-        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
-        KvPair dbPair = kvPairRepo.findOne(idType);
-        if (stopWatch != null) stopWatch.stopNow();
-
-        if (queryPair.getData().equals(dbPair.getData())) {
-            return true;
-        }
-
-        stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-        kvPairRepo.save(queryPair);
-        if (stopWatch != null) stopWatch.stopNow();
-
-        return true;
-    }
 }

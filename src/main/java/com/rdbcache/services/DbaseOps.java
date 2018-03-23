@@ -10,19 +10,28 @@ import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
-import com.rdbcache.models.KvIdType;
-import com.rdbcache.models.KvPair;
-import com.rdbcache.models.StopWatch;
+import com.rdbcache.helpers.Utils;
+import com.rdbcache.helpers.VersionInfo;
+import com.rdbcache.models.*;
+import com.rdbcache.queries.QueryInfo;
+import com.rdbcache.repositories.KvPairRepo;
+import com.rdbcache.repositories.MonitorRepo;
+import com.rdbcache.repositories.StopWatchRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -35,6 +44,9 @@ public class DbaseOps {
 
     private String databaseType = "h2";
 
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
     @PostConstruct
     public void init() {
     }
@@ -46,11 +58,21 @@ public class DbaseOps {
 
     @EventListener
     public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
-        String dbaseUrl = PropCfg.getDatasourceUrl();
-        if (dbaseUrl.startsWith("jdbc:h2:")) {
-            databaseType = "h2";
-        } else if (dbaseUrl.startsWith("jdbc:mysql:")) {
-            databaseType = "mysql";
+        try {
+            if (AppCtx.getJdbcDataSource() == null) {
+                System.out.println("*****");
+            }
+            String driverName = AppCtx.getJdbcDataSource().getConnection().getMetaData().getDriverName();
+            if (driverName.indexOf("MySQL") >= 0) {
+                databaseType = "mysql";
+            } else if (driverName.indexOf("H2") >= 0) {
+                databaseType = "h2";
+            } else {
+                throw new ServerErrorException("database drive not support");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ServerErrorException(e.getCause().getMessage());
         }
         setDefaultToDbTimeZone();
         cacheAllTablesInfo();
@@ -71,6 +93,87 @@ public class DbaseOps {
     public void setDatabaseType(String databaseType) {
         this.databaseType = databaseType;
     }
+
+    public String formatDate(String type, Date date) {
+        if (type.equals("year(4)") || type.equals("year")) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
+            return sdf.format(date);
+        } else if (type.equals("time")) {
+            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
+            return sdf.format(date);
+        } else if (type.equals("date")) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            return sdf.format(date);
+        } else if (type.equals("datetime")) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+            return sdf.format(date);
+        } else if (type.equals("timestamp")) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+            return sdf.format(date);
+        }
+        assert false : "not supported type " + type;
+        return null;
+    }
+
+    private static List<String> timeTypes = Arrays.asList("timestamp", "datetime", "date", "time", "year(4)");
+
+    public Map<String, Object> convertDbMap(Map<String, Object> columns, Map<String, Object> dbMap) {
+
+        if (databaseType.equals("mysql")) {
+            for (Map.Entry<String, Object> entry : dbMap.entrySet()) {
+
+                String key = entry.getKey();
+                Map<String, Object> attributes = (Map<String, Object>) columns.get(key);
+                if (attributes == null) {
+                    continue;
+                }
+                String type = (String) attributes.get("Type");
+                if (type == null) {
+                    continue;
+                }
+                Object value = entry.getValue();
+                if (value == null) {
+                    continue;
+                }
+                if (timeTypes.contains(type)) {
+                    assert value instanceof Date : "convertDbMap " + key + " is not instance of Date";
+                    dbMap.put(key, formatDate(type, (Date) value));
+                }
+            }
+            return dbMap;
+        }
+        if (databaseType.equals("h2")) {
+            for (Map.Entry<String, Object> entry : columns.entrySet()) {
+
+                String key = entry.getKey();
+                Map<String, Object> attributes = (Map<String, Object>) entry.getValue();
+                String keyUpperCase = key.toUpperCase();
+                Object value = dbMap.get(keyUpperCase);
+                if (value == null) {
+                    continue;
+                }
+                if (!key.equals(keyUpperCase)) {
+                    dbMap.remove(keyUpperCase);
+                    dbMap.put(key, value);
+                }
+                if (attributes == null) {
+                    continue;
+                }
+                String type = (String) attributes.get("Type");
+                if (type == null) {
+                    continue;
+                }
+                if (timeTypes.contains(type)) {
+                    assert value instanceof Date : "convertDbMap " + key + " is not instance of Date";
+                    dbMap.put(key, formatDate(type, (Date) value));
+                }
+            }
+            return dbMap;
+        }
+        assert false : "not supported database type " + databaseType;
+        return null;
+    }
+
 
     synchronized public void logTraceMessage(String traceId, String message, StackTraceElement[] trace) {
 
@@ -104,6 +207,68 @@ public class DbaseOps {
         AppCtx.getKvPairRepo().save(pair);
     }
 
+    public boolean saveMonitor(Context context) {
+
+        Monitor monitor = context.getMonitor();
+        if (monitor == null) {
+            return false;
+        }
+
+        monitor.stopNow();
+        VersionInfo versionInfo = AppCtx.getVersionInfo();
+        if (versionInfo != null) {
+            monitor.setBuiltInfo(versionInfo.getBriefInfo());
+        }
+
+        MonitorRepo monitorRepo = AppCtx.getMonitorRepo();
+        if (monitorRepo == null) {
+            return false;
+        }
+
+        monitorRepo.save(monitor);
+
+        StopWatchRepo stopWatchRepo = AppCtx.getStopWatchRepo();
+        if (stopWatchRepo == null) {
+            return false;
+        }
+
+        List<StopWatch> watches = monitor.getStopWatches();
+        if (watches != null && watches.size() > 0) {
+            for (StopWatch watch: watches) {
+                watch.setMonitorId(monitor.getId());
+                stopWatchRepo.save(watch);
+            }
+        }
+        return true;
+    }
+
+    // save query info to database
+    //
+    public static boolean saveQuery(Context context, QueryInfo queryInfo) {
+
+        KvPairRepo kvPairRepo = AppCtx.getKvPairRepo();
+        if (kvPairRepo == null) {
+            return false;
+        }
+
+        KvPair queryPair = new KvPair(queryInfo.getKey(), "query", Utils.toMap(queryInfo));
+        KvIdType idType = queryPair.getIdType();
+
+        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
+        KvPair dbPair = kvPairRepo.findOne(idType);
+        if (stopWatch != null) stopWatch.stopNow();
+
+        if (queryPair.getData().equals(dbPair.getData())) {
+            return true;
+        }
+
+        stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
+        kvPairRepo.save(queryPair);
+        if (stopWatch != null) stopWatch.stopNow();
+
+        return true;
+    }
+
     public List<String> getTableList(Context context) {
 
         Map<String, Object> tablesMap = AppCtx.getLocalCache().get("table_list");
@@ -112,9 +277,19 @@ public class DbaseOps {
         }
 
         tablesMap = AppCtx.getLocalCache().put("table_list", tableInfoCacheTTL * 1000L, () -> {
-            List<String> tables = fetchTableList(context);
-            if (tables == null) {
+            List<String> alltables = fetchTableList(context);
+            if (alltables == null) {
                 LOGGER.error("failed to get table list");
+                return null;
+            }
+            List<String> tables = new ArrayList<String>();
+            for (String table : alltables) {
+                Map<String, Object> indexes = getTableIndexes(context, table);
+                if (indexes != null  && indexes.size() > 0) {
+                    tables.add(table);
+                } else {
+                    LOGGER.warn("skip " + table + " table, due to no primary or unique index info");
+                }
             }
             Map<String, Object> map = new HashMap<>();
             map.put("tables", tables);
@@ -227,27 +402,6 @@ public class DbaseOps {
         return (String) attributes.get("type");
     }
 
-    public String formatDate(String type, Date date) {
-        if (type.equals("year(4)") || type.equals("year")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
-            return sdf.format(date);
-        } else if (type.equals("time")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
-            return sdf.format(date);
-        } else if (type.equals("date")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            return sdf.format(date);
-        } else if (type.equals("datetime")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-            return sdf.format(date);
-        } else if (type.equals("timestamp")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-            return sdf.format(date);
-        }
-        assert false : "not supported type " + type;
-        return null;
-    }
-
     public void setDefaultToDbTimeZone() {
 
         String timezone = "UTC";
@@ -288,33 +442,6 @@ public class DbaseOps {
             e.printStackTrace();
         }
         return null;
-    }
-
-    private static List<String> timeTypes = Arrays.asList("timestamp", "datetime", "date", "time", "year(4)");
-
-    public Map<String, Object> convertDbMap(Map<String, Object> columns, Map<String, Object> dbMap) {
-
-        for (Map.Entry<String, Object> entry: dbMap.entrySet()) {
-
-            String key = entry.getKey();
-            Map<String, Object> attributes = (Map<String, Object>) columns.get(key);
-            if (attributes == null) {
-                continue;
-            }
-            String type = (String) attributes.get("Type");
-            if (type == null) {
-                continue;
-            }
-            Object value = entry.getValue();
-            if (value == null) {
-                continue;
-            }
-            if (timeTypes.contains(type)) {
-                assert value instanceof Date : "convertDbMap " + key + " is not instance of Date";
-                dbMap.put(key, formatDate(type, (Date) value));
-            }
-        }
-        return dbMap;
     }
 
     // get list of tables from mysql

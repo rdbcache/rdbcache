@@ -16,21 +16,25 @@ public class StopWatch implements Serializable {
     private static final long serialVersionUID = 20180316L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Column(name="monitor_id")
     private Long monitorId;
 
     private String type;
 
     private String action;
 
+    @Column(name="thread_id")
     private Long threadId;
 
     private Long duration;
 
+    @Column(name="started_at")
     private Long startedAt;
 
+    @Column(name="ended_at")
     private Long endedAt;
 
     public StopWatch(String type, String action) {
@@ -120,19 +124,5 @@ public class StopWatch implements Serializable {
         endedAt = System.nanoTime();
         duration = endedAt - startedAt;
         return duration;
-    }
-
-    @Override
-    public String toString() {
-        return "StopWatch{" +
-                "id=" + id +
-                ", monitorId=" + monitorId +
-                ", threadId=" + threadId +
-                ", type='" + type + '\'' +
-                ", action='" + action + '\'' +
-                ", duration=" + duration +
-                ", startedAt=" + startedAt +
-                ", endedAt=" + endedAt +
-                '}';
     }
 }

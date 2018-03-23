@@ -23,18 +23,24 @@ public class Monitor implements Serializable {
 
     private String name;
 
+    @Column(name="thread_id")
     private Long threadId;
 
     private Long duration;
 
+    @Column(name="main_duration")
     private Long mainDuration;
 
+    @Column(name="started_at")
     private Long startedAt;
 
+    @Column(name="ended_at")
     private Long endedAt;
 
+    @Column(name="trace_id")
     private String traceId;
 
+    @Column(name="built_info")
     private String builtInfo;
 
     public Monitor(String name, String type, String action) {
@@ -201,19 +207,5 @@ public class Monitor implements Serializable {
         StopWatch stopWatch = new StopWatch(type, action);
         getStopWatches().add(stopWatch);
         return stopWatch;
-    }
-
-    @Override
-    public String toString() {
-        return "Monitor{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", traceId='" + traceId + '\'' +
-                ", threadId=" + threadId +
-                ", duration=" + duration +
-                ", mainDuration=" + mainDuration +
-                ", startedAt=" + startedAt +
-                ", endedAt=" + endedAt +
-                '}';
     }
 }

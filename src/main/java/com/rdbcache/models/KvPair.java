@@ -201,6 +201,19 @@ public class KvPair implements Serializable {
         data.clear();;
     }
 
+    public String shortKey() {
+        String key = getId();
+        if (key == null) {
+            return "null ";
+        }
+        int length = key.length();
+        if (length > 7) {
+            key = "..." + key.substring(length - 4);
+        }
+        key += " ";
+        return key;
+    }
+
     @JsonIgnore
     public Map<String, Object> getDataClone() {
         if (data == null) {

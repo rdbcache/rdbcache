@@ -9,7 +9,9 @@ package com.rdbcache.repositories;
 import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.KvPairs;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface KeyInfoRepo {
 
     public boolean find(Context context, KvPairs pairs, AnyKey anyKey);

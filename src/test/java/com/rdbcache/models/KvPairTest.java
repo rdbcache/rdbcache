@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 public class KvPairTest {
 
     @Test
-    public void objectToMap() {
+    public void convertJsonPojoMap() {
         Map<String, Object> map = Utils.toMap("{\n" +
                 "    \"expire\" : \"30\",\n" +
                 "    \"table\" : \"user_table\",\n" +
@@ -19,7 +19,7 @@ public class KvPairTest {
                 "    \"query_key\" : \"28f0a2d90b3c9d340e853b838d27845c\"\n" +
                 "  }");
 
-        KvPair pair1 = new KvPair("*", "data", map);
+        KvPair pair1 = new KvPair("*", "info", map);
 
         Map<String, Object> pairMap1 = Utils.toMap(pair1);
 

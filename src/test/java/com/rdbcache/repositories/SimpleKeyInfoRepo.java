@@ -18,6 +18,10 @@ public class SimpleKeyInfoRepo implements KeyInfoRepo {
         data = new LinkedHashMap<>(map);
     }
 
+    public SimpleKeyInfoRepo() {
+        data = new LinkedHashMap<>();
+    }
+
     @Override
     public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
         boolean foundAll = true;

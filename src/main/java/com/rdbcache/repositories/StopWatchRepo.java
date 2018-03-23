@@ -7,7 +7,9 @@
 package com.rdbcache.repositories;
 
 import com.rdbcache.models.StopWatch;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface StopWatchRepo extends CrudRepository<StopWatch, Long> {
+@Repository
+public interface StopWatchRepo extends JpaRepository<StopWatch, Long> {
 }

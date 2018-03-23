@@ -20,6 +20,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import redis.clients.jedis.JedisPoolConfig;
 
+import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 
 public class AppCtx {
@@ -197,15 +198,6 @@ public class AppCtx {
         AppCtx.dbaseRepo = dbaseRepo;
     }
 
-    public static DbaseRepoImpl getDbaseRepoImpl() {
-        try {
-            return ctx.getBean(DbaseRepoImpl.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public static KeyInfoRepo getKeyInfoRepo() {
         if (ctx != null && keyInfoRepo == null) {
             try {
@@ -219,15 +211,6 @@ public class AppCtx {
 
     public static void setKeyInfoRepo(KeyInfoRepo keyInfoRepo) {
         AppCtx.keyInfoRepo = keyInfoRepo;
-    }
-
-    public static KeyInfoRepoImpl getKeyInfoRepoImpl() {
-        try {
-            return ctx.getBean(KeyInfoRepoImpl.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public static KvPairRepo getKvPairRepo() {
@@ -273,15 +256,6 @@ public class AppCtx {
 
     public static void setRedisRepo(RedisRepo redisRepo) {
         AppCtx.redisRepo = redisRepo;
-    }
-
-    public static RedisRepoImpl getRedisRepoImpl() {
-        try {
-            return ctx.getBean(RedisRepoImpl.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public static StopWatchRepo getStopWatchRepo() {

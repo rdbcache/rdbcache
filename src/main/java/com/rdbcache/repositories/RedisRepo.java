@@ -9,7 +9,9 @@ package com.rdbcache.repositories;
 import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.KvPairs;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface RedisRepo {
 
     public boolean ifExist(Context context, KvPairs pairs, AnyKey anyKey);

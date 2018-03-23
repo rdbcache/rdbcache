@@ -41,9 +41,6 @@ public class ExpireOps {
     
     private Long eventLockTimeout = PropCfg.getEventLockTimeout();
 
-    @Autowired
-    private StringRedisTemplate redisTemplate;
-
     private ValueOperations valueOps;
 
     private static DefaultRedisScript<Long> set_expire_key_script;
@@ -56,8 +53,28 @@ public class ExpireOps {
 
     @PostConstruct
     public void init() {
+    }
 
+    @EventListener
+    public void handleEvent(ContextRefreshedEvent event) {
+        eventPrefix = PropCfg.getEventPrefix();
+        enableMonitor = PropCfg.getEnableMonitor();
+        eventLockTimeout = PropCfg.getEventLockTimeout();
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
+
+        StringRedisTemplate redisTemplate = AppCtx.getRedisTemplate();
+        if (redisTemplate == null) {
+            LOGGER.error("failed to get redis template");
+            return;
+        }
         valueOps = redisTemplate.opsForValue();
+        // setup for test
+        if (valueOps == null) {
+            return;
+        }
 
         set_expire_key_script = new DefaultRedisScript<>();
         set_expire_key_script.setLocation(new ClassPathResource("scripts/set-expire-key.lua"));
@@ -72,17 +89,6 @@ public class ExpireOps {
         expire_event_unlock_script.setResultType(Long.class);
 
         scriptExecutor = new DefaultScriptExecutor<String>(redisTemplate);
-    }
-
-    @EventListener
-    public void handleEvent(ContextRefreshedEvent event) {
-        eventPrefix = PropCfg.getEventPrefix();
-        enableMonitor = PropCfg.getEnableMonitor();
-        eventLockTimeout = PropCfg.getEventLockTimeout();
-    }
-
-    @EventListener
-    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
     }
 
     public String getEventPrefix() {
@@ -135,7 +141,7 @@ public class ExpireOps {
 
             KeyInfo keyInfo = anyKey.getAny(i);
 
-            LOGGER.trace("setExpireKey: " + key + " expire: " + keyInfo.getExpire());
+            LOGGER.trace("setExpireKey: " + pair.shortKey() + " expire: " + keyInfo.getExpire());
 
             String expire = keyInfo.getExpire();
             String expKey = eventPrefix + "::" + key;
@@ -175,7 +181,7 @@ public class ExpireOps {
         String traceId = parts[2];
 
         Context context = new Context(traceId);
-        KvPairs pairs = new KvPairs(key);
+        KvPair pair = new KvPair(key);
 
         if (enableMonitor) context.enableMonitor(event, "event", key);
 
@@ -196,7 +202,9 @@ public class ExpireOps {
 
         try {
 
+            KvPairs pairs = new KvPairs(pair);
             AnyKey anyKey = new AnyKey();
+
             if (!AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
 
                 String msg = "keyInfo not found";

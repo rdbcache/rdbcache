@@ -43,6 +43,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
     @PostConstruct
     public void init() {
+        //System.out.println("*** init KeyInfoRepoImpl");
         keyInfoOps = keyInfoTemplate.opsForHash();
     }
 
@@ -90,7 +91,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             return false;
         }
 
-        LOGGER.trace("key: " + pairs.getPair().getId() + (pairs.size() > 1 ? "..." : ""));
+        LOGGER.trace("key: " + pairs.shortKey());
 
         List<String> keys = new ArrayList<String>();
         List<String> redisKeys = new ArrayList<String>();
@@ -125,8 +126,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (foundAll) {
-            LOGGER.debug("find - found from cache: " + pairs.getPair().getId() +
-                    (pairs.size() > 1 ? "..." : "") );
+            LOGGER.debug("find - found from cache: " + pairs.shortKey());
             return true;
         }
 
@@ -181,14 +181,13 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
 
             if (foundAll) {
-                LOGGER.debug("find - found from redis: " + pairs.getPair().getId() +
-                        (pairs.size() > 1 ? "..." : "") );
+                LOGGER.debug("find - found from redis: " + pairs.shortKey());
                 return true;
             }
         }
 
         StopWatch stopWatch = context.startStopWatch("redis", "kvPairRepo.findAll");
-        Iterable<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
+        List<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
         if (stopWatch != null) stopWatch.stopNow();
 
         Map<String, KeyInfo> redisKeyInfoMap = new LinkedHashMap<String, KeyInfo>();
@@ -231,9 +230,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (foundAll) {
-            LOGGER.debug("find - found: " + pairs.getPair().getId() + (pairs.size() > 1 ? "..." : "") );
+            LOGGER.debug("find - found: " + pairs.shortKey());
         } else {
-            LOGGER.debug("find - not found: " + pairs.getPair().getId() + (pairs.size() > 1 ? "..." : "") );
+            LOGGER.debug("find - not found: " + pairs.shortKey());
         }
 
         return foundAll;
@@ -250,15 +249,14 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             return false;
         }
 
-        LOGGER.trace("save(" + pairs.size() + "): " + pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " ") + anyKey.getAny().toString());
+        LOGGER.trace("save(" + pairs.size() + "): " + pairs.shortKey() + anyKey.getAny().toString());
 
         for (int i = 0; i < pairs.size(); i++) {
 
             KeyInfo keyInfo = anyKey.getAny(i);
 
             if (!keyInfo.isNew()) {
-                LOGGER.trace("save KeyInfo is not new, skip ...");
+                LOGGER.trace("save KeyInfo is not new, skipped");
                 continue;
             }
 
@@ -290,8 +288,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             if (stopWatch != null) stopWatch.stopNow();
         }
 
-        LOGGER.debug("save Ok: " + pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " "));
+        LOGGER.debug("save Ok: " + pairs.shortKey());
 
         return true;
     }
@@ -304,8 +301,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             return;
         }
 
-        LOGGER.trace("delete(" + pairs.size() + "): " + pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " "));
+        LOGGER.trace("delete(" + pairs.size() + "): " + pairs.shortKey());
 
         if (enableKeyCache) {
             AppCtx.getLocalCache().removeKeyInfo(pairs);
@@ -322,9 +318,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         if (dbOps) {
-            AppCtx.getKvPairRepo().delete(pairs);
+            for (KvPair pair: pairs) {
+                AppCtx.getKvPairRepo().delete(pair);
+            }
         }
-        LOGGER.debug("delete Ok: " + pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " "));
+        LOGGER.debug("delete Ok: " + pairs.shortKey());
     }
 }

@@ -1,9 +1,7 @@
-delete from user_table;
 insert into user_table (email, name, dob) values ('mike@example.com', 'Mike A.', '1977-01-01');
 insert into user_table (email, name, dob) values ('kevin@example.com', 'Kevin B.', '1980-07-21');
 insert into user_table (email, name, dob) values ('david@example.com', 'David C.', '1979-11-08');
 
-delete from employees;
 INSERT INTO employees VALUES (10072,'1952-05-15','Hironoby','Sidou','F','1988-07-21');
 INSERT INTO employees VALUES (10073,'1954-02-23','Shir','McClurg','M','1991-12-01');
 INSERT INTO employees VALUES (10074,'1955-08-28','Mokhtar','Bernatsky','F','1990-08-13');

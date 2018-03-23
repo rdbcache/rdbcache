@@ -6,6 +6,7 @@
 
 package com.rdbcache.helpers;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.models.KvPair;
 
@@ -80,4 +81,17 @@ public class KvPairs extends ArrayList<KvPair>{
         }
         return keys;
     }
+
+    public String shortKey() {
+        int size = size();
+        if (size == 0) {
+            return "";
+        }
+        String key = get(0).shortKey();
+        if (size > 1) {
+            key += "... ";
+        }
+        return key;
+    }
+
 }

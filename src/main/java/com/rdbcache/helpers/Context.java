@@ -14,6 +14,7 @@ import com.rdbcache.repositories.StopWatchRepo;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class Context {
 
@@ -72,6 +73,10 @@ public class Context {
         monitor.setTraceId(traceId);
     }
 
+    public boolean isMonitorEnabled() {
+        return monitorEnabled;
+    }
+
     public String getAction() {
         return action;
     }
@@ -119,50 +124,12 @@ public class Context {
         return monitor.startStopWatch(type, action);
     }
 
-    public boolean saveMonitorData() {
-
-        if (!monitorEnabled || monitor == null) {
-            return false;
-        }
-        monitorEnabled = false;
-
-        monitor.stopNow();
-        VersionInfo versionInfo = AppCtx.getVersionInfo();
-        if (versionInfo != null) {
-            monitor.setBuiltInfo(versionInfo.getBriefInfo());
-        }
-
-        MonitorRepo monitorRepo = AppCtx.getMonitorRepo();
-        if (monitorRepo == null) {
-            return false;
-        }
-
-        Monitor result = monitorRepo.save(monitor);
-        if (result == null) {
-            return false;
-        }
-
-        StopWatchRepo stopWatchRepo = AppCtx.getStopWatchRepo();
-        if (stopWatchRepo == null) {
-            return false;
-        }
-
-        List<StopWatch> watches = monitor.getStopWatches();
-        if (watches != null && watches.size() > 0) {
-            for (StopWatch watch: watches) {
-                watch.setMonitorId(result.getId());
-                stopWatchRepo.save(watch);
-            }
-        }
-        return true;
-    }
-
     synchronized public void closeMonitor() {
         if (monitor == null) {
             return;
         }
         monitor.stopNow();
-        saveMonitorData();
+        AppCtx.getDbaseOps().saveMonitor(this);
         monitor = null;
     }
 

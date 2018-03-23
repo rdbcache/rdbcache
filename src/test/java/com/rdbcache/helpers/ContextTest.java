@@ -6,6 +6,7 @@ import com.rdbcache.models.Monitor;
 import com.rdbcache.repositories.MonitorRepo;
 import com.rdbcache.repositories.StopWatchRepo;
 
+import com.rdbcache.services.DbaseOps;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -37,12 +38,11 @@ public class ContextTest {
     }
 
     @Test
-    public void monitorStopWatchTest() {
+    public void monitorTest() {
 
         try {
             Context context = new Context();
-            assertFalse(context.saveMonitorData());
-
+            assertFalse(context.isMonitorEnabled());
             StopWatch watch = context.startStopWatch("testType", "test0");
             assertNull(watch);
 
@@ -71,6 +71,10 @@ public class ContextTest {
 
             BDDMockito.when(AppCtx.getVersionInfo()).thenReturn(new VersionInfo());
 
+            DbaseOps dbaseOps = mock(DbaseOps.class, Mockito.RETURNS_DEEP_STUBS);
+            BDDMockito.when(AppCtx.getDbaseOps()).thenReturn(dbaseOps);
+            Mockito.when(dbaseOps.saveMonitor(context)).thenReturn(true);
+
             MonitorRepo monitorRepo = mock(MonitorRepo.class, Mockito.RETURNS_DEEP_STUBS);
             BDDMockito.when(AppCtx.getMonitorRepo()).thenReturn(monitorRepo);
             Mockito.when(monitorRepo.save(any(Monitor.class))).thenAnswer(invocation -> anyVararg());
@@ -84,8 +88,8 @@ public class ContextTest {
             context.closeMonitor();
 
         } catch (Exception e) {
-            fail(e.getCause().getMessage());
             e.printStackTrace();
+            fail(e.getCause().getMessage());
         }
     }
 }

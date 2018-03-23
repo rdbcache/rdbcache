@@ -45,6 +45,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     @PostConstruct
     public void init() {
+        //System.out.println("*** init DbaseRepoImpl");
     }
 
     @EventListener
@@ -84,18 +85,17 @@ public class DbaseRepoImpl implements DbaseRepo {
     @Override
     public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("find: " + (pairs.size() > 0 ? pairs.getPair().getId() : "") + 
-            (pairs.size() > 1 ? " ... " : " ") + anyKey.getAny().toString());
+        LOGGER.trace("find: " + pairs.shortKey() + anyKey.getAny().toString());
 
         String table = anyKey.getKey().getTable();
 
         if (table == null) {
             if (!kvFind(context, pairs, anyKey)) {
-                LOGGER.debug("find - kvFind failed: " + pairs.getPair().getId() +
+                LOGGER.debug("find - kvFind failed: " + pairs.shortKey() +
                         (pairs.size() > 1 ? " ... " : " "));
                 return false;
             } else {
-                LOGGER.debug("find - kvFind Ok: " + pairs.getPair().getId() +
+                LOGGER.debug("find - kvFind Ok: " + pairs.shortKey() +
                         (pairs.size() > 1 ? " ... " : " "));
             }
         } else {
@@ -105,26 +105,22 @@ public class DbaseRepoImpl implements DbaseRepo {
             if (!query.ifSelectOk() || !query.executeSelect()) {
                 if (enableDbFallback) {
                     if (!kvFind(context, pairs, anyKey)) {
-                        String msg = "find - not found fallbacked to default table: " +
-                                pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ");
+                        String msg = "find - not found fallbacked to default table: " + pairs.shortKey();
                         LOGGER.trace(msg);
                         return false;
                     } else {
-                        String msg = "find - found fallbacked to default table Ok: " +
-                                pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ");
+                        String msg = "find - found fallbacked to default table Ok: " + pairs.shortKey();
                         context.logTraceMessage(msg);
                         LOGGER.warn(msg);
                     }
                 } else {
 
-                    LOGGER.debug("find - not found: from " + table + " " +
-                            pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
+                    LOGGER.debug("find - not found: from " + table + " " + pairs.shortKey());
                     return false;
                 }
             } else {
 
-                LOGGER.debug("find - found Ok: from " + table + " " +
-                        pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
+                LOGGER.debug("find - found Ok: from " + table + " " + pairs.shortKey());
             }
         }
 
@@ -134,16 +130,15 @@ public class DbaseRepoImpl implements DbaseRepo {
     @Override
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("save: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ") +
-                anyKey.getAny().toString());
+        LOGGER.trace("save: " + pairs.shortKey() + anyKey.getAny().toString());
 
         if (pairs.size() == 1) {
 
             if (saveOne(context, pairs, anyKey)) {
-                LOGGER.debug("save - saveOne Ok: " + pairs.getPair().getId());
+                LOGGER.debug("save - saveOne Ok: " + pairs.getPair().shortKey());
                 return true;
             } else {
-                LOGGER.debug("save - saveOne failed: " + pairs.getPair().getId());
+                LOGGER.debug("save - saveOne failed: " + pairs.getPair().shortKey());
                 return false;
             }
 
@@ -174,19 +169,16 @@ public class DbaseRepoImpl implements DbaseRepo {
     @Override
     public boolean insert(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("insert: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ") +
-                anyKey.getAny().toString());
+        LOGGER.trace("insert: " + pairs.shortKey() + anyKey.getAny().toString());
 
         String table = anyKey.getKey().getTable();
 
         if (table == null) {
             if (!kvSave(context, pairs, anyKey)) {
-                LOGGER.debug("insert kvSave failed: " + pairs.getPair().getId() +
-                        (pairs.size() > 1 ? " ... " : " "));
+                LOGGER.debug("insert kvSave failed: " + pairs.shortKey());
                 return false;
             } else {
-                LOGGER.debug("inserted kvSave Ok: " + pairs.getPair().getId() +
-                        (pairs.size() > 1 ? " ... " : " "));
+                LOGGER.debug("inserted kvSave Ok: " + pairs.shortKey());
             }
         } else {
 
@@ -196,22 +188,20 @@ public class DbaseRepoImpl implements DbaseRepo {
                 if (enableDbFallback) {
                     if (!kvSave(context, pairs, anyKey)) {
                         LOGGER.debug("insert failed - fallbacked to kvSave: " +
-                                pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
+                                pairs.shortKey());
                         return false;
                     } else {
                         String msg = "inserted Ok - fallbacked to kvSave: " +
-                                pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ");
+                                pairs.shortKey();
                         context.logTraceMessage(msg);
                         LOGGER.warn(msg);
                     }
                 } else {
-                    LOGGER.debug("insert failed: " + pairs.getPair().getId() +
-                            (pairs.size() > 1 ? " ... " : " "));
+                    LOGGER.debug("insert failed: " + pairs.shortKey());
                     return false;
                 }
             } else {
-                LOGGER.debug("insert Ok: " + pairs.getPair().getId() +
-                        (pairs.size() > 1 ? " ... " : " ") + " for " + table);
+                LOGGER.debug("insert Ok: " + pairs.getPair().getId() + pairs.shortKey() + " for " + table);
             }
         }
 
@@ -221,17 +211,16 @@ public class DbaseRepoImpl implements DbaseRepo {
     @Override
     public boolean update(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("update: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ") +
-                anyKey.getAny().toString());
+        LOGGER.trace("update: " + pairs.shortKey() + anyKey.getAny().toString());
 
         String table = anyKey.getKey().getTable();
 
         if (table == null) {
             if (!kvSave(context, pairs, anyKey)) {
-                LOGGER.debug("update kvSave failed: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
+                LOGGER.debug("update kvSave failed: " + pairs.shortKey());
                 return false;
             } else {
-                LOGGER.debug("updated kvSave Ok: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
+                LOGGER.debug("updated kvSave Ok: " + pairs.shortKey());
             }
         } else {
 
@@ -240,17 +229,15 @@ public class DbaseRepoImpl implements DbaseRepo {
             if (!query.ifUpdateOk() || !query.executeUpdate()) {
                 if (enableDbFallback) {
                     if (!kvSave(context, pairs, anyKey)) {
-                        LOGGER.debug("update failed - fallback to kvSave: " + pairs.getPair().getId() +
-                                (pairs.size() > 1 ? " ... " : " "));
+                        LOGGER.debug("update failed - fallback to kvSave: " + pairs.shortKey());
                         return false;
                     } else {
-                        String msg = "update Ok -  fallbacked to kvSave: " + pairs.getPair().getId() +
-                                (pairs.size() > 1 ? " ... " : " ");
+                        String msg = "update Ok -  fallbacked to kvSave: " + pairs.shortKey();
                         context.logTraceMessage(msg);
                         LOGGER.warn(msg);
                     }
                 } else {
-                    LOGGER.debug("update failed - " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " "));
+                    LOGGER.debug("update failed - " + pairs.shortKey());
                     return false;
                 }
             } else {
@@ -264,8 +251,7 @@ public class DbaseRepoImpl implements DbaseRepo {
     @Override
     public boolean delete(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("delete: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ") +
-                anyKey.getAny().toString());
+        LOGGER.trace("delete: " + pairs.shortKey() + anyKey.getAny().toString());
 
         String table = anyKey.getKey().getTable();
 
@@ -273,12 +259,10 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         if (table == null) {
             if (!kvDelete(context, pairs, anyKey)) {
-                LOGGER.debug("delete kvDelete failed: " + pairs.getPair().getId() +
-                        (pairs.size() > 1 ? " ... " : " "));
+                LOGGER.debug("delete kvDelete failed: " + pairs.shortKey());
                 return false;
             } else {
-                LOGGER.debug("deleted kvDelete Ok: " + pairs.getPair().getId() +
-                        (pairs.size() > 1 ? " ... " : " "));
+                LOGGER.debug("deleted kvDelete Ok: " + pairs.shortKey());
             }
         } else {
 
@@ -287,12 +271,10 @@ public class DbaseRepoImpl implements DbaseRepo {
             if (!query.ifDeleteOk() || !query.executeDelete()) {
                 if (enableDbFallback) {
                     if (!kvDelete(context, pairs, anyKey)) {
-                        LOGGER.debug("delete failed - fallback to kvDelete: " + pairs.getPair().getId() +
-                                (pairs.size() > 1 ? " ... " : " "));
+                        LOGGER.debug("delete failed - fallback to kvDelete: " + pairs.shortKey());
                         return false;
                     } else {
-                        String msg = "delete Ok - fallbacked to kvDelete" + pairs.getPair().getId() +
-                                (pairs.size() > 1 ? " ... " : " ");
+                        String msg = "delete Ok - fallbacked to kvDelete " + pairs.shortKey();
                         context.logTraceMessage(msg);
                         LOGGER.warn(msg);
                     }
@@ -443,7 +425,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             }
 
             StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findAll");
-            Iterable<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
+            List<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
             if (stopWatch != null) stopWatch.stopNow();
 
             if (dbPairs == null && !dbPairs.iterator().hasNext()) {
@@ -455,7 +437,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 keyInfo.setQueryInfo(null);
                 Utils.getExcutorService().submit(() -> {
                     Thread.yield();
-                    Parser.saveQuery(context, queryInfo);
+                    AppCtx.getDbaseOps().saveQuery(context, queryInfo);
                 });
             }
 
@@ -475,8 +457,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     private  boolean kvSave(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("kvSave: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ") +
-                anyKey.getAny().toString());
+        LOGGER.trace("kvSave: " + pairs.shortKey() + anyKey.getAny().toString());
 
         if (anyKey.size() == 0) {
             LOGGER.trace("kvSave(0) Ok - nothing to save");
@@ -506,7 +487,9 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
             try {
-                AppCtx.getKvPairRepo().save(pairs);
+                for (KvPair pair: pairs) {
+                    AppCtx.getKvPairRepo().save(pair);
+                }
                 if (stopWatch != null) stopWatch.stopNow();
 
                 LOGGER.trace("kvSave(" + pairs.size() + ") Ok");
@@ -531,8 +514,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     private  boolean kvDelete(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("kvDelete: " + pairs.getPair().getId() + (pairs.size() > 1 ? " ... " : " ") +
-                anyKey.getAny().toString());
+        LOGGER.trace("kvDelete: " + pairs.shortKey() + anyKey.getAny().toString());
 
         if (anyKey.size() == 0) {
             LOGGER.trace("kvDelete(0) Ok - nothing to delete");
@@ -562,7 +544,9 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
             try {
-                AppCtx.getKvPairRepo().delete(pairs);
+                for (KvPair pair: pairs) {
+                    AppCtx.getKvPairRepo().delete(pair);
+                }
                 if (stopWatch != null) stopWatch.stopNow();
 
                 LOGGER.trace("kvDelete(" + pairs.size() + ") Ok");

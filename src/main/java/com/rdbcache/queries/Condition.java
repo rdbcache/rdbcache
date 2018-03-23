@@ -17,6 +17,10 @@ public class Condition extends LinkedHashMap<String, List<String>> {
         push(ops, values);
     }
 
+    public Condition() {
+
+    }
+
     public void push(String ops, String[] values) {
         if (values == null || values.length == 0) {
             return;

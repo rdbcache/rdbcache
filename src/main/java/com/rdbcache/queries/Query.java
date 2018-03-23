@@ -107,10 +107,7 @@ public class Query {
             params = keyInfo.getParams();
         }
 
-        int limit = 1;
-        if (context.isBatch()) {
-            limit = getLimt();
-        }
+        int limit = getLimt();
 
         sql = "select * from " + table;
 
@@ -126,7 +123,7 @@ public class Query {
             keyInfo.setQueryInfo(null);
             Utils.getExcutorService().submit(() -> {
                 Thread.yield();
-                Parser.saveQuery(context, queryInfo);
+                AppCtx.getDbaseOps().saveQuery(context, queryInfo);
             });
         }
 
@@ -474,6 +471,9 @@ public class Query {
             } else {
                 limit = size;
             }
+        }
+        if (limit == 0 && !context.isBatch()) {
+            limit = 1;
         }
         return limit;
     }

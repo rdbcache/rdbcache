@@ -33,9 +33,7 @@ public class RedisConfig {
         JedisConnectionFactory factory = new JedisConnectionFactory();
 
         RedisProperties properties = redisProperties();
-
         properties.configure(factory);
-
         factory.afterPropertiesSet();
 
         return factory;

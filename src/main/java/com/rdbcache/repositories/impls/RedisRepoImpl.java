@@ -46,6 +46,7 @@ public class RedisRepoImpl implements RedisRepo {
 
     @PostConstruct
     public void init() {
+        //System.out.println("*** init RedisRepoImpl");
         hashOps = redisTemplate.opsForHash();
     }
 
@@ -87,9 +88,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean ifExist(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("ifExist pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " ") +
-                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("ifExist pairs(" + pairs.size() + "): " + pairs.shortKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean foundAll = true;
 
@@ -123,9 +123,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean updateIfExist(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("updateIfExist pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " ") +
-                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("updateIfExist pairs(" + pairs.size() + "): " + pairs.shortKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean foundAll = true;
 
@@ -192,9 +191,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("find pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " ") +
-                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("find pairs(" + pairs.size() + "): " + pairs.shortKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean foundAll = true;
 
@@ -257,9 +255,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("save pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " ") +
-                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("save pairs(" + pairs.size() + "): " + pairs.shortKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean savedAll = true;
 
@@ -308,9 +305,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean findAndSave(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " ") +
-                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.shortKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         boolean allOk = true;
 
@@ -393,8 +389,7 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public void delete(Context context, KvPairs pairs, AnyKey anyKey, boolean dbOps) {
 
-        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): "+ pairs.getPair().getId() +
-                (pairs.size() > 1 ? " ... " : " ") +
+        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.shortKey() +
                 "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
 
         if (enableDataCache) {

@@ -8,7 +8,9 @@ package com.rdbcache.repositories;
 
 import com.rdbcache.models.KvIdType;
 import com.rdbcache.models.KvPair;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface KvPairRepo extends CrudRepository<KvPair, KvIdType> {
+@Repository
+public interface KvPairRepo extends JpaRepository<KvPair, KvIdType> {
 }

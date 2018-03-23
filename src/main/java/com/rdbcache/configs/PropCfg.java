@@ -145,8 +145,8 @@ public class PropCfg {
     }
 
     @Value("${rdbcache.local_cache_max_size}")
-    public void setMaxCacheSize(Long maxCacheSize) {
-        PropCfg.maxCacheSize = maxCacheSize;
+    public void setMaxCacheSize(Long maxSize) {
+        maxCacheSize = maxSize;
     }
 
     public static Long getMaxCacheSize() {
@@ -154,8 +154,8 @@ public class PropCfg {
     }
 
     @Value("${rdbcache.cache_recycle_secs}")
-    public void setCacheRecycleSecs(Long recycleSecs) {
-        cacheRecycleSecs = recycleSecs;
+    public void setCacheRecycleSecs(Long secs) {
+        cacheRecycleSecs = secs;
     }
 
     public static Long getCacheRecycleSecs() {
@@ -163,8 +163,8 @@ public class PropCfg {
     }
 
     @Value("${rdbcache.enable_db_fallback}")
-    public void setEnableDbFallback(Boolean enableDbFallback) {
-        PropCfg.enableDbFallback = enableDbFallback;
+    public void setEnableDbFallback(Boolean enable) {
+        enableDbFallback = enable;
     }
 
     public static Boolean getEnableDbFallback() {
@@ -173,7 +173,7 @@ public class PropCfg {
 
     @Value("${rdbcache.data_max_cache_ttl}")
     public void setDataMaxCacheTLL(Long tll) {
-        PropCfg.dataMaxCacheTLL = tll;
+        dataMaxCacheTLL = tll;
     }
 
     public static Long getDataMaxCacheTLL() {

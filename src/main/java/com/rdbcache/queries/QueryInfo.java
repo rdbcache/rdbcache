@@ -74,6 +74,26 @@ public class QueryInfo implements Serializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        QueryInfo queryInfo = (QueryInfo) o;
+
+        if (table != null ? !table.equals(queryInfo.table) : queryInfo.table != null) return false;
+        if (conditions != null ? !conditions.equals(queryInfo.conditions) : queryInfo.conditions != null) return false;
+        return limit != null ? limit.equals(queryInfo.limit) : queryInfo.limit == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = table != null ? table.hashCode() : 0;
+        result = 31 * result + (conditions != null ? conditions.hashCode() : 0);
+        result = 31 * result + (limit != null ? limit.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         String s2 = "";
         if (conditions != null) {
@@ -81,7 +101,7 @@ public class QueryInfo implements Serializable {
             s2 = s2.replace("\"", "");
         }
         String s1 = (limit == null ? "" : "limit: " + limit);
-        if (s1.length() > 0) return s1 + ". " + s2;
+        if (s1.length() > 0) return s1 + " " + s2;
         else return s2;
     }
 }

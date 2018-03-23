@@ -12,6 +12,7 @@ import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.KeyInfo;
+import com.rdbcache.models.KvPair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -38,12 +39,8 @@ public class TaskQueue extends Thread {
 
     private ListOperations listOps;
 
-    @Autowired
-    StringRedisTemplate redisTemplate;
-
     @PostConstruct
     public void init() {
-        listOps = redisTemplate.opsForList();
     }
 
     @EventListener
@@ -54,6 +51,17 @@ public class TaskQueue extends Thread {
 
     @EventListener
     public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
+
+        StringRedisTemplate redisTemplate = AppCtx.getRedisTemplate();
+        if (redisTemplate == null) {
+            LOGGER.error("failed to get redis template");
+            return;
+        }
+        listOps = redisTemplate.opsForList();
+        // setup for test
+        if (listOps == null) {
+            return;
+        }
         start();
     }
 
@@ -154,8 +162,9 @@ public class TaskQueue extends Thread {
         Context context = new Context(traceId);
         if (enableMonitor) context.enableMonitor(task, "queue", action);
 
-        KvPairs pairs = new KvPairs(key);
+        KvPair pair = new KvPair(key);
 
+        KvPairs pairs = new KvPairs(pair);
         AnyKey anyKey = new AnyKey();
         if (!AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
             String msg = "keyInfo not found";

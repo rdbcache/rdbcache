@@ -39,7 +39,6 @@ import static org.junit.Assert.*;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringRunner.class)
 @WebMvcTest(value = {RTQueryApis.class, PropCfg.class}, secure = false)
-@TestPropertySource(locations="classpath:test.properties")
 @PrepareForTest(AppCtx.class)
 public class RTQueryApisTest {
 

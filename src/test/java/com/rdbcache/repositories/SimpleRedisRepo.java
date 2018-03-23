@@ -16,6 +16,10 @@ public class SimpleRedisRepo implements RedisRepo {
         data = new LinkedHashMap<>(map);
     }
 
+    public SimpleRedisRepo() {
+        data = new LinkedHashMap<>();
+    }
+
     @Override
     public boolean ifExist(Context context, KvPairs pairs, AnyKey anyKey) {
         boolean foundAll = true;
