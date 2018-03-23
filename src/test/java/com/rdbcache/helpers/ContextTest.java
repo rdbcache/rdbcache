@@ -13,12 +13,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import org.mockito.*;
-import org.springframework.context.annotation.Bean;
-
-import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;

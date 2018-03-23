@@ -3,7 +3,6 @@ package com.rdbcache.queries;
 import com.rdbcache.helpers.Utils;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Map;
 
 import static org.junit.Assert.*;

@@ -1,10 +1,8 @@
 package com.rdbcache.helpers;
 
-import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.models.KeyInfo;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 public class AnyKeyTest {

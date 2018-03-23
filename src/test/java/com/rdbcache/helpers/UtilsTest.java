@@ -1,10 +1,7 @@
 package com.rdbcache.helpers;
 
-import com.rdbcache.helpers.Utils;
-
 import com.rdbcache.models.KeyInfo;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 import java.math.BigDecimal;

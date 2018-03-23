@@ -6,7 +6,6 @@ import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.KvPairs;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
-import com.rdbcache.models.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

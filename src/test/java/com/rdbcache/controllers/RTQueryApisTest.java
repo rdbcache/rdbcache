@@ -4,24 +4,24 @@ import com.google.common.io.CharStreams;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.Utils;
-import com.rdbcache.services.DbaseOps;
 import com.rdbcache.services.LocalCache;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.mockito.BDDMockito;
 import org.mockito.Mockito;
+
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;

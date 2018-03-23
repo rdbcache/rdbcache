@@ -3,21 +3,20 @@ package com.rdbcache.helpers;
 import com.google.common.io.CharStreams;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.KeyInfo;
-import com.rdbcache.models.Monitor;
-import com.rdbcache.models.StopWatch;
 import com.rdbcache.repositories.KeyInfoRepo;
-import com.rdbcache.repositories.MonitorRepo;
 import com.rdbcache.repositories.SimpleKeyInfoRepo;
-import com.rdbcache.repositories.StopWatchRepo;
 import com.rdbcache.services.DbaseOps;
+
 import org.junit.Before;
 import org.junit.runner.RunWith;
+
 import org.mockito.BDDMockito;
 import org.mockito.Mockito;
+
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.springframework.boot.test.mock.mockito.MockBean;
+
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -30,16 +29,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockingDetails;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({AppCtx.class})

@@ -5,7 +5,6 @@ import com.rdbcache.queries.Condition;
 import com.rdbcache.queries.QueryInfo;
 import org.junit.Test;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 import static org.junit.Assert.*;

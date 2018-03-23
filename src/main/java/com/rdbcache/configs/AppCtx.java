@@ -9,18 +9,15 @@ package com.rdbcache.configs;
 import com.rdbcache.controllers.RdbcacheApis;
 import com.rdbcache.helpers.VersionInfo;
 import com.rdbcache.repositories.*;
-import com.rdbcache.repositories.impls.DbaseRepoImpl;
-import com.rdbcache.repositories.impls.KeyInfoRepoImpl;
-import com.rdbcache.repositories.impls.RedisRepoImpl;
 import com.rdbcache.services.*;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
+
 import redis.clients.jedis.JedisPoolConfig;
 
-import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 
 public class AppCtx {

@@ -1,6 +1,5 @@
 package com.rdbcache.queries;
 
-import com.rdbcache.configs.AppCtx;
 import com.rdbcache.configs.Configurations;
 import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.Context;
@@ -8,17 +7,15 @@ import com.rdbcache.helpers.KvPairs;
 import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
-import com.rdbcache.services.DbaseOps;
-import com.rdbcache.services.LocalCache;
-import org.junit.Before;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.security.Key;
 import java.util.Arrays;
 import java.util.Map;
 
