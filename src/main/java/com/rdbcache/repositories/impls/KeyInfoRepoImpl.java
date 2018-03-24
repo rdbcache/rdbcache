@@ -7,11 +7,13 @@
 package com.rdbcache.repositories.impls;
 
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.configs.KeyInfoRedisTemplate;
 import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.*;
 import com.rdbcache.repositories.KeyInfoRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.HashOperations;
@@ -36,15 +38,11 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
     private String hkeyPrefix = PropCfg.getHkeyPrefix();
 
-    @Autowired
-    private RedisTemplate<String, KeyInfo> keyInfoTemplate;
-
     private HashOperations<String, String, KeyInfo> keyInfoOps;
 
     @PostConstruct
     public void init() {
         //System.out.println("*** init KeyInfoRepoImpl");
-        keyInfoOps = keyInfoTemplate.opsForHash();
     }
 
     @EventListener
@@ -55,6 +53,17 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         } else {
             enableKeyCache = true;
         }
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
+
+        KeyInfoRedisTemplate template = AppCtx.getKeyInfoRedisTemplate();
+        if (template == null) {
+            LOGGER.error("failed to get key info redis template");
+            return;
+        }
+        keyInfoOps = template.opsForHash();
     }
 
     public boolean isEnableKeyCache() {
@@ -277,8 +286,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
 
             if (enableRedisCache) {
-
-                StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.putAll");
+                StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.put");
                 keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
                 if (stopWatch != null) stopWatch.stopNow();
             }
@@ -319,7 +327,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         if (dbOps) {
             for (KvPair pair: pairs) {
+                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
                 AppCtx.getKvPairRepo().delete(pair);
+                if (stopWatch != null) stopWatch.stopNow();
             }
         }
         LOGGER.debug("delete Ok: " + pairs.shortKey());

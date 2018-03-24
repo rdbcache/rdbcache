@@ -47,9 +47,9 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, KeyInfo> keyInfoTemplate() {
+    public KeyInfoRedisTemplate keyInfoRedisTemplate() {
 
-        RedisTemplate<String, KeyInfo> template =  new RedisTemplate<String, KeyInfo>();
+        KeyInfoRedisTemplate template =  new KeyInfoRedisTemplate();
 
         template.setConnectionFactory(redisConnectionFactory());
 
@@ -61,7 +61,7 @@ public class RedisConfig {
     }
 
     @Bean
-    public StringRedisTemplate redisTemplate() {
+    public StringRedisTemplate stringRedisTemplate() {
         StringRedisTemplate template = new StringRedisTemplate();
 
         template.setConnectionFactory(redisConnectionFactory());

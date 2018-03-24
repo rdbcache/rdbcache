@@ -6,10 +6,9 @@ import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.KvPairs;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
 
 import static org.junit.Assert.*;
 

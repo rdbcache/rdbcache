@@ -65,12 +65,12 @@ public class ExpireOps {
     @EventListener
     public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
 
-        StringRedisTemplate redisTemplate = AppCtx.getRedisTemplate();
-        if (redisTemplate == null) {
+        StringRedisTemplate stringRedisTemplate = AppCtx.getStringRedisTemplate();
+        if (stringRedisTemplate == null) {
             LOGGER.error("failed to get redis template");
             return;
         }
-        valueOps = redisTemplate.opsForValue();
+        valueOps = stringRedisTemplate.opsForValue();
         // setup for test
         if (valueOps == null) {
             return;
@@ -88,7 +88,7 @@ public class ExpireOps {
         expire_event_unlock_script.setLocation(new ClassPathResource("scripts/expire-event-unlock.lua"));
         expire_event_unlock_script.setResultType(Long.class);
 
-        scriptExecutor = new DefaultScriptExecutor<String>(redisTemplate);
+        scriptExecutor = new DefaultScriptExecutor<String>(stringRedisTemplate);
     }
 
     public String getEventPrefix() {

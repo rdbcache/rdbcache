@@ -17,6 +17,7 @@ import com.rdbcache.models.KvPair;
 import com.rdbcache.models.StopWatch;
 import com.rdbcache.repositories.RedisRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.*;
@@ -36,18 +37,16 @@ public class RedisRepoImpl implements RedisRepo {
     private boolean enableDataCache = true;
 
     private String hdataPrefix = PropCfg.getHdataPrefix();
-    
+
     private String eventPrefix = PropCfg.getEventPrefix();
     
-    @Autowired
-    private StringRedisTemplate redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     private HashOperations hashOps;
 
     @PostConstruct
     public void init() {
         //System.out.println("*** init RedisRepoImpl");
-        hashOps = redisTemplate.opsForHash();
     }
 
     @EventListener
@@ -59,6 +58,17 @@ public class RedisRepoImpl implements RedisRepo {
         } else {
             enableDataCache = true;
         }
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
+
+        StringRedisTemplate stringRedisTemplate = AppCtx.getStringRedisTemplate();
+        if (stringRedisTemplate == null) {
+            LOGGER.error("failed to get redis template");
+            return;
+        }
+        hashOps = stringRedisTemplate.opsForHash();
     }
 
     public boolean isEnableDataCache() {
@@ -106,8 +116,8 @@ public class RedisRepoImpl implements RedisRepo {
                 }
             }
 
-            StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
-            foundAll = AppCtx.getRedisTemplate().hasKey(hdataPrefix + "::" + key);
+            StopWatch stopWatch = context.startStopWatch("redis", "stringRedisTemplate.hasKey");
+            foundAll = AppCtx.getStringRedisTemplate().hasKey(hdataPrefix + "::" + key);
             if (stopWatch != null) stopWatch.stopNow();
 
             if (!foundAll) {
@@ -145,8 +155,8 @@ public class RedisRepoImpl implements RedisRepo {
 
             if (!found) {
 
-                StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
-                boolean result = AppCtx.getRedisTemplate().hasKey(hashKey);
+                StopWatch stopWatch = context.startStopWatch("redis", "stringRedisTemplate.hasKey");
+                boolean result = AppCtx.getStringRedisTemplate().hasKey(hashKey);
                 if (stopWatch != null) stopWatch.stopNow();
 
                 if (!result) {
@@ -396,7 +406,7 @@ public class RedisRepoImpl implements RedisRepo {
             AppCtx.getLocalCache().removeKeyAndData(pairs);
         }
 
-        List<String> hashKeys = new ArrayList<>();
+        Set<String> hashKeys = new HashSet<>();
         for (int i = 0; i < pairs.size(); i++) {
 
             KvPair pair = pairs.get(i);
@@ -406,21 +416,21 @@ public class RedisRepoImpl implements RedisRepo {
             String expKey = eventPrefix + "::" + key;
 
             // get existing expire key
-            StopWatch stopWatch = context.startStopWatch("redis", "redisTemplate.hasKey");
-            Set<String> expKeys = AppCtx.getRedisTemplate().keys(expKey + "::*");
+            StopWatch stopWatch = context.startStopWatch("redis", "stringRedisTemplate.hasKey");
+            Set<String> expKeys = AppCtx.getStringRedisTemplate().keys(expKey + "::*");
             if (stopWatch != null) stopWatch.stopNow();
 
             if (expKeys != null && expKeys.size() > 0) {
-                stopWatch = context.startStopWatch("redis", "redisTemplate.delete");
-                AppCtx.getRedisTemplate().delete(expKeys);
+                stopWatch = context.startStopWatch("redis", "stringRedisTemplate.delete");
+                AppCtx.getStringRedisTemplate().delete(expKeys);
                 if (stopWatch != null) stopWatch.stopNow();
 
                 LOGGER.debug("delete " + key);
             }
         }
 
-        StopWatch stopWatch = context.startStopWatch("redis", "hashOps.delete");
-        AppCtx.getRedisTemplate().delete(hashKeys);
+        StopWatch stopWatch = context.startStopWatch("redis", "stringRedisTemplate.delete");
+        AppCtx.getStringRedisTemplate().delete(hashKeys);
         if (stopWatch != null) stopWatch.stopNow();
 
         AppCtx.getKeyInfoRepo().delete(context, pairs, dbOps);

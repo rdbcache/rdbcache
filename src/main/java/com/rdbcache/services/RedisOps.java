@@ -40,7 +40,7 @@ public class RedisOps {
     //
     public void ensureNotifyKeySpaceEventsEx() {
 
-        RedisConnection connection = AppCtx.getRedisTemplate().getConnectionFactory().getConnection();
+        RedisConnection connection = AppCtx.getStringRedisTemplate().getConnectionFactory().getConnection();
 
         List<String> items = connection.getConfig("notify-keyspace-events");
 

@@ -2,9 +2,9 @@ package com.rdbcache.configs;
 
 import com.rdbcache.repositories.*;
 import com.rdbcache.repositories.impls.DbaseRepoImpl;
+import com.rdbcache.repositories.impls.KeyInfoRepoImpl;
+import com.rdbcache.repositories.impls.RedisRepoImpl;
 import com.rdbcache.services.*;
-
-import org.mockito.Mockito;
 
 import org.springframework.beans.BeansException;
 
@@ -137,23 +137,19 @@ public class Configurations implements ApplicationContextAware {
     }
 
     @Bean
-    public StringRedisTemplate redisTemplate() {
-        StringRedisTemplate template = mock(StringRedisTemplate.class, Mockito.RETURNS_DEEP_STUBS);
-        Mockito.when(template.opsForList()).thenReturn(null);
-        Mockito.when(template.opsForValue()).thenReturn(null);
-        return template;
+    public StringRedisTemplate stringRedisTemplate() {
+        return MockRedis.mockStringRedisTemplate();
+    }
+
+    @Bean
+    public KeyInfoRedisTemplate keyInfoRedisTemplate() {
+        return MockRedis.mockKeyInfoRedisTemplate();
     }
 
     @Bean
     public ExpireOps expireOps() {
         return new SimpleExpireOps();
     }
-
-    @Bean
-    public KeyInfoRepo keyInfoRepo() {
-        return new SimpleKeyInfoRepo();
-    }
-
 
     @Bean
     public DbaseOps dbaseOps() {
@@ -181,12 +177,18 @@ public class Configurations implements ApplicationContextAware {
     }
 
     @Bean
+    public KeyInfoRepo keyInfoRepo() {
+        return new KeyInfoRepoImpl();
+    }
+
+    @Bean
     public DbaseRepo dbaseRepo() {
         return new DbaseRepoImpl();
     }
 
     @Bean
     public RedisRepo redisRepo() {
-        return new SimpleRedisRepo();
+        return new RedisRepoImpl();
     }
+
 }

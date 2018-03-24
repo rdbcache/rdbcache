@@ -8,11 +8,13 @@ package com.rdbcache.configs;
 
 import com.rdbcache.controllers.RdbcacheApis;
 import com.rdbcache.helpers.VersionInfo;
+import com.rdbcache.models.KeyInfo;
 import com.rdbcache.repositories.*;
 import com.rdbcache.services.*;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -44,6 +46,8 @@ public class AppCtx {
 
     private static KeyInfoRepo keyInfoRepo;
 
+    private static KeyInfoRedisTemplate keyInfoRedisTemplate;
+
     private static KvPairRepo kvPairRepo;
 
     private static MonitorRepo monitorRepo;
@@ -54,7 +58,7 @@ public class AppCtx {
 
     private static JdbcTemplate jdbcTemplate;
 
-    private static StringRedisTemplate redisTemplate;
+    private static StringRedisTemplate stringRedisTemplate;
 
     public static ApplicationContext getApplicationContext() {
         return ctx;
@@ -225,6 +229,21 @@ public class AppCtx {
         AppCtx.kvPairRepo = kvPairRepo;
     }
 
+    public static KeyInfoRedisTemplate getKeyInfoRedisTemplate() {
+        if (ctx != null && keyInfoRedisTemplate == null) {
+            try {
+                keyInfoRedisTemplate = (KeyInfoRedisTemplate) ctx.getBean("keyInfoRedisTemplate");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return keyInfoRedisTemplate;
+    }
+
+    public static void setKeyInfoRedisTemplate(KeyInfoRedisTemplate template) {
+        AppCtx.keyInfoRedisTemplate = template;
+    }
+
     public static MonitorRepo getMonitorRepo() {
         if (ctx != null && monitorRepo == null) {
             try {
@@ -293,27 +312,27 @@ public class AppCtx {
         AppCtx.jdbcTemplate = jdbcTemplate;
     }
 
-    public static StringRedisTemplate getRedisTemplate() {
-        if (ctx != null && redisTemplate == null) {
+    public static StringRedisTemplate getStringRedisTemplate() {
+        if (ctx != null && stringRedisTemplate == null) {
             try {
-                redisTemplate = (StringRedisTemplate) ctx.getBean("redisTemplate");
+                stringRedisTemplate = (StringRedisTemplate) ctx.getBean("stringRedisTemplate");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        return redisTemplate;
+        return stringRedisTemplate;
     }
 
-    public static void setRedisTemplate(StringRedisTemplate redisTemplate) {
-        AppCtx.redisTemplate = redisTemplate;
+    public static void setRedisTemplate(StringRedisTemplate stringRedisTemplate) {
+        AppCtx.stringRedisTemplate = stringRedisTemplate;
     }
 
     public static JedisConnectionFactory getJedisConnectionFactory() {
 
-        StringRedisTemplate template = getRedisTemplate();
+        StringRedisTemplate template = getStringRedisTemplate();
         if (template == null) return null;
 
-        return (JedisConnectionFactory) redisTemplate.getConnectionFactory();
+        return (JedisConnectionFactory) stringRedisTemplate.getConnectionFactory();
     }
 
     public static JedisPoolConfig getJedisPoolConfig() {

@@ -17,6 +17,7 @@ import com.rdbcache.repositories.DbaseRepo;
 import com.rdbcache.queries.Condition;
 import com.rdbcache.queries.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,7 +41,6 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     private Boolean enableDbFallback = PropCfg.getEnableDbFallback();
 
-    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @PostConstruct
@@ -55,6 +55,16 @@ public class DbaseRepoImpl implements DbaseRepo {
             enableDataCache = false;
         } else {
             enableDataCache = true;
+        }
+    }
+
+    @EventListener
+    public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
+
+        jdbcTemplate = AppCtx.getJdbcTemplate();
+        if (jdbcTemplate == null) {
+            LOGGER.error("failed to get jdbc template");
+            return;
         }
     }
 

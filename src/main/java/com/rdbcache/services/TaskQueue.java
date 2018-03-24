@@ -52,12 +52,12 @@ public class TaskQueue extends Thread {
     @EventListener
     public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
 
-        StringRedisTemplate redisTemplate = AppCtx.getRedisTemplate();
-        if (redisTemplate == null) {
+        StringRedisTemplate stringRedisTemplate = AppCtx.getStringRedisTemplate();
+        if (stringRedisTemplate == null) {
             LOGGER.error("failed to get redis template");
             return;
         }
-        listOps = redisTemplate.opsForList();
+        listOps = stringRedisTemplate.opsForList();
         // setup for test
         if (listOps == null) {
             return;
@@ -111,10 +111,12 @@ public class TaskQueue extends Thread {
                     freshConnection = false;
                 }
 
-                String task = (String) listOps.leftPop(queueName, 0, TimeUnit.SECONDS);
+                String task = (String) listOps.leftPop(queueName, 1, TimeUnit.SECONDS);
 
                 if (!isRunning) break;
 
+                if (task == null) continue;
+                
                 onReceiveTask(task);
 
             } catch (RedisConnectionFailureException e) {

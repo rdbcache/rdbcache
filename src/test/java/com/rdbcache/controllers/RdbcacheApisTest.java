@@ -113,5 +113,36 @@ public class RdbcacheApisTest {
             fail("caught an exception");
         }
     }
+
+    @Test
+    public void get_get2() {
+
+        try {
+
+            RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                    get("/rdbcache/v1/get/*/user_table?id=100").
+                    accept(MediaType.APPLICATION_JSON);
+
+            ResultActions actions = mockMvc.perform(requestBuilder);
+            MvcResult result = actions.andReturn();
+            MockHttpServletResponse response = result.getResponse();
+
+            assertEquals(404, response.getStatus());
+
+            requestBuilder = MockMvcRequestBuilders.
+                    get("/rdbcache/v1/get/any_hash_key_not_existed").
+                    accept(MediaType.APPLICATION_JSON);
+
+            actions = mockMvc.perform(requestBuilder);
+            result = actions.andReturn();
+            response = result.getResponse();
+
+            assertEquals(404, response.getStatus());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
 }
 
