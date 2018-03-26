@@ -64,3 +64,26 @@ CREATE TABLE IF NOT EXISTS employees (
     hire_date   DATE            NOT NULL,
     PRIMARY KEY (emp_no)
 );
+
+DROP TABLE IF EXISTS user_table2;
+
+CREATE TABLE IF NOT EXISTS user_table2 (
+  id int not null auto_increment,
+  email varchar(255),
+  name varchar(32),
+  dob date,
+  PRIMARY KEY (id),
+  UNIQUE KEY (email)
+);
+
+DROP TABLE IF EXISTS employees2;
+
+CREATE TABLE IF NOT EXISTS employees2 (
+    emp_no      INT             NOT NULL,
+    birth_date  DATE            NOT NULL,
+    first_name  VARCHAR(14)     NOT NULL,
+    last_name   VARCHAR(16)     NOT NULL,
+    gender      ENUM ('M','F')  NOT NULL,
+    hire_date   DATE            NOT NULL,
+    PRIMARY KEY (emp_no)
+);

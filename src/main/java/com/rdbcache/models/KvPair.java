@@ -19,7 +19,7 @@ import java.util.Map;
 
 @Entity
 @Table(name="rdbcache_kv_pair")
-public class KvPair implements Serializable {
+public class KvPair implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 20180316L;
 
@@ -28,7 +28,7 @@ public class KvPair implements Serializable {
 
     @JsonIgnore
     @Transient
-    private Boolean isUuid = false;
+    private Boolean isNewUuid = false;
 
     @Transient
     private Map<String, Object> data;
@@ -36,7 +36,7 @@ public class KvPair implements Serializable {
     public KvPair(String id, String type, String value) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId(), type);
-            isUuid = true;
+            isNewUuid = true;
         } else {
             idType = new KvIdType(id, type);
         }
@@ -46,7 +46,7 @@ public class KvPair implements Serializable {
     public KvPair(String id, String type, Map<String, Object> data) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId(), type);
-            isUuid = true;
+            isNewUuid = true;
         } else {
             idType = new KvIdType(id, type);
         }
@@ -56,7 +56,7 @@ public class KvPair implements Serializable {
     public KvPair(String id, String type) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId(), type);
-            isUuid = true;
+            isNewUuid = true;
         } else {
             idType = new KvIdType(id, type);
         }
@@ -66,7 +66,7 @@ public class KvPair implements Serializable {
     public KvPair(String id, Object value) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId());
-            isUuid = true;
+            isNewUuid = true;
         } else {
             idType = new KvIdType(id);
         }
@@ -76,7 +76,7 @@ public class KvPair implements Serializable {
     public KvPair(String id) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId());
-            isUuid = true;
+            isNewUuid = true;
         } else {
             idType = new KvIdType(id);
         }
@@ -104,19 +104,19 @@ public class KvPair implements Serializable {
         }
         if (id.equals("*")) {
             idType.setId(Utils.generateId());
-            isUuid = true;
+            isNewUuid = true;
         } else {
             idType.setId(id);
         }
     }
 
     @JsonIgnore
-    public Boolean isUuid() {
-        return isUuid;
+    public Boolean isNewUuid() {
+        return isNewUuid;
     }
 
-    public void setIsUuid(Boolean isUuid) {
-        this.isUuid = isUuid;
+    public void setIsNewUuid(Boolean isNewUuid) {
+        this.isNewUuid = isNewUuid;
     }
 
     public String getType() {
@@ -201,7 +201,7 @@ public class KvPair implements Serializable {
         data.clear();;
     }
 
-    public String shortKey() {
+    public String printKey() {
         String key = getId();
         if (key == null) {
             return "null ";
@@ -212,6 +212,15 @@ public class KvPair implements Serializable {
         }
         key += " ";
         return key;
+    }
+
+    public KvPair clone() {
+        KvPair clone = new KvPair();
+        clone.idType.setId(idType.getId());
+        clone.idType.setId(idType.getId());
+        clone.isNewUuid = isNewUuid;
+        clone.data = getDataClone();
+        return clone;
     }
 
     @JsonIgnore

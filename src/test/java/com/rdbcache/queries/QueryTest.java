@@ -36,11 +36,14 @@ public class QueryTest {
             KvPairs pairs = new KvPairs();
             AnyKey anyKey = new AnyKey();
 
-            KeyInfo keyInfo = new KeyInfo("100", "user_table");
+            KeyInfo keyInfo = new KeyInfo();
+            keyInfo.setExpire("100");
+            keyInfo.setTable("user_table");
+
             String json = "{\"table\":\"user_table\",\"conditions\":{\"id\":{\">\":[\"1\"]}},\"limit\":2}";
             QueryInfo queryInfo = Utils.toPojo(Utils.toMap(json), QueryInfo.class);
-            keyInfo.setQueryInfo(queryInfo);
-            anyKey.setKey(keyInfo);
+            keyInfo.setQuery(queryInfo);
+            anyKey.setKeyInfo(keyInfo);
             Query query = new Query(context, jdbcTemplate, pairs, anyKey);
 
             assertTrue(query.ifSelectOk());
@@ -77,8 +80,11 @@ public class QueryTest {
 
             AnyKey anyKey = new AnyKey();
 
-            KeyInfo keyInfo = new KeyInfo("100", "user_table");
-            anyKey.setKey(keyInfo);
+            KeyInfo keyInfo = new KeyInfo();
+            keyInfo.setExpire("100");
+            keyInfo.setTable("user_table");
+
+            anyKey.setKeyInfo(keyInfo);
             Query query = new Query(context, jdbcTemplate, pairs, anyKey);
 
             assertTrue(query.ifInsertOk());
@@ -104,11 +110,14 @@ public class QueryTest {
             KvPairs pairs = new KvPairs();
             AnyKey anyKey = new AnyKey();
 
-            KeyInfo keyInfo = new KeyInfo("100", "user_table");
+            KeyInfo keyInfo = new KeyInfo();
+            keyInfo.setExpire("100");
+            keyInfo.setTable("user_table");
+
             String json1 = "{\"table\":\"user_table\",\"conditions\":{\"email\":{\"=\":[\"david@example.com\"]}}}";
             QueryInfo queryInfo1 = Utils.toPojo(Utils.toMap(json1), QueryInfo.class);
-            keyInfo.setQueryInfo(queryInfo1);
-            anyKey.setKey(keyInfo);
+            keyInfo.setQuery(queryInfo1);
+            anyKey.setKeyInfo(keyInfo);
             Query query = new Query(context, jdbcTemplate, pairs, anyKey);
 
             assertTrue(query.ifSelectOk());
@@ -130,10 +139,12 @@ public class QueryTest {
 
             KvPair pair = new KvPair(key, map1);
             pairs.setPair(pair);
-            KeyInfo keyInfo2 = new KeyInfo("100", "user_table");
+            KeyInfo keyInfo2 = new KeyInfo();
+            keyInfo2.setExpire("100");
+            keyInfo2.setTable("user_table");
             keyInfo2.setClause("id = ?");
             keyInfo2.setParams(Arrays.asList(id));
-            anyKey.setKey(keyInfo2);
+            anyKey.setKeyInfo(keyInfo2);
 
             query = new Query(context, jdbcTemplate, pairs, anyKey);
 
@@ -165,11 +176,14 @@ public class QueryTest {
             KvPairs pairs = new KvPairs();
             AnyKey anyKey = new AnyKey();
 
-            KeyInfo keyInfo = new KeyInfo("100", "user_table");
+            KeyInfo keyInfo = new KeyInfo();
+            keyInfo.setExpire("100");
+            keyInfo.setTable("user_table");
+
             String json1 = "{\"table\":\"user_table\",\"conditions\":{\"id\":{\"=\":[\"3\"]}}}";
             QueryInfo queryInfo1 = Utils.toPojo(Utils.toMap(json1), QueryInfo.class);
-            keyInfo.setQueryInfo(queryInfo1);
-            anyKey.setKey(keyInfo);
+            keyInfo.setQuery(queryInfo1);
+            anyKey.setKeyInfo(keyInfo);
             Query query = new Query(context, jdbcTemplate, pairs, anyKey);
 
             assertTrue(query.ifSelectOk());
@@ -182,10 +196,13 @@ public class QueryTest {
 
             KvPair pair = new KvPair(key);
             pairs.setPair(pair);
-            KeyInfo keyInfo2 = new KeyInfo("100", "user_table");
+            KeyInfo keyInfo2 = new KeyInfo();
+            keyInfo2.setExpire("100");
+            keyInfo2.setTable("user_table");
+
             keyInfo2.setClause("id = ?");
             keyInfo2.setParams(Arrays.asList("3"));
-            anyKey.setKey(keyInfo2);
+            anyKey.setKeyInfo(keyInfo2);
 
             query = new Query(context, jdbcTemplate, pairs, anyKey);
 

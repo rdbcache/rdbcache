@@ -175,7 +175,7 @@ public class TaskQueue extends Thread {
             return;
         }
 
-        KeyInfo keyInfo = anyKey.getAny();
+        KeyInfo keyInfo = anyKey.getKeyInfo();
 
         //...
 

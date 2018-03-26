@@ -27,7 +27,9 @@ public class KeyInfoTest {
     @Test
     public void objectToMap2() {
 
-        KeyInfo keyInfo1 = new KeyInfo("100", "table");
+        KeyInfo keyInfo1 = new KeyInfo();
+        keyInfo1.setExpire("100");
+        keyInfo1.setTable("table");
         Map<String, Object> map1 = Utils.toMap(keyInfo1);
         KeyInfo keyInfo2 = Utils.toPojo(map1, KeyInfo.class);
         Map<String, Object> map2 = Utils.toMap(keyInfo2);
@@ -74,7 +76,7 @@ public class KeyInfoTest {
         Map<String, Condition> conditions = new LinkedHashMap<>();
         conditions.put("id", condition);
         queryInfo.setConditions(conditions);
-        keyInfo1.setQueryInfo(queryInfo);
+        keyInfo1.setQuery(queryInfo);
 
         //System.out.println(queryInfo.toString());
         Map<String, Object> map2 = Utils.toMap(keyInfo1);

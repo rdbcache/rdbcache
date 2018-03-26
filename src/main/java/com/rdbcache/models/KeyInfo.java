@@ -6,6 +6,7 @@
 
 package com.rdbcache.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.configs.PropCfg;
 import com.rdbcache.exceptions.ServerErrorException;
@@ -18,9 +19,8 @@ import com.rdbcache.queries.QueryInfo;
 import java.io.Serializable;
 import java.util.*;
 
-public class KeyInfo implements Serializable, Cloneable {
-
-    private static final long serialVersionUID = 20180316L;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class KeyInfo implements Cloneable {
 
     private String expire = PropCfg.getDefaultExpire();
 
@@ -37,22 +37,16 @@ public class KeyInfo implements Serializable, Cloneable {
     private Boolean isNew = false;
 
     @JsonIgnore
-    private List<String> indexes;
-
-    @JsonIgnore
-    private Map<String, Object> columns;
+    private String expireOld;
 
     @JsonIgnore
     private QueryInfo query;
 
-    public KeyInfo(String expire, String table) {
-        this.expire = expire;
-        this.table = table;
-    }
+    @JsonIgnore
+    private List<String> primaryIndexes;
 
-    public KeyInfo(String expire) {
-        this.expire = expire;
-    }
+    @JsonIgnore
+    private Map<String, Object> columns;
 
     public KeyInfo() {
     }
@@ -62,7 +56,10 @@ public class KeyInfo implements Serializable, Cloneable {
     }
 
     public void setExpire(String expire) {
-        this.expire = expire;
+        if (!this.expire.equals(expire)) {
+            expireOld = this.expire;
+            this.expire = expire;
+        }
     }
 
     public String getTable() {
@@ -101,8 +98,7 @@ public class KeyInfo implements Serializable, Cloneable {
         this.queryKey = queryKey;
     }
 
-    @JsonIgnore
-    public Boolean isNew() {
+    public Boolean getIsNew() {
         return isNew;
     }
 
@@ -110,10 +106,31 @@ public class KeyInfo implements Serializable, Cloneable {
         this.isNew = isNew;
     }
 
+    public QueryInfo getQuery() {
+        return query;
+    }
+
+    public void setQuery(QueryInfo query) {
+        if (query != null) {
+            queryKey = query.getKey();
+        }
+        this.query = query;
+    }
+
+    public String getExpireOld() {
+        return expireOld;
+    }
+
+    public void restoreExpire() {
+        if (expireOld != null) {
+            expire = expireOld;
+        }
+    }
+
     @JsonIgnore
     public List<String> getPrimaryIndexes() {
-        if (indexes != null) {
-            return indexes;
+        if (primaryIndexes != null) {
+            return primaryIndexes;
         }
         if (table == null || queryKey == null) {
             return null;
@@ -124,18 +141,18 @@ public class KeyInfo implements Serializable, Cloneable {
             return null;
         }
         if (map.containsKey("PRIMARY")) {
-            indexes = (List<String>) map.get("PRIMARY");
+            primaryIndexes = (List<String>) map.get("PRIMARY");
         } else {
             for (Map.Entry<String, Object> entry: map.entrySet()) {
-                indexes = (List<String>) entry.getValue();
+                primaryIndexes = (List<String>) entry.getValue();
                 break;
             }
         }
-        return indexes;
+        return primaryIndexes;
     }
 
     public void setPrimaryIndexes(List<String> indexes) {
-        this.indexes = indexes;
+        primaryIndexes = indexes;
     }
 
     @JsonIgnore
@@ -158,18 +175,6 @@ public class KeyInfo implements Serializable, Cloneable {
     }
 
     @JsonIgnore
-    public QueryInfo getQueryInfo() {
-        return query;
-    }
-
-    public void setQueryInfo(QueryInfo query) {
-        if (query != null) {
-            queryKey = query.getKey();
-        }
-        this.query = query;
-    }
-
-    @JsonIgnore
     public Long getExpireTTL() {
         Long ttl = Long.valueOf(expire);
         if (ttl < 0l) return -ttl;
@@ -180,6 +185,17 @@ public class KeyInfo implements Serializable, Cloneable {
     public Integer getQueryLimit() {
         if (query == null) return null;
         return query.getLimit();
+    }
+
+    public void cleanup() {
+        expireOld = null;
+        if (query != null && queryKey != null && queryKey.length() == 0) {
+            queryKey = query.getKey();
+            query = null;
+        }
+        columns = null;
+        primaryIndexes = null;
+        isNew = false;
     }
 
     @Override

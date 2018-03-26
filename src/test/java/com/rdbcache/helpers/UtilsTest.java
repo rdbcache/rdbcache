@@ -60,16 +60,20 @@ public class UtilsTest {
 
     @Test
     public void toMapTestWithPojo() {
-        KeyInfo keyInfo = new KeyInfo("100", "table");
+        KeyInfo keyInfo = new KeyInfo();
+        keyInfo.setExpire("100");
+        keyInfo.setTable("table");
         Map<String, Object> map = Utils.toMap(keyInfo);
-        String json = "{\"expire\":\"100\",\"table\":\"table\",\"clause\":\"\",\"params\":null,\"query_key\":\"\"}";
+        String json = "{\"expire\":\"100\",\"table\":\"table\",\"clause\":\"\",\"query_key\":\"\"}";
         Map<String, Object> newMap = Utils.toMap(json);
         assertEquals(map, newMap);
     }
 
     @Test
     public void toPojoTest() {
-        KeyInfo keyInfo1 = new KeyInfo("100", "table");
+        KeyInfo keyInfo1 = new KeyInfo();
+        keyInfo1.setExpire("100");
+        keyInfo1.setTable("table");
         Map<String, Object> map = Utils.toMap(keyInfo1);
         KeyInfo keyInfo2 = Utils.toPojo(map, KeyInfo.class);
         assertEquals(keyInfo1, keyInfo2);

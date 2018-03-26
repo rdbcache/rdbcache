@@ -98,8 +98,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean ifExist(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("ifExist pairs(" + pairs.size() + "): " + pairs.shortKey() + 
-            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("ifExist pairs(" + pairs.size() + "): " + pairs.printKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
 
         boolean foundAll = true;
 
@@ -107,7 +107,6 @@ public class RedisRepoImpl implements RedisRepo {
 
             KvPair pair = pairs.get(i);
             String key = pair.getId();
-            //String table = anyKey.getKey(i).getTable();
 
             if (enableDataCache) {
                 if (AppCtx.getLocalCache().containsData(key)) {
@@ -133,8 +132,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean updateIfExist(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("updateIfExist pairs(" + pairs.size() + "): " + pairs.shortKey() + 
-            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("updateIfExist pairs(" + pairs.size() + "): " + pairs.printKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
 
         boolean foundAll = true;
 
@@ -201,17 +200,17 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("find pairs(" + pairs.size() + "): " + pairs.shortKey() + 
-            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("find pairs(" + pairs.size() + "): " + pairs.printKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
 
         boolean foundAll = true;
 
         for (int i = 0; i < pairs.size(); i++) {
 
             KvPair pair = pairs.get(i);
+            String key = pair.getId();
             KeyInfo keyInfo = anyKey.getAny(i);
 
-            String key = pair.getId();
             String hashKey = hdataPrefix + "::" + key;
             Map<String, Object> map = null;
 
@@ -265,8 +264,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("save pairs(" + pairs.size() + "): " + pairs.shortKey() + 
-            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("save pairs(" + pairs.size() + "): " + pairs.printKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
 
         boolean savedAll = true;
 
@@ -315,8 +314,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean findAndSave(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.shortKey() + 
-            "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.printKey() + 
+            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
 
         boolean allOk = true;
 
@@ -399,8 +398,8 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public void delete(Context context, KvPairs pairs, AnyKey anyKey, boolean dbOps) {
 
-        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.shortKey() +
-                "anyKey(" + anyKey.size() + "): " + anyKey.getAny().getTable());
+        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.printKey() +
+                "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
 
         if (enableDataCache) {
             AppCtx.getLocalCache().removeKeyAndData(pairs);

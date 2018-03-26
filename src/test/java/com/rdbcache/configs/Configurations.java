@@ -38,7 +38,6 @@ import java.util.Properties;
 import static org.mockito.Mockito.mock;
 
 @Configuration
-@EnableTransactionManagement(proxyTargetClass = true)
 @EnableJpaRepositories(basePackages = "com.rdbcache.repositories")
 public class Configurations implements ApplicationContextAware {
 

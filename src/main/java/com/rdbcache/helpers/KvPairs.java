@@ -7,8 +7,11 @@
 package com.rdbcache.helpers;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.rdbcache.controllers.RdbcacheApis;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.models.KvPair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +64,14 @@ public class KvPairs extends ArrayList<KvPair>{
         return get(0);
     }
 
+    public String getKey() {
+        if (size() == 0) {
+            return null;
+        }
+        return get(0).getId();
+
+    }
+
     public KvPair getAny() {
         return getAny(0);
     }
@@ -82,16 +93,23 @@ public class KvPairs extends ArrayList<KvPair>{
         return keys;
     }
 
-    public String shortKey() {
+    public String printKey() {
         int size = size();
         if (size == 0) {
-            return "";
+            return "null";
         }
-        String key = get(0).shortKey();
+        String key = get(0).printKey();
         if (size > 1) {
             key += "... ";
         }
         return key;
     }
 
+    public KvPairs clone() {
+        KvPairs clone = new KvPairs();
+        for (KvPair pair: this) {
+            clone.add(pair.clone());
+        }
+        return clone;
+    }
 }

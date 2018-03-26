@@ -53,7 +53,7 @@ public class KvPairsTest {
         for (int i = 0; i < 3; i++) {
             KvPair pair = pairs.get(i);
             map = pair.getData();
-            assertTrue(pair.isUuid());
+            assertTrue(pair.isNewUuid());
             assertEquals(3, map.size());
         }
     }

@@ -28,6 +28,11 @@ public class KvIdType implements Serializable {
         this.id = id;
     }
 
+    public KvIdType(KvIdType idType) {
+        id = idType.id;
+        type = idType.type;
+    }
+
     public KvIdType() {
     }
 

@@ -271,12 +271,12 @@ public class DbaseOps {
 
     public List<String> getTableList(Context context) {
 
-        Map<String, Object> tablesMap = AppCtx.getLocalCache().get("table_list");
+        Map<String, Object> tablesMap = (Map<String, Object>) AppCtx.getLocalCache().get("table_list");
         if (tablesMap != null) {
             return (List<String>) tablesMap.get("tables");
         }
 
-        tablesMap = AppCtx.getLocalCache().put("table_list", tableInfoCacheTTL * 1000L, () -> {
+        tablesMap = (Map<String, Object>) AppCtx.getLocalCache().put("table_list", tableInfoCacheTTL * 1000L, () -> {
             List<String> alltables = fetchTableList(context);
             if (alltables == null) {
                 LOGGER.error("failed to get table list");
@@ -309,7 +309,7 @@ public class DbaseOps {
             return columns;
         }
 
-        columns = AppCtx.getLocalCache().put("table_columns::" + table, tableInfoCacheTTL * 1000L, () -> {
+        columns = (Map<String, Object>) AppCtx.getLocalCache().put("table_columns::" + table, tableInfoCacheTTL * 1000L, () -> {
             Map<String, Object> map = fetchTableColumns(context, table);
             if (map == null) {
                 String msg = "failed to get table columns";
@@ -336,7 +336,7 @@ public class DbaseOps {
             return (String) columns.get(table);
         }
 
-        columns = AppCtx.getLocalCache().put("table_auto_inc_columns", tableInfoCacheTTL * 1000L, () -> {
+        columns = (Map<String, Object>) AppCtx.getLocalCache().put("table_auto_inc_columns", tableInfoCacheTTL * 1000L, () -> {
             Map<String, Object> map = fetchTableAutoIncrementColumns(context);
             if (map == null) {
                 String msg = "failed to get table auto increment column map";

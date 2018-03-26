@@ -7,6 +7,7 @@
 package com.rdbcache.queries;
 
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.AnyKey;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.KvPairs;
@@ -71,9 +72,9 @@ public class Query {
     public boolean ifSelectOk() {
 
         Assert.isTrue(anyKey.size() == 1, "anyKey.size() = " +
-                anyKey.size() + ", select only supports anyKey size == 1");
+                anyKey.size() + ", select only supports anyKey size == 1 : " + Utils.toJson(anyKey));
 
-        KeyInfo keyInfo = anyKey.getAny();
+        KeyInfo keyInfo = anyKey.getKeyInfo();
 
         String table = keyInfo.getTable();
         if (table == null) {
@@ -95,6 +96,8 @@ public class Query {
             if (Parser.prepareQueryClauseParams(context, pair, keyInfo)) {
                 ready = true;
             } else if (keyInfo.getQueryLimit() != null) {
+                ready = true;
+            } else if (pairs.size() > 0) {
                 ready = true;
             } else if (Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
                 ready = true;
@@ -118,9 +121,9 @@ public class Query {
             sql += " limit " + limit;
         }
 
-        QueryInfo queryInfo = keyInfo.getQueryInfo();
+        QueryInfo queryInfo = keyInfo.getQuery();
         if (queryInfo != null) {
-            keyInfo.setQueryInfo(null);
+            keyInfo.setQuery(null);
             Utils.getExcutorService().submit(() -> {
                 Thread.yield();
                 AppCtx.getDbaseOps().saveQuery(context, queryInfo);
@@ -132,15 +135,20 @@ public class Query {
 
     public boolean executeSelect() {
 
-        KeyInfo keyInfo = anyKey.getAny();
+        KeyInfo keyInfo = anyKey.getKeyInfo();
         String table = keyInfo.getTable();
 
         LOGGER.trace("sql: " + sql);
-        LOGGER.trace("params: " + params.toString());
+        LOGGER.trace("params: " + (params != null ? params.toString() : "null"));
 
+        List<Map<String, Object>> list = null;
         StopWatch stopWatch = context.startStopWatch("dbase", "jdbcTemplate.queryForList");
         try {
-            List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, params.toArray());
+            if (params != null) {
+                list = jdbcTemplate.queryForList(sql, params.toArray());
+            } else {
+                list = jdbcTemplate.queryForList(sql);
+            }
             if (stopWatch != null) stopWatch.stopNow();
 
             if (list != null && list.size() > 0) {
@@ -168,10 +176,10 @@ public class Query {
         } catch (Exception e) {
             if (stopWatch != null) stopWatch.stopNow();
 
+            e.printStackTrace();
             String msg = e.getCause().getMessage();
             LOGGER.error(msg);
             context.logTraceMessage(msg);
-            e.printStackTrace();
         }
 
         return false;
@@ -182,7 +190,7 @@ public class Query {
         Assert.isTrue(anyKey.size() == 1, "anyKey.size() = " +
                 anyKey.size() + ", insert only supports anyKey size == 1");
 
-        KeyInfo keyInfo = anyKey.getAny();
+        KeyInfo keyInfo = anyKey.getKeyInfo();
 
         String table = keyInfo.getTable();
         if (table == null) {
@@ -209,6 +217,17 @@ public class Query {
 
             String table = keyInfo.getTable();
             Map<String, Object> map = pair.getData();
+            String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
+
+            boolean cacheUpdate = false;
+
+            if (!map.containsKey(autoIncKey) && keyInfo.getParams() != null && keyInfo.getParams().size() == 1) {
+                String stdClause = "(" + autoIncKey + " = ?)";
+                if (stdClause.equals(keyInfo.getClause())) {
+                    map.put(autoIncKey, keyInfo.getParams().get(0));
+                    cacheUpdate = true;
+                }
+            }
 
             String fields = "", values = "";
             params.clear();
@@ -258,10 +277,13 @@ public class Query {
 
             if (rowCount > 0) {
 
-                String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
                 if (autoIncKey != null && keyHolder.getKey() != null) {
                     String keyValue = String.valueOf(keyHolder.getKey());
                     map.put(autoIncKey, keyValue);
+                    cacheUpdate = true;
+                }
+
+                if (cacheUpdate) {
                     if (enableLocal) {
                         AppCtx.getLocalCache().putData(pair, keyInfo);
                     }
@@ -294,7 +316,7 @@ public class Query {
         Assert.isTrue(anyKey.size() == pairs.size(), anyKey.size() + " != " +
                 pairs.size() + ", update only supports anyKey size == pairs size");
 
-        KeyInfo keyInfo = anyKey.getAny();
+        KeyInfo keyInfo = anyKey.getKeyInfo();
 
         String table = keyInfo.getTable();
         if (table == null) {
@@ -385,7 +407,7 @@ public class Query {
         Assert.isTrue(anyKey.size() == pairs.size(), anyKey.size() + " != " +
                 pairs.size() + ", delete only supports anyKey size == pairs size");
 
-        KeyInfo keyInfo = anyKey.getAny();
+        KeyInfo keyInfo = anyKey.getKeyInfo();
 
         String table = keyInfo.getTable();
         if (table == null) {
@@ -459,7 +481,7 @@ public class Query {
 
     private int getLimt() {
 
-        KeyInfo keyInfo = anyKey.getAny();
+        KeyInfo keyInfo = anyKey.getKeyInfo();
         Integer queryLimit = keyInfo.getQueryLimit();
         int size = pairs.size();
         int limit = 0;

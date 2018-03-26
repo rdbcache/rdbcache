@@ -134,14 +134,9 @@ public class ExpireOps {
             KvPair pair = pairs.get(i);
             String key = pair.getId();
 
-            if (key == null || key.length() == 0) {
-                LOGGER.warn("setExpireKey invalid key");
-                continue;
-            }
-
             KeyInfo keyInfo = anyKey.getAny(i);
 
-            LOGGER.trace("setExpireKey: " + pair.shortKey() + " expire: " + keyInfo.getExpire());
+            LOGGER.trace("setExpireKey: " + pair.printKey() + " expire: " + keyInfo.getExpire());
 
             String expire = keyInfo.getExpire();
             String expKey = eventPrefix + "::" + key;
@@ -151,7 +146,10 @@ public class ExpireOps {
                     Collections.singletonList(expKey), context.getTraceId(), expire);
             if (stopWatch != null) stopWatch.stopNow();
 
-            if (result == 1 && keyInfo.isNew()) {
+            if (result != 1 && keyInfo.getIsNew()) {
+                keyInfo.restoreExpire();
+            }
+            if (keyInfo.getIsNew()) {
                 AppCtx.getKeyInfoRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
             }
         }
@@ -213,7 +211,7 @@ public class ExpireOps {
                 return;
             }
 
-            KeyInfo keyInfo = anyKey.getAny();
+            KeyInfo keyInfo = anyKey.getKeyInfo();
 
             LOGGER.trace(keyInfo.toString());
 

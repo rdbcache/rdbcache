@@ -40,7 +40,7 @@ public class AsyncOps {
 
     public void doSetExpKey(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("doSetExpKey: " + pairs.size() + " table: " + anyKey.getKey().getTable());
+        LOGGER.trace("doSetExpKey: " + pairs.size() + " table: " + anyKey.printTable());
 
         Utils.getExcutorService().submit(() -> {
 
@@ -51,7 +51,7 @@ public class AsyncOps {
 
     public void doSaveToRedis(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("doSaveToRedis: " + pairs.size() + " table: " + anyKey.getKey().getTable());
+        LOGGER.trace("doSaveToRedis: " + pairs.size() + " table: " + anyKey.printTable());
 
         Utils.getExcutorService().submit(() -> {
 
@@ -63,7 +63,7 @@ public class AsyncOps {
 
     public void doSaveToDbase(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("doSaveToDbase: " + pairs.size() + " table: " + anyKey.getKey().getTable());
+        LOGGER.trace("doSaveToDbase: " + pairs.size() + " table: " + anyKey.printTable());
 
         Utils.getExcutorService().submit(() -> {
 
@@ -75,7 +75,7 @@ public class AsyncOps {
 
     public void doUpdateToDbase(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("doUpateToDbase: " + pairs.size() + " table: " + anyKey.getKey().getTable());
+        LOGGER.trace("doUpateToDbase: " + pairs.size() + " table: " + anyKey.printTable());
 
         Utils.getExcutorService().submit(() -> {
 
@@ -87,28 +87,20 @@ public class AsyncOps {
 
     public void doPushOperations(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("doPushOperations: " + pairs.size() + " table: " + anyKey.getKey().getTable());
+        LOGGER.trace("doPushOperations: " + pairs.size() + " table: " + anyKey.printTable());
 
         Utils.getExcutorService().submit(() -> {
 
-            AnyKey anyKeyNew = new AnyKey();
-            if (AppCtx.getKeyInfoRepo().find(context, pairs, anyKeyNew)) {
-                int i = 0;
-                for (KvPair pair : pairs) {
-                    KvPairs kvpPairs = new KvPairs(pair);
-                    AnyKey akey = new AnyKey(anyKeyNew.getAny(i++));
-                    AppCtx.getDbaseRepo().update(context, kvpPairs, akey);
-                    AppCtx.getRedisRepo().save(context, kvpPairs, akey);
-                    AppCtx.getExpireOps().setExpireKey(context, kvpPairs, akey);
-                }
-            }
+            AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            AppCtx.getRedisRepo().save(context, pairs, anyKey);
+            AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
             context.closeMonitor();
         });
     }
 
     public void doSaveAllToRedisAndSaveAllTodDbase(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + anyKey.getKey().getTable());
+        LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + anyKey.printTable());
 
         Utils.getExcutorService().submit(() -> {
 
@@ -122,7 +114,7 @@ public class AsyncOps {
     public void doSaveToRedisAndDbase(Context context, KvPairs pairs, AnyKey anyKey) {
 
 
-        LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + anyKey.getKey().getTable());
+        LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + anyKey.printTable());
 
         Utils.getExcutorService().submit(() -> {
 
@@ -135,7 +127,7 @@ public class AsyncOps {
 
     public void doPutOperation(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        LOGGER.trace("doPutOperation: " + pairs.size() + " table: " + anyKey.getKey().getTable());
+        LOGGER.trace("doPutOperation: " + pairs.size() + " table: " + anyKey.print());
 
         Utils.getExcutorService().submit(() -> {
 
@@ -149,7 +141,7 @@ public class AsyncOps {
 
                 try {
 
-                    if (AppCtx.getRedisRepo().updateIfExist(context, kvPairs, akey)) {
+                    if (!pair.isNewUuid() && AppCtx.getRedisRepo().updateIfExist(context, kvPairs, akey)) {
                         AppCtx.getDbaseRepo().save(context, kvPairs, akey);
                         AppCtx.getExpireOps().setExpireKey(context, kvPairs, akey);
                         continue;
@@ -168,7 +160,7 @@ public class AsyncOps {
                         Map<String, Object> dbMap = dbPair.getData();            // loaded from database
                         Map<String, Object> map = pair.getData();                // input
 
-                        if (akey.getKey().getTable() != null) {
+                        if (akey.getKeyInfo().getTable() != null) {
 
                             Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
 
@@ -207,57 +199,34 @@ public class AsyncOps {
         });
     }
 
-    public void doDeleteFromRedis(Context context, KvPairs pairs) {
+    public void doDeleteFromRedis(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doDeleteFromRedis: " + pairs.size());
 
         Utils.getExcutorService().submit(() -> {
 
-            for (KvPair pair : pairs) {
+            try {
+                AppCtx.getRedisRepo().delete(context, pairs, anyKey, false);
 
-                KvPairs newPairs = new KvPairs(pair);
-                AnyKey anyKey = new AnyKey(new KeyInfo());
-
-                try {
-                    if (!AppCtx.getKeyInfoRepo().find(context, newPairs, anyKey)) {
-                        String message = "key (" + pair.getId() + ") not found";
-                        LOGGER.warn(message);
-                        context.logTraceMessage(message);
-                    }
-                    AppCtx.getRedisRepo().delete(context, newPairs, anyKey, false);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
             context.closeMonitor();
         });
     }
 
-    public void doDeleteFromRedisAndDbase(Context context, KvPairs pairs) {
+    public void doDeleteFromRedisAndDbase(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doDeleteFromRedisAndDbase: " + pairs.size());
 
         Utils.getExcutorService().submit(() -> {
 
-            for (KvPair pair: pairs) {
+            try {
+                AppCtx.getRedisRepo().delete(context, pairs, anyKey, true);
+                AppCtx.getDbaseRepo().delete(context, pairs, anyKey);
 
-                KvPairs newPairs = new KvPairs(pair);
-                AnyKey anyKey = new AnyKey(new KeyInfo());
-
-                try {
-                    if (!AppCtx.getKeyInfoRepo().find(context, newPairs, anyKey)) {
-                        String message = "key (" + pair.getId() + ") not found";
-                        LOGGER.warn(message);
-                        context.logTraceMessage(message);
-                    }
-                    AppCtx.getRedisRepo().delete(context, newPairs, anyKey, true);
-                    AppCtx.getDbaseRepo().delete(context, newPairs, anyKey);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             context.closeMonitor();

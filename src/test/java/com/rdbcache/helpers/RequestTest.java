@@ -7,6 +7,7 @@ import com.rdbcache.repositories.KeyInfoRepo;
 import com.rdbcache.repositories.SimpleKeyInfoRepo;
 import com.rdbcache.services.DbaseOps;
 
+import com.rdbcache.services.LocalCache;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
@@ -67,6 +68,11 @@ public class RequestTest {
 
         BDDMockito.when(AppCtx.getDbaseOps()).thenReturn(dbaseOps);
 
+        LocalCache localCache = new LocalCache();
+        localCache.init();
+        localCache.handleEvent(null);
+
+        BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
     }
 
     protected HttpServletRequest getRequest(String api, String key, Object value, Optional<String> tableOpt,
@@ -105,11 +111,11 @@ public class RequestTest {
 
             Context context = new Context();
 
-            AnyKey anyKey = Request.process(context, request, key, tableOpt, expireOpt);
+            AnyKey anyKey = Request.process(context, request, new KvPairs(key), tableOpt, expireOpt);
 
             assertEquals(1, anyKey.size());
-            KeyInfo keyInfo = anyKey.getKey();
-            assertTrue(keyInfo.isNew());
+            KeyInfo keyInfo = anyKey.getKeyInfo();
+            assertTrue(keyInfo.getIsNew());
 
             assertEquals("KeyInfo(true, tb1, 30, {id: {=: [1]}})", keyInfo.toString());
 
@@ -129,11 +135,11 @@ public class RequestTest {
 
             Context context = new Context();
 
-            AnyKey anyKey = Request.process(context, request, key, null, null);
+            AnyKey anyKey = Request.process(context, request, new KvPairs(key), null, null);
 
             assertEquals(1, anyKey.size());
-            KeyInfo keyInfo = anyKey.getKey();
-            assertFalse(keyInfo.isNew());
+            KeyInfo keyInfo = anyKey.getKeyInfo();
+            assertFalse(keyInfo.getIsNew());
 
             //System.out.println(keyInfo.toString());
             assertEquals("KeyInfo(false, user_table, 30, id = ?, [12466])", keyInfo.toString());

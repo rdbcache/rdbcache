@@ -41,13 +41,14 @@ public class ParserTest {
 
         Context context = new Context();
         KvPair pair = new KvPair("hash_key");
-        KeyInfo keyInfo = new KeyInfo("100", "user_table");
-
+        KeyInfo keyInfo = new KeyInfo();
+        keyInfo.setExpire("100");
+        keyInfo.setTable("user_table");
         String json = "{\"table\":\"user_table\",\"conditions\":{\"id\":{\"=\":[\"1\",\"2\",\"3\"]}},\"limit\":2}";
         Map<String, Object> map = Utils.toMap(json);
         QueryInfo queryInfo = Utils.toPojo(map, QueryInfo.class);
 
-        keyInfo.setQueryInfo(queryInfo);
+        keyInfo.setQuery(queryInfo);
 
         Parser.prepareQueryClauseParams(context, pair, keyInfo);
 
@@ -82,12 +83,14 @@ public class ParserTest {
 
         KvPair pair = new KvPair("*", "data", Utils.toMap(json));
 
-        KeyInfo keyInfo = new KeyInfo("100", "user_table");
+        KeyInfo keyInfo = new KeyInfo();
+        keyInfo.setExpire("100");
+        keyInfo.setTable("user_table");
 
         String json2 = "{\"table\":\"user_table\",\"conditions\":{\"id\":{\"=\":[\"1\",\"2\",\"3\"]}},\"limit\":2}";
         QueryInfo queryInfo = Utils.toPojo(Utils.toMap(json2), QueryInfo.class);
 
-        keyInfo.setQueryInfo(queryInfo);
+        keyInfo.setQuery(queryInfo);
         keyInfo.setColumns((Map<String, Object>) testTable.get("table_columns::user_table"));
         keyInfo.setPrimaryIndexes(Arrays.asList("id"));
 

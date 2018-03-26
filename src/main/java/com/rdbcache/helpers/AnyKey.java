@@ -20,12 +20,12 @@ public class AnyKey extends ArrayList<KeyInfo> {
     public AnyKey() {
     }
 
-    public void setKey(KeyInfo keyInfo) {
+    public void setKeyInfo(KeyInfo keyInfo) {
         clear();
         add(keyInfo);
     }
 
-    public KeyInfo getKey() {
+    public KeyInfo getKeyInfo() {
         if (size() == 0) {
             return null;
         }
@@ -37,18 +37,52 @@ public class AnyKey extends ArrayList<KeyInfo> {
     }
 
     public KeyInfo getAny(int index) {
-        if (index > size()) {
+        int size = size();
+        if (index > size) {
             throw new ServerErrorException("getAny index out of range");
         }
-        if (size() == 0) {
-            KeyInfo keyInfo = new KeyInfo();
-            keyInfo.setIsNew(true);
-            add(keyInfo);
-        } else if (index == size()) {
-            KeyInfo keyInfo = get(0).clone();
-            keyInfo.setIsNew(true);
+        if (size == 0 || index == size) {
+            KeyInfo keyInfo = null;
+            if (size == 0) {
+                keyInfo = new KeyInfo();
+                keyInfo.setIsNew(true);
+            } else {
+                keyInfo = get(0).clone();
+                keyInfo.setIsNew(true);
+                keyInfo.clearParams();
+            }
             add(keyInfo);
         }
         return get(index);
+    }
+
+    public String printTable() {
+        if (size() == 0) {
+            return null;
+        }
+        String s = get(0).getTable();
+        if (size() > 1) {
+            s += "...";
+        }
+        return s;
+    }
+
+    public String print() {
+        if (size() == 0) {
+            return null;
+        }
+        String s = get(0).toString();
+        if (size() > 1) {
+            s += "...";
+        }
+        return s;
+    }
+
+    public AnyKey clone() {
+        AnyKey anyKey = new AnyKey();
+        for (KeyInfo keyInfo: this) {
+            anyKey.add(keyInfo.clone());
+        }
+        return anyKey;
     }
 }

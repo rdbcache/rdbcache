@@ -13,10 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Response  {
 
@@ -45,7 +42,7 @@ public class Response  {
         if (pairs != null) {
             if (pairs.size() == 0) {
                 if (data == null) {
-                    map.put("data", pairs);
+                    map.put("data", new HashMap<>());
                 } else {
                     map.put("data", data);
                 }

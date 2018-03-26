@@ -101,7 +101,7 @@ public class Parser {
                 ops = keyLastChar + "=";
                 key = key.substring(0, key.length() - 1);
 
-            } else if (values.length == 1 && values[0].length() == 0) {
+            } else if (values != null && values.length == 1 && values[0] != null && values[0].length() == 0) {
                 for (int i = 0; i < opsList.length; i++) {
                     int index = key.indexOf(opsList[i]);
                     if (index >= 0) {
@@ -137,7 +137,7 @@ public class Parser {
     // translate query string to SQL where clause and parameters
     //
     public static boolean prepareQueryClauseParams(Context context, KvPair pair, KeyInfo keyInfo) {
-        QueryInfo queryInfo = keyInfo.getQueryInfo();
+        QueryInfo queryInfo = keyInfo.getQuery();
         if (queryInfo == null) {
             return false;
         }
@@ -149,7 +149,7 @@ public class Parser {
         Map<String, Condition> conditions = queryInfo.getConditions();
         if (limit == null && (conditions == null || conditions.size() == 0)) {
             keyInfo.setQueryKey(null);
-            keyInfo.setQueryInfo(null);
+            keyInfo.setQuery(null);
             return false;
         }
         List<Object> params = keyInfo.getParams();
@@ -159,8 +159,6 @@ public class Parser {
         } else {
             params.clear();
         }
-        String key = null;
-        if (pair != null) key = pair.getId();
         String clause = "";
         int total = 0;
         for (Map.Entry<String, Condition> entry: conditions.entrySet()) {
@@ -172,36 +170,33 @@ public class Parser {
             int count = 0;
             String exp = "";
             for (Map.Entry<String, List<String>> opsEntry: condition.entrySet()) {
-                String ops = opsEntry.getKey();
+                List<String> values = opsEntry.getValue();
+                if (values == null || values.size() == 0) {
+                    return false;
+                }
                 if (count > 0) {
                     exp += " AND ";
                 }
-                List<String> values = opsEntry.getValue();
+                String ops = opsEntry.getKey();
                 String subExp = "";
-                if (values == null || values.size() == 0) {
-                    subExp += ckey + " = ?";
-                    params.add(key);
-                } else {
-                    int i = 0;
-                    for (; i < values.size(); i++) {
-                        String value = values.get(i);
-                        if (i > 0) {
-                            if (Arrays.asList(opsOrList).contains(ops)) {
-                                subExp += " OR ";
-                            } else {
-                                subExp += " AND ";
-                            }
-                        }
-                        if (Arrays.asList(opsSingleList).contains(ops)) {
-                            subExp += ckey + " " + ops;
+                int i = 0;
+                for (; i < values.size(); i++) {
+                    String value = values.get(i);
+                    if (value == null) {
+                        return false;
+                    }
+                    if (i > 0) {
+                        if (Arrays.asList(opsOrList).contains(ops)) {
+                            subExp += " OR ";
                         } else {
-                            subExp += ckey + " " + ops + " ?";
-                            if (value != null) {
-                                params.add(value);
-                            } else {
-                                params.add(key);
-                            }
+                            subExp += " AND ";
                         }
+                    }
+                    if (Arrays.asList(opsSingleList).contains(ops)) {
+                        subExp += ckey + " " + ops;
+                    } else {
+                        subExp += ckey + " " + ops + " ?";
+                        params.add(value);
                     }
                 }
                 exp += "(" + subExp + ")";
@@ -236,8 +231,8 @@ public class Parser {
             return false;
         }
 
-        String key = pair.getId();
-        Map<String, Object> map = pair.getData();
+        Map<String, Object> map = null;
+        if (pair != null) map = pair.getData();
         List<Object> stdParams = new ArrayList<Object>();
         int stdParamsCount = 0;
         String stdClause = "";
@@ -254,8 +249,8 @@ public class Parser {
             if (map != null && map.containsKey(indexKey)) {
                 stdParams.add(map.get(indexKey));
             } else  {
-                stdParams.add(key);
                 ready = false;
+                break;
             }
         }
         if (ready) {
@@ -271,6 +266,10 @@ public class Parser {
             if (params != null && params.size() == stdParamsCount) {
                 return true;
             }
+        }
+
+        if (stdParams.size() == 0) {
+            return false;
         }
 
         // 3) the last offer

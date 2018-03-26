@@ -129,6 +129,9 @@ public class PropCfg {
     @Value("${rdbcache.key_min_cache_ttl}")
     public void setKeyInfoCacheTTL(Long ttl) {
         keyMinCacheTTL = ttl;
+        if (keyMinCacheTTL < 60l) {
+            keyMinCacheTTL = 60l;
+        }
     }
 
     public static Long getKeyMinCacheTTL() {

@@ -9,8 +9,10 @@ package com.rdbcache.helpers;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.models.Monitor;
 import com.rdbcache.models.StopWatch;
+import com.rdbcache.repositories.DbaseRepo;
 import com.rdbcache.repositories.MonitorRepo;
 import com.rdbcache.repositories.StopWatchRepo;
+import com.rdbcache.services.DbaseOps;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -129,7 +131,14 @@ public class Context {
             return;
         }
         monitor.stopNow();
-        AppCtx.getDbaseOps().saveMonitor(this);
+        DbaseOps dbaseOps = AppCtx.getDbaseOps();
+        if (dbaseOps != null) {
+            try {
+                dbaseOps.saveMonitor(this);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         monitor = null;
     }
 
