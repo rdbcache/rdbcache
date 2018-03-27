@@ -1853,7 +1853,7 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 Map<String, Object> data = (Map<String, Object>) map.get("data");
