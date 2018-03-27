@@ -6,6 +6,7 @@
 
 package com.rdbcache.queries;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rdbcache.helpers.Utils;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.*;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class QueryInfo implements Serializable {
 
     private static final long serialVersionUID = 20180316L;

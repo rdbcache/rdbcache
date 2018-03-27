@@ -1,8 +1,14 @@
 package com.rdbcache.controllers;
 
+import com.rdbcache.configs.AppCtx;
 import com.rdbcache.configs.Configurations;
+import com.rdbcache.configs.MockRedis;
 import com.rdbcache.configs.PropCfg;
+import com.rdbcache.helpers.Context;
+import com.rdbcache.helpers.KvPairs;
 import com.rdbcache.helpers.Utils;
+import com.rdbcache.models.KvIdType;
+import com.rdbcache.models.KvPair;
 import com.rdbcache.repositories.DbaseRepo;
 import com.rdbcache.services.LocalCache;
 
@@ -12,6 +18,7 @@ import org.springframework.http.MediaType;
 
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,15 +33,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(secure = false)
 @ContextConfiguration(classes = {Configurations.class, PropCfg.class})
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class RdbcacheApisTest {
 
     private MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new RdbcacheApis()).build();
@@ -150,6 +156,19 @@ public class RdbcacheApisTest {
                 data1 = (Map<String, Object>) map.get("data");
                 assertNotNull(data1);
             }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            // assume local cache and redis data are expired
+            AppCtx.getLocalCache().removeAllData();
+            AppCtx.getLocalCache().removeAllKeyInfos();
+            MockRedis.getData().clear();
+
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         get("/rdbcache/v1/get/" + key).
@@ -294,6 +313,18 @@ public class RdbcacheApisTest {
                 assertEquals(200, response.getStatus());
             }
 
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            // assume local cache and redis data are expired
+            AppCtx.getLocalCache().removeAllData();
+            AppCtx.getLocalCache().removeAllKeyInfos();
+            MockRedis.getData().clear();
+
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         get("/rdbcache/v1/get/test_hash_key2").
@@ -339,7 +370,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -355,7 +386,7 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
                 Map<String, Object> map = Utils.toMap(body);
                 Map<String, Object> data = (Map<String, Object>) map.get("data");
                 assertNotNull(data.get("id"));
@@ -401,7 +432,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -464,7 +495,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -525,10 +556,15 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
+
+            // assume local cache and redis data are expired
+            AppCtx.getLocalCache().removeAllData();
+            AppCtx.getLocalCache().removeAllKeyInfos();
+            MockRedis.getData().clear();
 
             {
                 String update = "{\"name\":\"Test333\"}";
@@ -547,7 +583,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -605,7 +641,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -633,7 +669,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -684,20 +720,19 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
                 Map<String, Object> map = Utils.toMap(body);
                 key = (String) map.get("key");
                 assertNotNull(key);
                 data2 = (Map<String, Object>) map.get("data");
                 assertNotNull(data2);
-                data1 = Utils.toMap("{\"id\":3,\"email\":\"david@example.com\",\"name\":\"David C.\",\"dob\":\"1979-11-08\"}");
-                assertEquals(data1, data2);
+                assertEquals("david@example.com", data2.get("email"));
 
             }
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -713,7 +748,7 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 data2 = (Map<String, Object>) map.get("data");
@@ -749,7 +784,7 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
                 Map<String, Object> map = Utils.toMap(body);
                 key = (String) map.get("key");
                 assertNotNull(key);
@@ -760,10 +795,15 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
+
+            // assume local cache and redis data are expired
+            AppCtx.getLocalCache().removeAllData();
+            AppCtx.getLocalCache().removeAllKeyInfos();
+            MockRedis.getData().clear();
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
@@ -776,7 +816,7 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 data2 = (Map<String, Object>) map.get("data");
@@ -786,6 +826,215 @@ public class RdbcacheApisTest {
                 assertEquals("5", (String) data2.get("id").toString());
             }
 
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
+
+    @Test
+    public void pull_post1() {
+
+        try {
+
+            Map<String, Object>  data1 = null, data2 = null;
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?limit=3").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNotNull(data1);
+                assertTrue(data1.size() > 1);
+            }
+
+            {
+                Set<String> keys = data1.keySet();
+
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        post("/rdbcache/v1/pull").
+                        contentType(MediaType.APPLICATION_JSON).content(Utils.toJson(keys)).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data2 = (Map<String, Object>) map.get("data");
+                assertNotNull(data2);
+                assertTrue(data2.size() > 1);
+                assertEquals(data1, data2);
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
+
+    @Test
+    public void pull_post2() {
+
+        try {
+
+            Map<String, Object>  data1 = null, data2 = null;
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?limit=3").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNotNull(data1);
+                assertTrue(data1.size() > 1);
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            // assume local cache and redis data are expired
+            AppCtx.getLocalCache().removeAllData();
+            AppCtx.getLocalCache().removeAllKeyInfos();
+            MockRedis.getData().clear();
+
+            {
+                Set<String> keys = data1.keySet();
+
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        post("/rdbcache/v1/pull").
+                        contentType(MediaType.APPLICATION_JSON).content(Utils.toJson(keys)).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data2 = (Map<String, Object>) map.get("data");
+                assertNotNull(data2);
+                assertTrue(data2.size() > 1);
+                assertEquals(data1, data2);
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
+
+    @Test
+    public void pull_post3() {
+
+        try {
+
+            Map<String, Object>  data1 = null, data2 = null;
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?limit=2").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNotNull(data1);
+                assertTrue(data1.size() > 1);
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            // assume local cache and redis data are expired
+            AppCtx.getLocalCache().removeAllData();
+            AppCtx.getLocalCache().removeAllKeyInfos();
+            MockRedis.getData().clear();
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?id=3").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                Map<String, Object> data3 = (Map<String, Object>) map.get("data");
+                assertNotNull(data3);
+                assertTrue(data3.size() == 1);
+
+                for (Map.Entry<String, Object> entry: data3.entrySet()) {
+                    data1.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            {
+                Set<String> keys = data1.keySet();
+
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        post("/rdbcache/v1/pull").
+                        contentType(MediaType.APPLICATION_JSON).content(Utils.toJson(keys)).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data2 = (Map<String, Object>) map.get("data");
+                assertNotNull(data2);
+                assertTrue(data2.size() > 1);
+                assertEquals(data1, data2);
+
+            }
         } catch (Exception e) {
             e.printStackTrace();
             fail("caught an exception");
@@ -912,10 +1161,15 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
+
+            // assume local cache and redis data are expired
+            AppCtx.getLocalCache().removeAllData();
+            AppCtx.getLocalCache().removeAllKeyInfos();
+            MockRedis.getData().clear();
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
@@ -964,24 +1218,27 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 data1 = (Map<String, Object>) map.get("data");
                 assertNotNull(data1);
                 assertEquals(3, data1.size());
             }
-            /*
+
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
 
-            String batchUpdate = "{\"hash_key011\":{\"email\":\"mike.a@example.com\"},"+
-                    "\"hash_key012\":{\"email\":\"kevin.b@example.com\"},"+
-                    "\"hash_key013\":{\"email\":\"david.c@example.com\"}}";
+            //System.out.println(Utils.toJson("cache: "+AppCtx.getLocalCache().listAllData()));
+            //System.out.println(Utils.toJson("redis: "+ MockRedis.getData()));
+
+            String batchUpdate = "{\"hash_key011\":{\"name\":\"Mike 001\"},"+
+                    "\"hash_key012\":{\"name\":\"Kevin 002\"},"+
+                    "\"hash_key013\":{\"name\":\"David 003\"}}";
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
@@ -995,7 +1252,7 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 List<String> keys = (List<String>) map.get("data");
@@ -1005,10 +1262,13 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
+
+            //System.out.println(Utils.toJson("cache: "+ AppCtx.getLocalCache().listAllData()));
+            //System.out.println(Utils.toJson("redis: "+ MockRedis.getData()));
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
@@ -1022,19 +1282,589 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 data2 = (Map<String, Object>) map.get("data");
                 assertNotNull(data2);
                 assertEquals(3, data2.size());
+                assertEquals("Mike 001", ((Map<String, Object>) data2.get("hash_key011")).get("name"));
+                assertEquals("Kevin 002", ((Map<String, Object>) data2.get("hash_key012")).get("name"));
+                assertEquals("David 003", ((Map<String, Object>) data2.get("hash_key013")).get("name"));
+                ((Map<String, Object>) data2.get("hash_key011")).put("name", "Mike A.");
+                ((Map<String, Object>) data2.get("hash_key012")).put("name", "Kevin B.");
+                ((Map<String, Object>) data2.get("hash_key013")).put("name", "David C.");
+                assertEquals(data1, data2);
+
             }
-            */
         } catch (Exception e) {
             e.printStackTrace();
             fail("caught an exception");
         }
     }
 
+    @Test
+    public void delkey_get1() {
+
+        try {
+
+            Map<String, Object> data1 = null, data2 = null;
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?id=1").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNotNull(data1);
+                assertEquals(1, data1.size());
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            String key = (String) data1.keySet().toArray()[0];
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/delkey/"+key).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNull(data1);
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            assertFalse(AppCtx.getLocalCache().containsKey(key));
+            Map<String, Object> redis = MockRedis.getData();
+            //System.out.println(Utils.toJson(redis));
+            assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
+            Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::keyinfo");
+            assertFalse(rdchkeys.containsKey(key));
+
+            KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(key, "info"));
+            assertNull(pair);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
+
+    @Test
+    public void delkey_post1() {
+
+        try {
+
+            Map<String, Object> data1 = null, data2 = null;
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?limit=3").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNotNull(data1);
+                assertEquals(3, data1.size());
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            Set<String> keys = data1.keySet();
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        post("/rdbcache/v1/delkey/").
+                        contentType(MediaType.APPLICATION_JSON).content(Utils.toJson(keys)).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                assertNotNull(map.get("data"));
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            Map<String, Object> redis = MockRedis.getData();
+            //System.out.println(Utils.toJson(redis));
+
+            for (String key : keys) {
+                assertFalse(AppCtx.getLocalCache().containsKey(key));
+                assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
+                Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::keyinfo");
+                assertFalse(rdchkeys.containsKey(key));
+
+                KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(key, "info"));
+                assertNull(pair);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
+
+    @Test
+    public void delall_get1() {
+
+        try {
+
+            Map<String, Object> data1 = null, data2 = null;
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?id=1").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNotNull(data1);
+                assertEquals(1, data1.size());
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            String key = (String) data1.keySet().toArray()[0];
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/delall/"+key).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNull(data1);
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            assertFalse(AppCtx.getLocalCache().containsKey(key));
+            Map<String, Object> redis = MockRedis.getData();
+            //System.out.println(Utils.toJson(redis));
+            assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
+            Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::keyinfo");
+            assertFalse(rdchkeys.containsKey(key));
+            KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(key, "info"));
+            assertNull(pair);
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/get/*/user_table?id=1").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(404, response.getStatus());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
+
+    @Test
+    public void delall_post1() {
+
+        try {
+
+            Map<String, Object> data1 = null, data2 = null;
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?limit=3").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNotNull(data1);
+                assertEquals(3, data1.size());
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            Set<String> keys = data1.keySet();
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        post("/rdbcache/v1/delall/").
+                        contentType(MediaType.APPLICATION_JSON).content(Utils.toJson(keys)).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                assertNotNull(map.get("data"));
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            Map<String, Object> redis = MockRedis.getData();
+            //System.out.println(Utils.toJson(redis));
+
+            int i = 1;
+            for (String key : keys) {
+                assertFalse(AppCtx.getLocalCache().containsKey(key));
+                assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
+                Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::keyinfo");
+                assertFalse(rdchkeys.containsKey(key));
+
+                KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(key, "info"));
+                assertNull(pair);
+
+                {
+                    RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                            get("/rdbcache/v1/get/*/user_table?id=" + i++).
+                            accept(MediaType.APPLICATION_JSON);
+
+                    ResultActions actions = mockMvc.perform(requestBuilder);
+                    MvcResult result = actions.andReturn();
+                    MockHttpServletResponse response = result.getResponse();
+
+                    assertEquals(404, response.getStatus());
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
+
+    @Test
+    public void save_post1() {
+
+        try {
+
+            Map<String, Object> data1 = null, data2 = null;
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?limit=3").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data1 = (Map<String, Object>) map.get("data");
+                assertNotNull(data1);
+                assertEquals(3, data1.size());
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            {
+                //System.out.println("data1.values(): " + Utils.toJson(data1.values()));
+
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        post("/rdbcache/v1/save/user_table2").
+                        contentType(MediaType.APPLICATION_JSON).content(Utils.toJson(data1.values())).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                List<String> keys = (List<String>) map.get("data");
+                assertNotNull(keys);
+                assertEquals(3, keys.size());
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table2?limit=3").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                data2 = (Map<String, Object>) map.get("data");
+                assertNotNull(data2);
+                assertEquals(3, data2.size());
+
+                Object[] values1 = data1.values().toArray();
+                Object[] values2 = data2.values().toArray();
+                for (int i = 0; i < values1.length; i++) {
+                    assertEquals(values1[i], values2[i]);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
+
+    @Test
+    public void trace_get_post1() {
+
+        try {
+
+            List<String> traceIds = new ArrayList<>();
+
+            String traceId = null;
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/select/user_table?limit=3").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                traceId = (String) map.get("trace_id");
+                assertNotNull(traceId);
+                traceIds.add(traceId);
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/trace/"+traceId).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                Map<String, Object> data = (Map<String, Object>) map.get("data");
+                assertNotNull(data);
+                assertEquals(0, data.size());
+                traceIds.add((String) map.get("trace_id"));
+
+            }
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/set/*/value/user_table?id=1").
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                traceId = (String) map.get("trace_id");
+                assertNotNull(traceId);
+                traceIds.add(traceId);
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            {
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        get("/rdbcache/v1/trace/"+traceId).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                //System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                Map<String, Object> data = (Map<String, Object>) map.get("data");
+                assertNotNull(data);
+                assertTrue(data.size() > 0);
+                traceIds.add((String) map.get("trace_id"));
+            }
+
+            // allow time to synchronize data
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+            {
+                System.out.println(Utils.toJsonWithList(traceIds));
+
+                RequestBuilder requestBuilder = MockMvcRequestBuilders.
+                        post("/rdbcache/v1/trace").
+                        contentType(MediaType.APPLICATION_JSON).content(Utils.toJsonWithList(traceIds)).
+                        accept(MediaType.APPLICATION_JSON);
+
+                ResultActions actions = mockMvc.perform(requestBuilder);
+                MvcResult result = actions.andReturn();
+                MockHttpServletResponse response = result.getResponse();
+
+                assertEquals(200, response.getStatus());
+                String body = response.getContentAsString();
+                System.out.println(body);
+
+                Map<String, Object> map = Utils.toMap(body);
+                Map<String, Object> data = (Map<String, Object>) map.get("data");
+                assertNotNull(data);
+                assertTrue(data.size() > 0);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("caught an exception");
+        }
+    }
 }
 

@@ -227,7 +227,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         String table = anyKey.getKeyInfo().getTable();
 
         if (table == null) {
-            if (!kvSave(context, pairs, anyKey)) {
+            if (!kvUpdate(context, pairs, anyKey)) {
                 LOGGER.debug("update kvSave failed: " + pairs.printKey());
                 return false;
             } else {
@@ -239,7 +239,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             if (!query.ifUpdateOk() || !query.executeUpdate()) {
                 if (enableDbFallback) {
-                    if (!kvSave(context, pairs, anyKey)) {
+                    if (!kvUpdate(context, pairs, anyKey)) {
                         LOGGER.debug("update failed - fallback to kvSave: " + pairs.printKey());
                         return false;
                     } else {
@@ -298,8 +298,6 @@ public class DbaseRepoImpl implements DbaseRepo {
             }
         }
 
-        AppCtx.getKeyInfoRepo().delete(context, pairs,true);
-
         return true;
     }
 
@@ -343,7 +341,9 @@ public class DbaseRepoImpl implements DbaseRepo {
                         AppCtx.getLocalCache().updateData(pair);
                     }
                     if (enableRedisCache) {
-                        AppCtx.getRedisRepo().updateIfExist(context, new KvPairs(pair), new AnyKey(keyInfo));
+                        if (AppCtx.getRedisRepo().ifExist(context, new KvPairs(pair), new AnyKey(keyInfo))) {
+                            AppCtx.getRedisRepo().update(context, new KvPairs(pair), new AnyKey(keyInfo));
+                        }
                     }
                 }
 
@@ -465,7 +465,21 @@ public class DbaseRepoImpl implements DbaseRepo {
         }
     }
 
-    private  boolean kvSave(Context context, KvPairs pairs, AnyKey anyKey) {
+    private boolean kvUpdate(Context context, KvPairs pairs, AnyKey anyKey) {
+
+        KvPairs pairsClone = pairs.clone();
+        kvFind(context, pairsClone, anyKey);
+        for (int i = 0; i < pairsClone.size(); i++) {
+            Map<String, Object> data = pairsClone.get(i).getData();
+            Map<String, Object> update = pairs.get(i).getData();
+            for (Map.Entry<String, Object> entry: update.entrySet()) {
+                data.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return kvSave(context, pairsClone, anyKey);
+    }
+
+    private boolean kvSave(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("kvSave: " + pairs.printKey() + anyKey.print());
 
@@ -522,7 +536,7 @@ public class DbaseRepoImpl implements DbaseRepo {
     }
 
 
-    private  boolean kvDelete(Context context, KvPairs pairs, AnyKey anyKey) {
+    private boolean kvDelete(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("kvDelete: " + pairs.printKey() + anyKey.print());
 

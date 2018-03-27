@@ -20,9 +20,9 @@ public interface RedisRepo {
 
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey);
 
-    public boolean updateIfExist(Context context, KvPairs pairs, AnyKey anyKey);
+    public boolean update(Context context, KvPairs pairs, AnyKey anyKey);
 
     public boolean findAndSave(Context context, KvPairs pairs, AnyKey anyKey);
 
-    public void delete(Context context, KvPairs pairs, AnyKey anyKey, boolean dbOps);
+    public void delete(Context context, KvPairs pairs, AnyKey anyKey);
 }

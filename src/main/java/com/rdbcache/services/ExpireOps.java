@@ -72,7 +72,7 @@ public class ExpireOps {
         }
         valueOps = stringRedisTemplate.opsForValue();
         // setup for test
-        if (valueOps == null) {
+        if (valueOps == null || "__TRUE__".equals(valueOps.get("__is_mock_test__"))) {
             return;
         }
 
@@ -146,7 +146,7 @@ public class ExpireOps {
                     Collections.singletonList(expKey), context.getTraceId(), expire);
             if (stopWatch != null) stopWatch.stopNow();
 
-            if (result != 1 && keyInfo.getIsNew()) {
+            if (result != 1) {
                 keyInfo.restoreExpire();
             }
             if (keyInfo.getIsNew()) {
@@ -221,8 +221,8 @@ public class ExpireOps {
                 if (AppCtx.getRedisRepo().find(context, pairs, anyKey)) {
 
                     AppCtx.getDbaseRepo().save(context, pairs, anyKey);
-                    AppCtx.getRedisRepo().delete(context, pairs, anyKey, false);
-                    AppCtx.getKeyInfoRepo().delete(context, pairs,false);
+                    AppCtx.getRedisRepo().delete(context, pairs, anyKey);
+                    AppCtx.getKeyInfoRepo().delete(context, pairs);
 
                 } else {
                     String msg = "failed to find key from redis for " + key;

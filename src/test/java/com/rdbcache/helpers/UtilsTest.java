@@ -63,8 +63,10 @@ public class UtilsTest {
         KeyInfo keyInfo = new KeyInfo();
         keyInfo.setExpire("100");
         keyInfo.setTable("table");
+        keyInfo.cleanup();
         Map<String, Object> map = Utils.toMap(keyInfo);
-        String json = "{\"expire\":\"100\",\"table\":\"table\",\"clause\":\"\",\"query_key\":\"\"}";
+        //System.out.println(Utils.toJson(map));
+        String json = "{\"expire\":\"100\",\"table\":\"table\",\"clause\":\"\",\"query_key\":\"\",\"is_new\":false}";
         Map<String, Object> newMap = Utils.toMap(json);
         assertEquals(map, newMap);
     }

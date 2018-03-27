@@ -42,32 +42,26 @@ public class KeyInfoTest {
     @Test
     public void objectToMap3() {
 
-        Map<String, Object> map1 = Utils.toMap("{\n" +
-                "    \"expire\" : \"30\",\n" +
-                "    \"table\" : \"user_table\",\n" +
-                "    \"clause\" : \"id = ?\",\n" +
-                "    \"params\" : [ 12466 ],\n" +
-                "    \"query_key\" : \"1e44ca12f7ec6d2ee835c94bdc2c01dc\"\n" +
-                "  }");
+        Map<String, Object> map1 = Utils.toMap("{\"expire\":\"30\",\"table\":\"user_table\",\"clause\":"+
+                "\"id = ?\",\"params\":[12466],\"query_key\":\"1e44ca12f7ec6d2ee835c94bdc2c01dc\",\"is_new\":false,"+
+                "\"expire_old\":\"180\"}");
         KeyInfo keyInfo1 = Utils.toPojo(map1, KeyInfo.class);
         Map<String, Object> map2 = Utils.toMap(keyInfo1);
         KeyInfo keyInfo2 = Utils.toPojo(map2, KeyInfo.class);
 
+        //System.out.println(Utils.toJson(map2));
+
         assertEquals(keyInfo1, keyInfo2);
         assertEquals(map1, map2);
-        //System.out.println(Utils.toJson(map1));
     }
 
     @Test
     public void objectToMap4() {
 
-        Map<String, Object> map1 = Utils.toMap("{\n" +
-                "    \"expire\" : \"30\",\n" +
-                "    \"table\" : \"user_table\",\n" +
-                "    \"clause\" : \"id = ?\",\n" +
-                "    \"params\" : [ 12466 ],\n" +
-                "    \"query_key\" : \"28f0a2d90b3c9d340e853b838d27845c\"\n" +
-                "  }");
+        Map<String, Object> map1 = Utils.toMap("{\"expire\":\"30\",\"table\":\"user_table\",\"clause\":"+
+                "\"id = ?\",\"params\":[12466],\"query\":{\"table\":\"user_table\",\"conditions\":{\"id\":"+
+                "{\"=\":[\"12466\"]}}},\"query_key\":\"28f0a2d90b3c9d340e853b838d27845c\",\"is_new\":"+
+                "false,\"expire_old\":\"180\"}");
         KeyInfo keyInfo1 = Utils.toPojo(map1, KeyInfo.class);
 
         QueryInfo queryInfo = new QueryInfo("user_table");
@@ -78,13 +72,13 @@ public class KeyInfoTest {
         queryInfo.setConditions(conditions);
         keyInfo1.setQuery(queryInfo);
 
-        //System.out.println(queryInfo.toString());
         Map<String, Object> map2 = Utils.toMap(keyInfo1);
         KeyInfo keyInfo2 = Utils.toPojo(map2, KeyInfo.class);
 
+        //System.out.println(Utils.toJson(map2));
+
         assertEquals(keyInfo1, keyInfo2);
         assertEquals(map1, map2);
-        //System.out.println(Utils.toJson(map1));
     }
 
     @Test public void cloneTest() {

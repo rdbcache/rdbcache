@@ -18,7 +18,6 @@ public class Condition extends LinkedHashMap<String, List<String>> {
     }
 
     public Condition() {
-
     }
 
     public void push(String ops, String[] values) {

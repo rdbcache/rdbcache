@@ -111,7 +111,7 @@ public class TaskQueue extends Thread {
                     freshConnection = false;
                 }
 
-                String task = (String) listOps.leftPop(queueName, 1, TimeUnit.SECONDS);
+                String task = (String) listOps.leftPop(queueName, 0, TimeUnit.SECONDS);
 
                 if (!isRunning) break;
 

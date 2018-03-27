@@ -71,7 +71,7 @@ public class SimpleKeyInfoRepo implements KeyInfoRepo {
     }
 
     @Override
-    public void delete(Context context, KvPairs pairs, boolean dbOps) {
+    public void delete(Context context, KvPairs pairs) {
 
         LOGGER.trace("delete(" + pairs.size() + "): " + pairs.printKey());
 

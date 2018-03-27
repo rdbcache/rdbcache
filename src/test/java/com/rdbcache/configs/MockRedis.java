@@ -12,6 +12,7 @@ import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import java.security.Key;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,12 +20,17 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 
 public class MockRedis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MockRedis.class);
 
-    private static ConcurrentHashMap<String, Object> data = new ConcurrentHashMap<>();
+    private static Map<String, Object> data = new HashMap<>();
+
+    public static Map<String, Object> getData() {
+        return data;
+    }
 
     public static StringRedisTemplate mockStringRedisTemplate() {
 
@@ -81,8 +87,32 @@ public class MockRedis {
 
         // opsForValue only use in ExpireOps for lua scripts, set it to null to bypass the real operations
         //
-        //ValueOperations valueOps =  mock(ValueOperations.class, Mockito.RETURNS_DEEP_STUBS);
-        Mockito.when(template.opsForValue()).thenReturn(null);
+        ValueOperations valueOps =  mock(ValueOperations.class, Mockito.RETURNS_DEEP_STUBS);
+        Mockito.when(template.opsForValue()).thenReturn(valueOps);
+
+        // mock ValueOperations set
+        //
+        Mockito.doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            String key = (String) args[0];
+            String expire = (String) args[1];
+            Integer expValue = (Integer) args[2];
+            LOGGER.trace("StringRedisTemplate ValueOperations set " + key + " " + expire + " " + expValue);
+            data.put(key, Arrays.asList(expire, expValue));
+            return null;
+        }).when(valueOps).set(anyString(), anyString(), anyInt());
+
+        // mock ValueOperations get
+        //
+        Mockito.doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            String key = (String) args[0];
+            if ("__is_mock_test__".equals(key)) {
+                return "__TRUE__";
+            }
+            LOGGER.trace("StringRedisTemplate ValueOperations get " + key );
+            return data.get(key);
+        }).when(valueOps).get(anyString());
 
         // mock (ListOperations leftPop
         //
@@ -193,7 +223,11 @@ public class MockRedis {
            String key = (String) args[0];
            String subKey = (String) args[1];
            LOGGER.trace("KeyInfoRedisTemplate HashOperations delete " + key + " " + subKey);
-           data.remove(subKey);
+           Map<String, Object> map = (Map<String, Object>) data.get(key);
+           if (map == null) {
+               return null;
+           }
+           map.remove(subKey);
            return null;
        }).when(keyInfoOps).delete(anyString(), anyString());
 
@@ -204,10 +238,13 @@ public class MockRedis {
            Object[] args = invocation.getArguments();
            String key = (String) args[0];
            Map<String, Object> map = (Map<String, Object>) data.get(key);
+           if (map == null) {
+               return null;
+           }
            List<String> keys = (List<String>) args[1];
            LOGGER.trace("KeyInfoRedisTemplate HashOperations delete " + key + " " + keys);
            for (String subKey: keys) {
-               data.remove(subKey);
+               map.remove(subKey);
            }
            return null;
        }).when(keyInfoOps).delete(anyString(), anyList());

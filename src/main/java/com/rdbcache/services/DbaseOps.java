@@ -59,9 +59,6 @@ public class DbaseOps {
     @EventListener
     public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
         try {
-            if (AppCtx.getJdbcDataSource() == null) {
-                System.out.println("*****");
-            }
             String driverName = AppCtx.getJdbcDataSource().getConnection().getMetaData().getDriverName();
             if (driverName.indexOf("MySQL") >= 0) {
                 databaseType = "mysql";
@@ -149,10 +146,7 @@ public class DbaseOps {
                 Map<String, Object> attributes = (Map<String, Object>) entry.getValue();
                 String keyUpperCase = key.toUpperCase();
                 Object value = dbMap.get(keyUpperCase);
-                if (value == null) {
-                    continue;
-                }
-                if (!key.equals(keyUpperCase)) {
+                if (!key.equals(keyUpperCase) && dbMap.containsKey(keyUpperCase)) {
                     dbMap.remove(keyUpperCase);
                     dbMap.put(key, value);
                 }

@@ -33,13 +33,12 @@ public class KeyInfo implements Cloneable {
     @JsonProperty("query_key")
     private String queryKey = "";  // null means worked on it, conclusion is not for any query
 
-    @JsonIgnore
+    @JsonProperty("is_new")
     private Boolean isNew = false;
 
-    @JsonIgnore
-    private String expireOld;
+    @JsonProperty("expire_old")
+    private String expireOld = PropCfg.getDefaultExpire();
 
-    @JsonIgnore
     private QueryInfo query;
 
     @JsonIgnore
@@ -57,7 +56,9 @@ public class KeyInfo implements Cloneable {
 
     public void setExpire(String expire) {
         if (!this.expire.equals(expire)) {
-            expireOld = this.expire;
+            if (!this.expire.equals(expireOld)) {
+                expireOld = this.expire;
+            }
             this.expire = expire;
         }
     }
@@ -99,6 +100,9 @@ public class KeyInfo implements Cloneable {
     }
 
     public Boolean getIsNew() {
+        if (isNew == null) {
+            isNew = false;
+        }
         return isNew;
     }
 
@@ -122,8 +126,10 @@ public class KeyInfo implements Cloneable {
     }
 
     public void restoreExpire() {
-        if (expireOld != null) {
+        if (expireOld != null && !expireOld.equals(PropCfg.getDefaultExpire())) {
+            isNew = true;
             expire = expireOld;
+            expireOld = PropCfg.getDefaultExpire();
         }
     }
 
@@ -189,13 +195,15 @@ public class KeyInfo implements Cloneable {
 
     public void cleanup() {
         expireOld = null;
-        if (query != null && queryKey != null && queryKey.length() == 0) {
-            queryKey = query.getKey();
+        if (query != null) {
+            if (queryKey != null && queryKey.length() == 0) {
+                queryKey = query.getKey();
+            }
             query = null;
         }
         columns = null;
         primaryIndexes = null;
-        isNew = false;
+        isNew = null;
     }
 
     @Override

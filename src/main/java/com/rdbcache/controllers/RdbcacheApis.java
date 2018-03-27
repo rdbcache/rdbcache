@@ -401,36 +401,28 @@ public class RdbcacheApis {
 
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
-        AppCtx.getRedisRepo().find(context, pairs, anyKey);
+        if (!AppCtx.getRedisRepo().find(context, pairs, anyKey)) {
 
-        KvPairs redisPairs = new KvPairs();
-        KvPairs dbPairs = new KvPairs();
+            KvPairs dbPairs = new KvPairs();
 
-        for (int i = 0; i < pairs.size(); i++) {
+            for (int i = 0; i < pairs.size(); i++) {
 
-            KvPair pair = pairs.get(i);
-            KeyInfo keyInfo = anyKey.get(i);
-            
-            if (!pair.hasContent()) {
+                KvPair pair = pairs.get(i);
+                if (!pair.hasContent()) {
 
-                KvPairs pairsNew = new KvPairs(pair);
-                AnyKey anyKeyNew = new AnyKey(keyInfo);
+                    KeyInfo keyInfo = anyKey.get(i);
+                    KvPairs pairsNew = new KvPairs(pair);
+                    AnyKey anyKeyNew = new AnyKey(keyInfo);
 
-                if (AppCtx.getDbaseRepo().find(context, pairsNew, anyKeyNew)) {
-
-                    dbPairs.add(pair);
+                    if (AppCtx.getDbaseRepo().find(context, pairsNew, anyKeyNew)) {
+                        dbPairs.add(pair);
+                    }
                 }
-            } else {
-                redisPairs.add(pair);
             }
-        }
 
-        if (redisPairs.size() > 0) {
-            AppCtx.getAsyncOps().doUpdateToDbase(context, redisPairs, anyKey);
-        }
-
-        if (dbPairs.size() > 0) {
-            AppCtx.getAsyncOps().doSaveToRedis(context, dbPairs, anyKey);
+            if (dbPairs.size() > 0) {
+                AppCtx.getAsyncOps().doSaveToRedis(context, dbPairs, anyKey);
+            }
         }
 
         return Response.send(context, pairs);

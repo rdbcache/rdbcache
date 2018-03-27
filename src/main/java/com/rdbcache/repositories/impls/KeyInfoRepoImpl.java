@@ -247,20 +247,23 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         LOGGER.trace("save " + pairs.printKey() + anyKey.print());
 
-        for (int i = 0; i < pairs.size(); i++) {
-
-            KeyInfo keyInfo = anyKey.get(i);
-
-            if (!keyInfo.getIsNew()) {
-                LOGGER.trace("save KeyInfo is not new, skipped");
-                continue;
-            }
-
-            keyInfo.setIsNew(false);
-            keyInfo.cleanup();
+        for (int i = 0; i < pairs.size() && i < anyKey.size(); i++) {
 
             KvPair pair = pairs.get(i);
             String key = pair.getId();
+            KeyInfo keyInfo = anyKey.get(i);
+
+            if (keyInfo == null) {
+                LOGGER.trace("save KeyInfo is null for " + key);
+                continue;
+            }
+
+            if (!keyInfo.getIsNew()) {
+                LOGGER.trace("save KeyInfo is not new, skipped for " + key);
+                continue;
+            }
+
+            keyInfo.cleanup();
 
             AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
 
@@ -281,7 +284,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     }
 
     @Override
-    public void delete(Context context, KvPairs pairs, boolean dbOps) {
+    public void delete(Context context, KvPairs pairs) {
 
         LOGGER.trace("delete " + pairs.printKey());
 
@@ -295,13 +298,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             }
         }
 
-        if (dbOps) {
-            for (KvPair pair: pairs) {
-                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
-                AppCtx.getKvPairRepo().delete(pair);
-                if (stopWatch != null) stopWatch.stopNow();
-            }
-        }
+        //intentional leave database not deleted
+
         LOGGER.debug("delete Ok: " + pairs.printKey());
     }
 }

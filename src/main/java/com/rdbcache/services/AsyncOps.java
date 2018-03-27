@@ -9,6 +9,7 @@ package com.rdbcache.services;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.*;
 
+import com.rdbcache.models.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -92,7 +93,7 @@ public class AsyncOps {
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getDbaseRepo().update(context, pairs, anyKey);
-            AppCtx.getRedisRepo().save(context, pairs, anyKey);
+            AppCtx.getRedisRepo().update(context, pairs, anyKey);
             AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
             context.closeMonitor();
         });
@@ -131,70 +132,15 @@ public class AsyncOps {
 
         Utils.getExcutorService().submit(() -> {
 
-            for (int i = 0; i < pairs.size(); i++) {
-
-                KvPair pair = pairs.get(i);
-                KeyInfo keyInfo = anyKey.getAny(i);
-
-                KvPairs kvPairs = new KvPairs(pair);
-                AnyKey akey = new AnyKey(keyInfo);
-
-                try {
-
-                    if (!pair.isNewUuid() && AppCtx.getRedisRepo().updateIfExist(context, kvPairs, akey)) {
-                        AppCtx.getDbaseRepo().save(context, kvPairs, akey);
-                        AppCtx.getExpireOps().setExpireKey(context, kvPairs, akey);
-                        continue;
-                    }
-
-                    KvPairs dbPairs = new KvPairs(pair.getId());
-                    if (!AppCtx.getDbaseRepo().find(context, dbPairs, akey)) {
-
-                        AppCtx.getDbaseRepo().save(context, kvPairs, akey);
-                        AppCtx.getRedisRepo().save(context, kvPairs, akey);
-                        AppCtx.getExpireOps().setExpireKey(context, kvPairs, akey);
-
-                    } else {
-
-                        KvPair dbPair = dbPairs.getPair();
-                        Map<String, Object> dbMap = dbPair.getData();            // loaded from database
-                        Map<String, Object> map = pair.getData();                // input
-
-                        if (akey.getKeyInfo().getTable() != null) {
-
-                            Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
-
-                            if (!Utils.mapChangesAfterUpdate(map, dbMap, todoMap)) {
-                                LOGGER.error("field found in input, but not found in database");
-                                continue;
-                            }
-                            for (Map.Entry<String, Object> entry : todoMap.entrySet()) {
-                                dbMap.put(entry.getKey(), entry.getValue());     // overwrite dbMap
-                            }
-                        } else if (!Utils.isMapEquals(map, dbMap)) {
-
-                            for (Map.Entry<String, Object> entry : map.entrySet()) {
-                                dbMap.put(entry.getKey(), entry.getValue());     // overwrite dbMap
-                            }
-                        } else {
-                            AppCtx.getExpireOps().setExpireKey(context, kvPairs, anyKey);
-                            continue;
-                        }
-
-                        pair.setData(dbMap);
-
-                        if (!AppCtx.getRedisRepo().save(context, kvPairs, akey)) {
-                            LOGGER.error("failed to save to redis");
-                            continue;
-                        }
-
-                        AppCtx.getDbaseRepo().save(context, kvPairs, akey);
-                        AppCtx.getExpireOps().setExpireKey(context, kvPairs, akey);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            if (AppCtx.getRedisRepo().ifExist(context, pairs, anyKey)) {
+                AppCtx.getRedisRepo().update(context, pairs, anyKey);
+                AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            } else {
+                AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+                AppCtx.getDbaseRepo().find(context, pairs, anyKey);
+                AppCtx.getRedisRepo().save(context, pairs, anyKey);
             }
+            AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
             context.closeMonitor();
         });
     }
@@ -205,12 +151,15 @@ public class AsyncOps {
 
         Utils.getExcutorService().submit(() -> {
 
-            try {
-                AppCtx.getRedisRepo().delete(context, pairs, anyKey, false);
+            AppCtx.getRedisRepo().delete(context, pairs, anyKey);
+            AppCtx.getKeyInfoRepo().delete(context, pairs);
 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            for (KvPair pair: pairs) pair.setType("info");
+
+            StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
+            AppCtx.getKvPairRepo().delete(pairs);
+            if (stopWatch != null) stopWatch.stopNow();
+
             context.closeMonitor();
         });
     }
@@ -221,13 +170,15 @@ public class AsyncOps {
 
         Utils.getExcutorService().submit(() -> {
 
-            try {
-                AppCtx.getRedisRepo().delete(context, pairs, anyKey, true);
-                AppCtx.getDbaseRepo().delete(context, pairs, anyKey);
+            AppCtx.getRedisRepo().delete(context, pairs, anyKey);
+            AppCtx.getDbaseRepo().delete(context, pairs, anyKey);
+            AppCtx.getKeyInfoRepo().delete(context, pairs);
 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            for (KvPair pair: pairs) pair.setType("info");
+
+            StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
+            AppCtx.getKvPairRepo().delete(pairs);
+            if (stopWatch != null) stopWatch.stopNow();
 
             context.closeMonitor();
         });

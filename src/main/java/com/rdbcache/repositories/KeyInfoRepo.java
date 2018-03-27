@@ -18,5 +18,5 @@ public interface KeyInfoRepo {
 
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey);
 
-    public void delete(Context context, KvPairs pairs, boolean dbOps);
+    public void delete(Context context, KvPairs pairs);
 }

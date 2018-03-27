@@ -74,8 +74,10 @@ public class Request {
         for (int i = 0; i < pairs.size() && i < anyKey.size(); i++) {
             keyInfo = anyKey.get(i);
             if (keyInfo.getIsNew()) {
+                keyInfo.setIsNew(false);
                 String key = pairs.get(i).getId();
                 AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+                keyInfo.setIsNew(true);
             }
         }
         if (anyKey.size() != 1 && pairs.size() != anyKey.size()) {

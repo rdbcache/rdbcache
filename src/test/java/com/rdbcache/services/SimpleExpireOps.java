@@ -41,7 +41,7 @@ public class SimpleExpireOps extends ExpireOps {
             if (hasKey) {
                 if (expValue <= 0L || expire.startsWith("+")) {
 
-                    AppCtx.getRedisRepo().delete(context, new KvPairs(expKey), new AnyKey(keyInfo), false);
+                    AppCtx.getRedisRepo().delete(context, new KvPairs(expKey), new AnyKey(keyInfo));
 
                 } else {
                     // for unsigned expire, event existed, no update
@@ -60,12 +60,10 @@ public class SimpleExpireOps extends ExpireOps {
                 }
 
                 LOGGER.debug("setup expire: " + key + " expire: " + keyInfo.getExpire());
-                AppCtx.getRedisRepo().save(context, new KvPairs(expKey), new AnyKey(keyInfo));
+                AppCtx.getStringRedisTemplate().opsForValue().set(expKey, expire, expValue);
 
             } else {
-                if (keyInfo.getIsNew()) {
-                    keyInfo.restoreExpire();
-                }
+                keyInfo.restoreExpire();
             }
             if (keyInfo.getIsNew()) {
                 LOGGER.debug("save keyInfo: " + key + " expire: " + keyInfo.getExpire());

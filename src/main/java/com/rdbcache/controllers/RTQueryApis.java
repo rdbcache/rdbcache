@@ -237,7 +237,7 @@ public class RTQueryApis {
                                 Object value = objMethod.invoke(object);
                                 map.put(name, value);
                             } catch (Exception e) {
-                                System.out.println("Call " + beanName + "." + objFName);
+                                //System.out.println("Call " + beanName + "." + objFName);
                                 e.printStackTrace();
                             }
                         }
@@ -246,7 +246,7 @@ public class RTQueryApis {
                     data.put(beanName, map);
 
                 } catch (Exception e) {
-                    System.out.println("Call AppCtxx." + appCtxFName);
+                    //System.out.println("Call AppCtxx." + appCtxFName);
                     e.printStackTrace();
                 }
             }

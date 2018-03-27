@@ -27,7 +27,7 @@ public class ParserTest {
         params.put("id", new String[]{"1", "2", "3"});
 
         Parser.prepareConditions(queryInfo1, params);
-
+        //System.out.println(Utils.toJson(queryInfo1));
         String json = "{\"table\":\"user_table\",\"conditions\":{\"id\":{\"=\":[\"1\",\"2\",\"3\"]}},\"limit\":2}";
         Map<String, Object> map2 = Utils.toMap(json);
         QueryInfo queryInfo2 = Utils.toPojo(map2, QueryInfo.class);
@@ -95,8 +95,16 @@ public class ParserTest {
         keyInfo.setPrimaryIndexes(Arrays.asList("id"));
 
         Parser.prepareStandardClauseParams(context, pair, keyInfo);
-
-        assertEquals("{\"expire\":\"100\",\"table\":\"user_table\",\"clause\":\"id = ?\",\"params\":[12467],"+
-                "\"query_key\":\"87677684c30a46c6e5afec88d0131410\"}", Utils.toJson(keyInfo));
+        //System.out.println(Utils.toJson(keyInfo));
+        assertEquals("{\"expire\":\"100\",\"table\":\"user_table\",\"clause\":\"id = ?\"," +
+                "\"params\":[12467],\"query\":{\"table\":\"user_table\",\"conditions\":{\"id\":{\"=\":" +
+                "[\"1\",\"2\",\"3\"]}},\"limit\":2},\"query_key\":\"87677684c30a46c6e5afec88d0131410\","+
+                "\"is_new\":false,\"expire_old\":\"180\"}",
+                Utils.toJson(keyInfo));
+        keyInfo.cleanup();
+        //System.out.println(Utils.toJson(keyInfo));
+        assertEquals("{\"expire\":\"100\",\"table\":\"user_table\",\"clause\":\"id = ?\"," +
+                "\"params\":[12467],\"query_key\":\"87677684c30a46c6e5afec88d0131410\",\"is_new\":false}",
+                Utils.toJson(keyInfo));
     }
 }

@@ -95,6 +95,16 @@ public class Utils {
         return null;
     }
 
+    public static String toJsonWithList(Object object) {
+        if (null == object) return null;
+        try {
+            return getObjectMapper().writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static String toJson(Object object) {
         if (null == object) return null;
         try {
@@ -232,7 +242,6 @@ public class Utils {
                 //e.printStackTrace();
             }
             if (al != null && bl != null && al.equals(bl)) {
-                System.out.println("4) true " + as + " ? " + bs);
                 return true;
             }
         }
