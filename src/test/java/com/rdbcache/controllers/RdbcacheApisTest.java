@@ -1161,7 +1161,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(200);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
