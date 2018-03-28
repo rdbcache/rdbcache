@@ -146,6 +146,11 @@ public class Request {
                 return;
             }
         }
-        throw new BadRequestException(context, "invalid path variable " + opt);
+        if (expPattern.matcher(opt).matches()) {
+            throw new BadRequestException(context, "invalid path variable " + opt + ", expire already found");
+        } else {
+            throw new BadRequestException(context, "invalid path variable " + opt +
+                    ", table not found OR missing primary/unique index");
+        }
     }
 }

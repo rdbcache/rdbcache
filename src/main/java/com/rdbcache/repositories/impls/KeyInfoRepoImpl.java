@@ -160,7 +160,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 List<KeyInfo> redisKeyInfos = keyInfoOps.multiGet(hkeyPrefix + "::keyinfo", redisKeys);
                 if (stopWatch != null) stopWatch.stopNow();
 
-                for (int i = 0; i < redisKeys.size(); i++) {
+                for (int i = 0; i < redisKeys.size() && i < redisKeyInfos.size(); i++) {
 
                     String key = redisKeys.get(i);
                     KeyInfo keyInfo = redisKeyInfos.get(i);

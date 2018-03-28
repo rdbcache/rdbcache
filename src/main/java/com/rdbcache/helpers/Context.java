@@ -35,47 +35,63 @@ public class Context {
     public Context(Boolean sendValue) {
         this.sendValue = sendValue;
         traceId = Utils.generateId();
-        monitor = new Monitor();
-        action = Thread.currentThread().getStackTrace()[2].getMethodName();
+        StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+        action = element.getMethodName();
+        monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
     public Context(Boolean sendValue, Boolean batch) {
         this.sendValue = sendValue;
         this.batch = batch;
         traceId = Utils.generateId();
-        monitor = new Monitor();
-        action = Thread.currentThread().getStackTrace()[2].getMethodName();
+        StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+        action = element.getMethodName();
+        monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
     public Context(String traceId) {
         this.sendValue = false;
         this.traceId = traceId;
-        monitor = new Monitor();
-        action = Thread.currentThread().getStackTrace()[2].getMethodName();
+        StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+        action = element.getMethodName();
+        monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
     public Context() {
         this.sendValue = false;
         traceId = Utils.generateId();
-        monitor = new Monitor();
         action = Thread.currentThread().getStackTrace()[2].getMethodName();
+        StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+        action = element.getMethodName();
+        monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
     public void enableMonitor(HttpServletRequest request) {
         monitorEnabled = true;
-        monitor.setName(request.getRequestURI());
-        monitor.setTypeAndAction("http", "process");
+        if (monitor == null) {
+            monitor = new Monitor(request.getRequestURI(), "http", action);
+        } else {
+            monitor.setName(request.getRequestURI());
+            monitor.setTypeAndAction("http", action);
+        }
         monitor.setTraceId(traceId);
     }
 
     public void enableMonitor(String name, String type, String action) {
         monitorEnabled = true;
-        monitor.setName(name);
-        monitor.setTypeAndAction(type, action);
+        if (monitor == null) {
+            monitor = new Monitor(name, type, action);
+        } else {
+            monitor.setName(name);
+            monitor.setTypeAndAction(type, action);
+        }
         monitor.setTraceId(traceId);
     }
 
     public boolean isMonitorEnabled() {
+        if (monitor == null) {
+            monitorEnabled = false;
+        }
         return monitorEnabled;
     }
 
@@ -120,7 +136,7 @@ public class Context {
     }
 
     public StopWatch startStopWatch(String type, String action) {
-        if (!monitorEnabled) {
+        if (!monitorEnabled || monitor == null) {
             return null;
         }
         return monitor.startStopWatch(type, action);

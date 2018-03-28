@@ -1171,6 +1171,7 @@ public class RdbcacheApisTest {
             AppCtx.getLocalCache().removeAllKeyInfos();
             MockRedis.getData().clear();
 
+            //System.out.println("json: " + json);
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         post("/rdbcache/v1/pull").

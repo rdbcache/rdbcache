@@ -21,7 +21,7 @@ public class Monitor implements Serializable {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private String name;
+    private String name = "";
 
     @Column(name="thread_id")
     private Long threadId;

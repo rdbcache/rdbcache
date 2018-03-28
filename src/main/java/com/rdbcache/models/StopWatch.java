@@ -22,7 +22,7 @@ public class StopWatch implements Serializable {
     @Column(name="monitor_id")
     private Long monitorId;
 
-    private String type;
+    private String type = "";
 
     private String action;
 
@@ -40,7 +40,7 @@ public class StopWatch implements Serializable {
     public StopWatch(String type, String action) {
         threadId = Thread.currentThread().getId();
         this.startedAt = System.nanoTime();
-        this.type = type;
+        this.type = (type.length() <= 16 ? type : type.substring(type.length() - 16));
         this.action = action;
     }
 

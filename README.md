@@ -72,4 +72,8 @@ git clone https://github.com/rdbcache/rdbcache.git
 
 cd rdbcache
 
+mvn clean test
+
 mvn clean spring-boot:run
+
+mvn clean test package

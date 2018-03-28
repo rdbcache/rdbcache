@@ -2,6 +2,8 @@ CREATE TABLE IF NOT EXISTS rdbcache_kv_pair (
   id varchar(255) not null,
   type varchar(16) not null,
   value text,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id, type)
 );
 
