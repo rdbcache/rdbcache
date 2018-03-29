@@ -86,19 +86,18 @@ public class RdbcacheApis {
             } else {
 
                 throw new NotFoundException(context, "data not found");
-
             }
         } else {
-            if (AppCtx.getRedisRepo().find(context, pairs, anyKey)) {
+            if (!AppCtx.getRedisRepo().find(context, pairs, anyKey)) {
 
-                AppCtx.getAsyncOps().doSaveToDbase(context, pairs, anyKey);
+                if (AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
 
-            } else if (AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
+                    AppCtx.getAsyncOps().doSaveToRedis(context, pairs, anyKey);
 
-                AppCtx.getAsyncOps().doSaveToRedis(context, pairs, anyKey);
+                } else {
 
-            } else {
-                throw new NotFoundException(context, "data not found");
+                    throw new NotFoundException(context, "data not found");
+                }
             }
         }
         return Response.send(context, pairs);

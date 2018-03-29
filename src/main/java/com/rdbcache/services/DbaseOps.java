@@ -102,10 +102,12 @@ public class DbaseOps {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             return sdf.format(date);
         } else if (type.equals("datetime")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss'Z'");
+            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
             return sdf.format(date);
         } else if (type.equals("timestamp")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss'Z'");
+            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
             return sdf.format(date);
         }
         assert false : "not supported type " + type;
@@ -120,13 +122,7 @@ public class DbaseOps {
 
             String key = entry.getKey();
             Object value = null;
-            if (databaseType.equals("mysql")) {
-                if (!dbMap.containsKey(key)) {
-                    continue;
-                }
-                value = dbMap.get(key);
-
-            } else if (databaseType.equals("h2")) {
+            if (databaseType.equals("h2")) {
                 String keyUpperCase = key.toUpperCase();
                 if (!dbMap.containsKey(keyUpperCase)) {
                     continue;
@@ -136,6 +132,12 @@ public class DbaseOps {
                     dbMap.remove(keyUpperCase);
                     dbMap.put(key, value);
                 }
+            } else { //if (databaseType.equals("mysql")) {
+                if (!dbMap.containsKey(key)) {
+                    continue;
+                }
+                value = dbMap.get(key);
+
             }
             if (value == null) {
                 continue;
@@ -148,9 +150,21 @@ public class DbaseOps {
             if (type == null) {
                 continue;
             }
-            if (timeTypes.contains(type) && value instanceof Date) {
-                String strDate = formatDate(type, (Date) value);
-                dbMap.put(key, strDate);
+            if (timeTypes.contains(type)) {
+                Date dateValue = null;
+                if (value instanceof Date) {
+                    dateValue = (Date) value;
+                } else if (value instanceof Long) {
+                    dateValue = new Date((Long) value);
+                } else if (value instanceof String) {
+                    String strValue = (String) value;
+                    if (strValue.length() > 10 && strValue.matches("[0-9]+")) {
+                        dateValue = new Date(Long.valueOf(strValue));
+                    }
+                }
+                if (dateValue != null) {
+                    dbMap.put(key, formatDate(type, dateValue));
+                }
             }
         }
         return dbMap;

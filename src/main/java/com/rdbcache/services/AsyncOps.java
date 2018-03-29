@@ -43,6 +43,8 @@ public class AsyncOps {
 
         LOGGER.trace("doSetExpKey: " + pairs.size() + " table: " + anyKey.printTable());
 
+        // set expire key always runs asynchronously
+        //
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
@@ -53,6 +55,13 @@ public class AsyncOps {
     public void doSaveToRedis(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doSaveToRedis: " + pairs.size() + " table: " + anyKey.printTable());
+
+        if (context.isSync()) {
+
+            AppCtx.getRedisRepo().save(context, pairs, anyKey);
+            doSetExpKey(context, pairs, anyKey);
+            return;
+        }
 
         Utils.getExcutorService().submit(() -> {
 
@@ -66,6 +75,13 @@ public class AsyncOps {
 
         LOGGER.trace("doSaveToDbase: " + pairs.size() + " table: " + anyKey.printTable());
 
+        if (context.isSync()) {
+
+            AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+            doSetExpKey(context, pairs, anyKey);
+            return;
+        }
+
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getDbaseRepo().save(context, pairs, anyKey);
@@ -78,6 +94,13 @@ public class AsyncOps {
 
         LOGGER.trace("doUpateToDbase: " + pairs.size() + " table: " + anyKey.printTable());
 
+        if (context.isSync()) {
+
+            AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            doSetExpKey(context, pairs, anyKey);
+            return;
+        }
+
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getDbaseRepo().update(context, pairs, anyKey);
@@ -89,6 +112,14 @@ public class AsyncOps {
     public void doPushOperations(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doPushOperations: " + pairs.size() + " table: " + anyKey.printTable());
+
+        if (context.isSync()) {
+
+            AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            AppCtx.getRedisRepo().update(context, pairs, anyKey);
+            doSetExpKey(context, pairs, anyKey);
+            return;
+        }
 
         Utils.getExcutorService().submit(() -> {
 
@@ -103,6 +134,14 @@ public class AsyncOps {
 
         LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + anyKey.printTable());
 
+        if (context.isSync()) {
+
+            AppCtx.getRedisRepo().save(context, pairs,  anyKey);
+            AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+            doSetExpKey(context, pairs, anyKey);
+            return;
+        }
+
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getRedisRepo().save(context, pairs,  anyKey);
@@ -114,8 +153,15 @@ public class AsyncOps {
 
     public void doSaveToRedisAndDbase(Context context, KvPairs pairs, AnyKey anyKey) {
 
-
         LOGGER.trace("doSaveToRedisAndDbase: " + pairs.size() + " table: " + anyKey.printTable());
+
+        if (context.isSync()) {
+
+            AppCtx.getRedisRepo().save(context, pairs, anyKey);
+            AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+            doSetExpKey(context, pairs, anyKey);
+            return;
+        }
 
         Utils.getExcutorService().submit(() -> {
 
@@ -129,6 +175,20 @@ public class AsyncOps {
     public void doPutOperation(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doPutOperation: " + pairs.size() + " table: " + anyKey.print());
+
+        if (context.isSync()) {
+
+            if (AppCtx.getRedisRepo().ifExist(context, pairs, anyKey)) {
+                AppCtx.getRedisRepo().update(context, pairs, anyKey);
+                AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            } else {
+                AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+                AppCtx.getDbaseRepo().find(context, pairs, anyKey);
+                AppCtx.getRedisRepo().save(context, pairs, anyKey);
+            }
+            doSetExpKey(context, pairs, anyKey);
+            return;
+        }
 
         Utils.getExcutorService().submit(() -> {
 
@@ -149,6 +209,23 @@ public class AsyncOps {
 
         LOGGER.trace("doDeleteFromRedis: " + pairs.size());
 
+        if (context.isSync()) {
+
+            AppCtx.getRedisRepo().delete(context, pairs, anyKey);
+            AppCtx.getKeyInfoRepo().delete(context, pairs);
+
+            for (KvPair pair: pairs) {
+                pair.setType("info");
+                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
+                AppCtx.getKvPairRepo().delete(pair);
+                if (stopWatch != null) stopWatch.stopNow();
+            }
+            Utils.getExcutorService().submit(() -> {
+                context.closeMonitor();
+            });
+            return;
+        }
+
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getRedisRepo().delete(context, pairs, anyKey);
@@ -160,7 +237,6 @@ public class AsyncOps {
                 AppCtx.getKvPairRepo().delete(pair);
                 if (stopWatch != null) stopWatch.stopNow();
             }
-
             context.closeMonitor();
         });
     }
@@ -168,6 +244,24 @@ public class AsyncOps {
     public void doDeleteFromRedisAndDbase(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doDeleteFromRedisAndDbase: " + pairs.size());
+
+        if (context.isSync()) {
+
+            AppCtx.getRedisRepo().delete(context, pairs, anyKey);
+            AppCtx.getDbaseRepo().delete(context, pairs, anyKey);
+            AppCtx.getKeyInfoRepo().delete(context, pairs);
+
+            for (KvPair pair: pairs) {
+                pair.setType("info");
+                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
+                AppCtx.getKvPairRepo().delete(pair);
+                if (stopWatch != null) stopWatch.stopNow();
+            }
+            Utils.getExcutorService().submit(() -> {
+                context.closeMonitor();
+            });
+            return;
+        }
 
         Utils.getExcutorService().submit(() -> {
 
@@ -181,7 +275,6 @@ public class AsyncOps {
                 AppCtx.getKvPairRepo().delete(pair);
                 if (stopWatch != null) stopWatch.stopNow();
             }
-
             context.closeMonitor();
         });
     }

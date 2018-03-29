@@ -182,6 +182,6 @@ public class TaskQueue extends Thread {
         String msg = "unknown task action:" + action;
         LOGGER.error(msg);
         context.logTraceMessage(msg);
-        context.stopFirstStopWatch();
+        context.closeMonitor();
     }
 }

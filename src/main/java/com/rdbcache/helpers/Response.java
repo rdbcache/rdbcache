@@ -34,7 +34,7 @@ public class Response  {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         Long now = System.currentTimeMillis();
         map.put("timestamp", now);
-        Long duration = context.stopFirstStopWatch();
+        Long duration = context.getDuration();
         if (duration != null) {
             double db = ((double) duration) / 1000000000.0;
             map.put("duration", durationFormat.format(db));

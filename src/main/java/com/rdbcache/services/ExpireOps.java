@@ -194,7 +194,7 @@ public class ExpireOps {
         if (!result.equals("OK")) {
             String msg = "unable to lock key: " + lockKey;
             LOGGER.trace(msg);
-            context.stopFirstStopWatch();
+            context.closeMonitor();
             return;
         }
 
@@ -256,7 +256,7 @@ public class ExpireOps {
             scriptExecutor.execute(expire_event_unlock_script, Collections.singletonList(lockKey), signature);
             if (stopWatch != null) stopWatch.stopNow();
 
-            context.stopFirstStopWatch();
+            context.closeMonitor();
         }
     }
 }

@@ -28,7 +28,7 @@ public class Request {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Request.class);
 
-    private static Pattern expPattern = Pattern.compile("([0-9]+|-[0-9]+|\\+[0-9]+)");
+    private static Pattern expPattern = Pattern.compile("([0-9]+|-[0-9]+|\\+[0-9]+)(-sync)?$");
 
     public static AnyKey process(Context context, HttpServletRequest request) {
         return process(context, request, null, null, null);
@@ -135,6 +135,18 @@ public class Request {
     private static void assignOption(Context context, String opt, String[] opts) {
 
         opt = opt.trim();
+        if (opt.equals("sync")) {
+            context.setSync(true);
+            return;
+        }
+        if (opt.endsWith("-sync")) {
+            context.setSync(true);
+            int length = opt.length() - 5;
+            if (length == 0) {
+                return;
+            }
+            opt = opt.substring(0, length);
+        }
         if (opts[0] == null && expPattern.matcher(opt).matches()) {
             opts[0] = opt;
             return;

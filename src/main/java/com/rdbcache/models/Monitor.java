@@ -84,11 +84,14 @@ public class Monitor implements Serializable {
         return duration;
     }
 
-    public void setDuration(Long mainDuration) {
-        this.duration = mainDuration;
+    public void setDuration(Long duration) {
+        this.duration = duration;
     }
 
     public Long getMainDuration() {
+        if (mainDuration == null) {
+            stopFirstStopWatch();
+        }
         return mainDuration;
     }
 
@@ -146,18 +149,16 @@ public class Monitor implements Serializable {
             return duration;
         }
         if (watches != null && watches.size() > 0) {
-            for (StopWatch watch : watches) {
+            for (StopWatch watch: watches) {
                 watch.stopNow();
             }
-            StopWatch watch = watches.get(0);
-            mainDuration = watch.stopNow();
         }
         endedAt = System.nanoTime();
         duration = endedAt - startedAt;
         return duration;
     }
 
-    public void startFirstStopWatch(String type, String action) {
+    private void startFirstStopWatch(String type, String action) {
         if (watches == null) {
             watches = new ArrayList<>();
         } else {
@@ -166,7 +167,7 @@ public class Monitor implements Serializable {
         watches.add(new StopWatch(type, action));
     }
 
-    public void startFirstStopWatch() {
+    private void startFirstStopWatch() {
         if (watches == null) {
             watches = new ArrayList<>();
         } else {
@@ -175,21 +176,19 @@ public class Monitor implements Serializable {
         watches.add(new StopWatch());
     }
 
-    public StopWatch getFirstStopWatch() {
+    private StopWatch getFirstStopWatch() {
         if (watches == null || watches.size() == 0) {
             return null;
         }
         return watches.get(0);
     }
 
-    public Long stopFirstStopWatch() {
-
+    private void stopFirstStopWatch() {
         if (watches == null || watches.size() == 0) {
-            return null;
+            return;
         }
         StopWatch watch = watches.get(0);
         mainDuration = watch.stopNow();
-        return mainDuration;
     }
 
     @Transient

@@ -32,6 +32,10 @@ public class Context {
 
     private Boolean monitorEnabled = false;
 
+    private Boolean sync = false;
+
+    private Long duration;
+
     public Context(Boolean sendValue) {
         this.sendValue = sendValue;
         traceId = Utils.generateId();
@@ -135,6 +139,25 @@ public class Context {
         this.traceId = traceId;
     }
 
+    public Boolean isSync() {
+        return sync;
+    }
+
+    public void setSync(Boolean sync) {
+        this.sync = sync;
+    }
+
+    public Long getDuration() {
+        if (duration == null && monitor != null) {
+            duration = monitor.getMainDuration();
+        }
+        return duration;
+    }
+
+    public void setDuration(Long duration) {
+        this.duration = duration;
+    }
+
     public StopWatch startStopWatch(String type, String action) {
         if (!monitorEnabled || monitor == null) {
             return null;
@@ -146,6 +169,7 @@ public class Context {
         if (monitor == null) {
             return;
         }
+        duration = monitor.getMainDuration();
         monitor.stopNow();
         DbaseOps dbaseOps = AppCtx.getDbaseOps();
         if (dbaseOps != null) {
@@ -156,13 +180,6 @@ public class Context {
             }
         }
         monitor = null;
-    }
-
-    public Long stopFirstStopWatch() {
-        if (monitor == null) {
-            return null;
-        }
-        return monitor.stopFirstStopWatch();
     }
 
     public void logTraceMessage(String message) {
