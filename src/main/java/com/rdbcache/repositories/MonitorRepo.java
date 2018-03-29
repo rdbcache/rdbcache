@@ -7,10 +7,11 @@
 package com.rdbcache.repositories;
 
 import com.rdbcache.models.Monitor;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MonitorRepo extends JpaRepository<Monitor, Long> {
+public interface MonitorRepo extends CrudRepository<Monitor, Long> {
 }
+
 

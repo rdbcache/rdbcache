@@ -21,7 +21,7 @@ public class KeyInfoTest {
 
         assertEquals(keyInfo1, keyInfo2);
         assertEquals(map1, map2);
-        //System.out.println(Utils.toJson(map1));
+        //System.out.println(Utils.toJsonMap(map1));
     }
 
     @Test
@@ -36,7 +36,7 @@ public class KeyInfoTest {
 
         assertEquals(keyInfo1, keyInfo2);
         assertEquals(map1, map2);
-        //System.out.println(Utils.toJson(map1));
+        //System.out.println(Utils.toJsonMap(map1));
     }
 
     @Test
@@ -49,7 +49,7 @@ public class KeyInfoTest {
         Map<String, Object> map2 = Utils.toMap(keyInfo1);
         KeyInfo keyInfo2 = Utils.toPojo(map2, KeyInfo.class);
 
-        //System.out.println(Utils.toJson(map2));
+        //System.out.println(Utils.toJsonMap(map2));
 
         assertEquals(keyInfo1, keyInfo2);
         assertEquals(map1, map2);
@@ -75,7 +75,7 @@ public class KeyInfoTest {
         Map<String, Object> map2 = Utils.toMap(keyInfo1);
         KeyInfo keyInfo2 = Utils.toPojo(map2, KeyInfo.class);
 
-        //System.out.println(Utils.toJson(map2));
+        //System.out.println(Utils.toJsonMap(map2));
 
         assertEquals(keyInfo1, keyInfo2);
         assertEquals(map1, map2);

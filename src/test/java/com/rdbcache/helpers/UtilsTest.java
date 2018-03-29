@@ -65,7 +65,7 @@ public class UtilsTest {
         keyInfo.setTable("table");
         keyInfo.cleanup();
         Map<String, Object> map = Utils.toMap(keyInfo);
-        //System.out.println(Utils.toJson(map));
+        //System.out.println(Utils.toJsonMap(map));
         String json = "{\"expire\":\"100\",\"table\":\"table\",\"clause\":\"\",\"query_key\":\"\",\"is_new\":false}";
         Map<String, Object> newMap = Utils.toMap(json);
         assertEquals(map, newMap);
@@ -86,7 +86,7 @@ public class UtilsTest {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("a", 1);
         map.put("b", "c");
-        String json = Utils.toJson(map);
+        String json = Utils.toJsonMap(map);
         assertEquals(json, "{\"a\":1,\"b\":\"c\"}");
     }
 
@@ -96,7 +96,7 @@ public class UtilsTest {
         list.add("a");
         list.add("b");
         list.add("c");
-        String json = Utils.toJson(list);
+        String json = Utils.toJsonMap(list);
         assertEquals(json, "{\"0\":\"a\",\"1\":\"b\",\"2\":\"c\"}");
     }
 
@@ -116,7 +116,7 @@ public class UtilsTest {
         list.add("b");
         list.add("c");
         String json = Utils.toPrettyJson(list).replaceAll("\\s", "");
-        assertEquals(json, "{\"0\":\"a\",\"1\":\"b\",\"2\":\"c\"}");
+        assertEquals("[\"a\",\"b\",\"c\"]", json);
     }
 
     @Test

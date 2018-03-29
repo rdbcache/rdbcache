@@ -8,13 +8,12 @@ package com.rdbcache.configs;
 
 import com.rdbcache.controllers.RdbcacheApis;
 import com.rdbcache.helpers.VersionInfo;
-import com.rdbcache.models.KeyInfo;
 import com.rdbcache.repositories.*;
 import com.rdbcache.services.*;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -335,7 +334,7 @@ public class AppCtx {
         return (JedisConnectionFactory) stringRedisTemplate.getConnectionFactory();
     }
 
-    public static JedisPoolConfig getJedisPoolConfig() {
+    public static GenericObjectPoolConfig getJedisPoolConfig() {
 
         JedisConnectionFactory factory = getJedisConnectionFactory();
         if (factory == null) return null;

@@ -6,6 +6,7 @@
 
 package com.rdbcache.queries;
 
+import com.google.common.collect.Maps;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.AnyKey;
@@ -72,7 +73,7 @@ public class Query {
     public boolean ifSelectOk() {
 
         Assert.isTrue(anyKey.size() == 1, "anyKey.size() = " +
-                anyKey.size() + ", select only supports anyKey size == 1 : " + Utils.toJson(anyKey));
+                anyKey.size() + ", select only supports anyKey size == 1 : " + Utils.toJsonMap(anyKey));
 
         KeyInfo keyInfo = anyKey.getKeyInfo();
 
@@ -110,7 +111,7 @@ public class Query {
             params = keyInfo.getParams();
         }
 
-        int limit = getLimt();
+        int limit = getLimit();
 
         sql = "select * from " + table;
 
@@ -153,15 +154,14 @@ public class Query {
 
             if (list != null && list.size() > 0) {
 
-                Map<String, Object> columns = keyInfo.getColumns();
-
                 for (int i = 0; i < list.size(); i++) {
 
                     KvPair pair = pairs.getAny(i);
                     keyInfo = anyKey.getAny(i);
+                    pair.setData(list.get(i));
 
-                    pair.setData(AppCtx.getDbaseOps().convertDbMap(columns, list.get(i)));
-
+                    //convertDbMap will be called within prepareStandardClauseParams
+                    //
                     if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
                         String msg = "executeSelect failed when prepareStandardClauseParams for " + pair.getId();
                         LOGGER.error(msg);
@@ -217,10 +217,9 @@ public class Query {
 
             String table = keyInfo.getTable();
             Map<String, Object> map = pair.getData();
+
             String autoIncKey = AppCtx.getDbaseOps().getTableAutoIncColumn(context, table);
-
             boolean cacheUpdate = false;
-
             if (!map.containsKey(autoIncKey) && keyInfo.getParams() != null && keyInfo.getParams().size() == 1) {
                 String stdClause = "(" + autoIncKey + " = ?)";
                 if (stdClause.equals(keyInfo.getClause())) {
@@ -228,6 +227,9 @@ public class Query {
                     cacheUpdate = true;
                 }
             }
+
+            Map<String, Object> columns = keyInfo.getColumns();
+            AppCtx.getDbaseOps().convertDbMap(columns, map);
 
             String fields = "", values = "";
             params.clear();
@@ -344,6 +346,8 @@ public class Query {
 
             String table = keyInfo.getTable();
 
+            //convertDbMap will be called within prepareStandardClauseParams
+            //
             if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
                 allOk = false;
                 String msg = "executeUpdate failed when calling prepareStandardClauseParams for " + pair.getId();
@@ -353,7 +357,6 @@ public class Query {
             }
 
             Map<String, Object> map = pair.getData();
-
             params.clear();
             String updates = "";
             for (Map.Entry<String, Object> entry: map.entrySet()) {
@@ -479,7 +482,7 @@ public class Query {
         return allOk;
     }
 
-    private int getLimt() {
+    private int getLimit() {
 
         KeyInfo keyInfo = anyKey.getKeyInfo();
         Integer queryLimit = keyInfo.getQueryLimit();

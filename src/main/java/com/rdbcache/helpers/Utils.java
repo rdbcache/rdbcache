@@ -95,7 +95,7 @@ public class Utils {
         return null;
     }
 
-    public static String toJsonWithList(Object object) {
+    public static String toJson(Object object) {
         if (null == object) return null;
         try {
             return getObjectMapper().writeValueAsString(object);
@@ -105,7 +105,7 @@ public class Utils {
         return null;
     }
 
-    public static String toJson(Object object) {
+    public static String toJsonMap(Object object) {
         if (null == object) return null;
         try {
             if (object instanceof List) {
@@ -126,16 +126,7 @@ public class Utils {
 
     public static String toPrettyJson(Object object) {
         try {
-            if (object instanceof List) {
-                Map<String, Object> map = new LinkedHashMap<String, Object>();
-                int i = 0;
-                for (Object obj : (List) object) {
-                    map.put(String.valueOf(i++), obj);
-                }
-                return getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(map);
-            } else {
-                return getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(object);
-            }
+            return getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(object);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

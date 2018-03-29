@@ -392,14 +392,14 @@ public class DbaseRepoImpl implements DbaseRepo {
             String key = pair.getId();
 
             StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
-            KvPair dbPair = AppCtx.getKvPairRepo().findOne(new KvIdType(key, "data"));
+            Optional<KvPair> opt = AppCtx.getKvPairRepo().findById(new KvIdType(key, "data"));
             if (stopWatch != null) stopWatch.stopNow();
 
-            if (dbPair == null) {
+            if (!opt.isPresent()) {
                 LOGGER.trace("kvFind: not found from default table for " + key);
                 return false;
             }
-
+            KvPair dbPair = opt.get();
             setUseDefaultTable(keyInfo);
             pair.setData(dbPair.getData());
 
@@ -436,7 +436,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             }
 
             StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findAll");
-            List<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
+            Iterable<KvPair> dbPairs = AppCtx.getKvPairRepo().findAllById(idTypes);
             if (stopWatch != null) stopWatch.stopNow();
 
             if (dbPairs == null && !dbPairs.iterator().hasNext()) {
@@ -453,10 +453,10 @@ public class DbaseRepoImpl implements DbaseRepo {
             }
 
             anyKey.clear();
-            for (int i = 0; i < dbPairs.size(); i++) {
-                KvPair dbPair = dbPairs.get(i);
+            int i = 0;
+            for (KvPair dbPair: dbPairs) {
                 pairs.add(dbPair);
-                anyKey.getAny(i);
+                anyKey.getAny(i++);
             }
 
             LOGGER.trace("kvFind(" + anyKey.size() + ") Ok - found from default table");

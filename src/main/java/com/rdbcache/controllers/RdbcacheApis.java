@@ -16,7 +16,6 @@ import com.rdbcache.models.KvPair;
 import com.rdbcache.exceptions.BadRequestException;
 import com.rdbcache.exceptions.NotFoundException;
 
-import com.rdbcache.queries.Query;
 import com.rdbcache.queries.QueryInfo;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.http.ResponseEntity;
@@ -31,8 +30,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
-import java.net.URLDecoder;
-import java.security.Key;
 import java.util.*;
 
 @RestController
@@ -814,9 +811,10 @@ public class RdbcacheApis {
 
         LOGGER.trace("pairs(" + pairs.size() +"): " + pairs.printKey());
 
-        KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(traceId, "trace"));
-        if (pair != null) {
-            pairs.add(pair);
+        KvPair pairKey = new KvPair(traceId, "trace");
+        Optional<KvPair> opt = AppCtx.getKvPairRepo().findById(new KvIdType(traceId, "trace"));
+        if (opt.isPresent()) {
+            pairs.add(opt.get());
         }
 
         return Response.send(context, pairs);
@@ -855,9 +853,9 @@ public class RdbcacheApis {
         LOGGER.trace("pairs(" + pairs.size() +"): " + pairs.printKey());
 
         for (String referenced_id: traceIds) {
-            KvPair pair = AppCtx.getKvPairRepo().findOne(new KvIdType(referenced_id, "trace"));
-            if (pair != null) {
-                pairs.add(pair);
+            Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(referenced_id, "trace"));
+            if (optional.isPresent()) {
+                pairs.add(optional.get());
             } else {
                 pairs.add(new KvPair(referenced_id));
             }

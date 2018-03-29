@@ -226,13 +226,17 @@ public class Parser {
             keyInfo.setQueryKey(null);
             return false;
         }
+        Map<String, Object> map = null;
+        if (pair != null) map = pair.getData();
+        if (map != null) {
+            Map<String, Object> columns = keyInfo.getColumns();
+            AppCtx.getDbaseOps().convertDbMap(columns, map);
+        }
         if (keyInfo.getClause() == null) {
             keyInfo.setQueryKey(null);
             return false;
         }
 
-        Map<String, Object> map = null;
-        if (pair != null) map = pair.getData();
         List<Object> stdParams = new ArrayList<Object>();
         int stdParamsCount = 0;
         String stdClause = "";

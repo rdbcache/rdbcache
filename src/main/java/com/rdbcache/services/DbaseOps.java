@@ -18,7 +18,6 @@ import com.rdbcache.repositories.KvPairRepo;
 import com.rdbcache.repositories.MonitorRepo;
 import com.rdbcache.repositories.StopWatchRepo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -32,6 +31,7 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -116,56 +116,44 @@ public class DbaseOps {
 
     public Map<String, Object> convertDbMap(Map<String, Object> columns, Map<String, Object> dbMap) {
 
-        if (databaseType.equals("mysql")) {
-            for (Map.Entry<String, Object> entry : dbMap.entrySet()) {
+        for (Map.Entry<String, Object> entry : columns.entrySet()) {
 
-                String key = entry.getKey();
-                Map<String, Object> attributes = (Map<String, Object>) columns.get(key);
-                if (attributes == null) {
+            String key = entry.getKey();
+            Object value = null;
+            if (databaseType.equals("mysql")) {
+                if (!dbMap.containsKey(key)) {
                     continue;
                 }
-                String type = (String) attributes.get("Type");
-                if (type == null) {
-                    continue;
-                }
-                Object value = entry.getValue();
-                if (value == null) {
-                    continue;
-                }
-                if (timeTypes.contains(type)) {
-                    assert value instanceof Date : "convertDbMap " + key + " is not instance of Date";
-                    dbMap.put(key, formatDate(type, (Date) value));
-                }
-            }
-            return dbMap;
-        }
-        if (databaseType.equals("h2")) {
-            for (Map.Entry<String, Object> entry : columns.entrySet()) {
+                value = dbMap.get(key);
 
-                String key = entry.getKey();
-                Map<String, Object> attributes = (Map<String, Object>) entry.getValue();
+            } else if (databaseType.equals("h2")) {
                 String keyUpperCase = key.toUpperCase();
-                Object value = dbMap.get(keyUpperCase);
-                if (!key.equals(keyUpperCase) && dbMap.containsKey(keyUpperCase)) {
+                if (!dbMap.containsKey(keyUpperCase)) {
+                    continue;
+                }
+                value = dbMap.get(keyUpperCase);
+                if (!key.equals(keyUpperCase)) {
                     dbMap.remove(keyUpperCase);
                     dbMap.put(key, value);
                 }
-                if (attributes == null) {
-                    continue;
-                }
-                String type = (String) attributes.get("Type");
-                if (type == null) {
-                    continue;
-                }
-                if (timeTypes.contains(type)) {
-                    assert value instanceof Date : "convertDbMap " + key + " is not instance of Date";
-                    dbMap.put(key, formatDate(type, (Date) value));
-                }
             }
-            return dbMap;
+            if (value == null) {
+                continue;
+            }
+            Map<String, Object> attributes = (Map<String, Object>) entry.getValue();
+            if (attributes == null) {
+                continue;
+            }
+            String type = (String) attributes.get("type");
+            if (type == null) {
+                continue;
+            }
+            if (timeTypes.contains(type) && value instanceof Date) {
+                String strDate = formatDate(type, (Date) value);
+                dbMap.put(key, strDate);
+            }
         }
-        assert false : "not supported database type " + databaseType;
-        return null;
+        return dbMap;
     }
 
 
@@ -190,9 +178,12 @@ public class DbaseOps {
         log.put("trace", simpleTrace);
 
         KvIdType idType = new KvIdType(traceId, "trace");
-        KvPair pair = AppCtx.getKvPairRepo().findOne(idType);
-        if (pair == null) {
+        Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(idType);
+        KvPair pair = null;
+        if (!optional.isPresent()) {
             pair = new KvPair(idType);
+        } else {
+            pair = optional.get();
         }
 
         Map<String, Object> map = pair.getData();
@@ -249,11 +240,14 @@ public class DbaseOps {
         KvIdType idType = queryPair.getIdType();
 
         StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.findOne");
-        KvPair dbPair = kvPairRepo.findOne(idType);
+        Optional<KvPair> optional = kvPairRepo.findById(idType);
         if (stopWatch != null) stopWatch.stopNow();
 
-        if (queryPair.getData().equals(dbPair.getData())) {
-            return true;
+        if (optional.isPresent()) {
+            KvPair dbPair = optional.get();
+            if (queryPair.getData().equals(dbPair.getData())) {
+                return true;
+            }
         }
 
         stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
@@ -399,14 +393,14 @@ public class DbaseOps {
     public void setDefaultToDbTimeZone() {
 
         String timezone = "UTC";
-
+        /*
         if (databaseType.equals("mysql")) {
             String tz = fetchMysqlDbTimeZone();
             if (tz != null) {
                 timezone = tz;
             }
         }
-
+        */
         TimeZone.setDefault(TimeZone.getTimeZone(timezone));
     }
 
@@ -538,7 +532,7 @@ public class DbaseOps {
             for (int i = 0; i < columns.size(); i++) {
                 Map<String, Object> column = columns.get(i);
                 String field = (String) column.get("Field");
-                String type = (String) column.get("Type");
+                String type = ((String) column.get("Type")).toLowerCase();
                 String s = (String) column.get("Null");
                 Boolean nullable = false;
                 if (s != null && s.equalsIgnoreCase("yes")) {
@@ -586,7 +580,7 @@ public class DbaseOps {
             for (int i = 0; i < columns.size(); i++) {
                 Map<String, Object> column = columns.get(i);
                 String field = (String) column.get("COLUMN_NAME");
-                String type = (String) column.get("TYPE_NAME");
+                String type = ((String) column.get("TYPE_NAME")).toLowerCase();
                 String s = (String) column.get("IS_NULLABLE");
                 Boolean nullable = false;
                 if (s != null && s.equalsIgnoreCase("yes")) {

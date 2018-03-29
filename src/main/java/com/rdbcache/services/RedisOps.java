@@ -42,15 +42,14 @@ public class RedisOps {
 
         RedisConnection connection = AppCtx.getStringRedisTemplate().getConnectionFactory().getConnection();
 
-        List<String> items = connection.getConfig("notify-keyspace-events");
+        Properties properties = connection.getConfig("notify-keyspace-events");
 
         String config = "";
 
-        Iterator<String> iterator = items.iterator();
-        while (iterator.hasNext()) {
-            String item = iterator.next();
-            if (item.equals("notify-keyspace-events")) {
-                config = iterator.next();
+        for (String key: properties.stringPropertyNames()) {
+            String value = properties.getProperty(key);
+            if (value.equals("notify-keyspace-events")) {
+                config = value;
                 break;
             }
         }

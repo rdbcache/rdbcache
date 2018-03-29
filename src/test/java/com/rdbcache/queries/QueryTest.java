@@ -50,7 +50,7 @@ public class QueryTest {
 
             assertTrue(query.executeSelect());
 
-            //System.out.println(Utils.toJson(pairs));
+            //System.out.println(Utils.toJsonMap(pairs));
             assertEquals(2, pairs.size());
 
         } catch (Exception e) {
@@ -91,7 +91,7 @@ public class QueryTest {
 
             assertTrue(query.executeInsert(false, false));
 
-            //System.out.println(Utils.toJson(pairs));
+            //System.out.println(Utils.toJsonMap(pairs));
             Map<String, Object> map2 = pair.getData();
             assertEquals("4", map2.get("id"));
             map2.remove("id");
@@ -124,7 +124,7 @@ public class QueryTest {
 
             assertTrue(query.executeSelect());
 
-            //System.out.println(Utils.toJson(pairs));
+            //System.out.println(Utils.toJsonMap(pairs));
             assertEquals(1, pairs.size());
 
             String key = pairs.getPair().getId();
@@ -189,7 +189,7 @@ public class QueryTest {
             assertTrue(query.ifSelectOk());
             assertTrue(query.executeSelect());
 
-            //System.out.println(Utils.toJson(pairs));
+            //System.out.println(Utils.toJsonMap(pairs));
             assertEquals(1, pairs.size());
 
             String key = pairs.getPair().getId();

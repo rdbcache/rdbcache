@@ -9,8 +9,11 @@ package com.rdbcache.helpers;
 import java.io.IOException;
 import java.net.URL;
 import java.net.JarURLConnection;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 
@@ -92,9 +95,18 @@ public class VersionInfo {
             return "rdbcache";
         }
 
+        String appBuildTimeStr = appBuildTime;
+        appBuildTime = appBuildTime.trim();
+        if (appBuildTime.matches("[0-9]+") && appBuildTime.length() > 10) {
+            Date date = new Date(Long.valueOf(appBuildTime));
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss'Z'");
+            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+            appBuildTimeStr = sdf.format(date);
+        }
+
         briefInfo = appName + " " +
                 appVersion + " rev." + appBuildNumber + " " + appProfile + " @ " +
-                appBuildTime + " built by " + appBuiltBy;
+                appBuildTimeStr + " built by " + appBuiltBy;
 
         return briefInfo;
     }

@@ -23,7 +23,7 @@ public class KvPairTest {
 
         Map<String, Object> pairMap1 = Utils.toMap(pair1);
 
-        //System.out.println(Utils.toJson(pairMap1));
+        //System.out.println(Utils.toJsonMap(pairMap1));
 
         KvPair pair2 = Utils.toPojo(pairMap1, KvPair.class);
 

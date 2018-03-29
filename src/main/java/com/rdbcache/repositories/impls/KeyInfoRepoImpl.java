@@ -12,12 +12,11 @@ import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.*;
 import com.rdbcache.repositories.KeyInfoRepo;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.HashOperations;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 import org.slf4j.Logger;
@@ -185,10 +184,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         }
 
         StopWatch stopWatch = context.startStopWatch("redis", "kvPairRepo.findAll");
-        List<KvPair> dbPairs = AppCtx.getKvPairRepo().findAll(idTypes);
+        Iterable<KvPair> dbPairs = AppCtx.getKvPairRepo().findAllById(idTypes);
         if (stopWatch != null) stopWatch.stopNow();
 
-        if (dbPairs.size() > 0) {
+        if (dbPairs.iterator().hasNext()) {
 
             Map<String, KeyInfo> redisKeyInfoMap = new LinkedHashMap<String, KeyInfo>();
 

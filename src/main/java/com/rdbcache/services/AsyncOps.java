@@ -154,11 +154,12 @@ public class AsyncOps {
             AppCtx.getRedisRepo().delete(context, pairs, anyKey);
             AppCtx.getKeyInfoRepo().delete(context, pairs);
 
-            for (KvPair pair: pairs) pair.setType("info");
-
-            StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
-            AppCtx.getKvPairRepo().delete(pairs);
-            if (stopWatch != null) stopWatch.stopNow();
+            for (KvPair pair: pairs) {
+                pair.setType("info");
+                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
+                AppCtx.getKvPairRepo().delete(pair);
+                if (stopWatch != null) stopWatch.stopNow();
+            }
 
             context.closeMonitor();
         });
@@ -174,11 +175,12 @@ public class AsyncOps {
             AppCtx.getDbaseRepo().delete(context, pairs, anyKey);
             AppCtx.getKeyInfoRepo().delete(context, pairs);
 
-            for (KvPair pair: pairs) pair.setType("info");
-
-            StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
-            AppCtx.getKvPairRepo().delete(pairs);
-            if (stopWatch != null) stopWatch.stopNow();
+            for (KvPair pair: pairs) {
+                pair.setType("info");
+                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
+                AppCtx.getKvPairRepo().delete(pair);
+                if (stopWatch != null) stopWatch.stopNow();
+            }
 
             context.closeMonitor();
         });

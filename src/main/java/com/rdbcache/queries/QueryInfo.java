@@ -99,7 +99,7 @@ public class QueryInfo implements Serializable {
     public String toString() {
         String s2 = "";
         if (conditions != null) {
-            s2 = Utils.toJson(conditions).replace("\":", ": ");
+            s2 = Utils.toJsonMap(conditions).replace("\":", ": ");
             s2 = s2.replace("\"", "");
         }
         String s1 = (limit == null ? "" : "limit: " + limit);

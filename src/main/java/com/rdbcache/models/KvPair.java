@@ -7,13 +7,10 @@
 package com.rdbcache.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.rdbcache.exceptions.BadRequestException;
-import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.Utils;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -149,7 +146,7 @@ public class KvPair implements Serializable, Cloneable {
         if (data.containsKey("_DEFAULT_")) {
             return (String) data.get("_DEFAULT_");
         } else {
-            return Utils.toJson(data);
+            return Utils.toJsonMap(data);
         }
     }
 
