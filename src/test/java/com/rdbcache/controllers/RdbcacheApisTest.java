@@ -1203,7 +1203,7 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 data1 = (Map<String, Object>) map.get("data");
@@ -1764,7 +1764,7 @@ public class RdbcacheApisTest {
             }
 
             {
-                System.out.println(Utils.toJson(traceIds));
+                //System.out.println(Utils.toJson(traceIds));
 
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         post("/rdbcache/v1/trace").

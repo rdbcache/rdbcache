@@ -132,7 +132,7 @@ public class QueryTest {
 
             assertNotNull(id);
 
-            System.out.println("id = "+id);
+            //System.out.println("id = "+id);
 
             String json2 = "{\"name\" : \"David Copper\"}";
             Map<String, Object> map1 = Utils.toMap(json2);

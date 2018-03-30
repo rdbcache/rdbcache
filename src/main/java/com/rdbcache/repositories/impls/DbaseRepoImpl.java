@@ -350,11 +350,21 @@ public class DbaseRepoImpl implements DbaseRepo {
 
                 Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
                 if (!Utils.mapChangesAfterUpdate(map, dbMap, todoMap)) {
-                    String msg = "switch to default table, unknown field found in input";
-                    LOGGER.error(msg);
-                    context.logTraceMessage(msg);
-                    setUseDefaultTable(keyInfo);
-                    todoMap = map;
+                    if (enableDbFallback) {
+                        String msg = "switch to default table, unknown field found in input";
+                        LOGGER.error(msg);
+                        context.logTraceMessage(msg);
+                        setUseDefaultTable(keyInfo);
+                        todoMap = map;
+                    } else {
+                        String msg = "sunknown field found in input";
+                        LOGGER.error(msg);
+                        context.logTraceMessage(msg);
+                        if (context.isSync()) {
+                            throw new ServerErrorException(context, msg);
+                        }
+                        return false;
+                    }
                 }
 
                 // identical map
