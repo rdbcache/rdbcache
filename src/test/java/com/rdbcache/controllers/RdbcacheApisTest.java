@@ -493,7 +493,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/put/*/user_table/66-sync?id=3").
+                        post("/rdbcache/v1/put/*/user_table/66/sync?id=3").
                         contentType(MediaType.APPLICATION_JSON).content(json).
                         accept(MediaType.APPLICATION_JSON);
 

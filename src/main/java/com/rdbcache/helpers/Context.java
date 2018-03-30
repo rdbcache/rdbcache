@@ -7,6 +7,7 @@
 package com.rdbcache.helpers;
 
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.configs.PropCfg;
 import com.rdbcache.models.Monitor;
 import com.rdbcache.models.StopWatch;
 import com.rdbcache.repositories.DbaseRepo;
@@ -30,9 +31,9 @@ public class Context {
 
     private String traceId;
 
-    private Boolean monitorEnabled = false;
+    private Boolean monitorEnabled = PropCfg.getEnableMonitor();
 
-    private Boolean sync = false;
+    private Boolean sync = PropCfg.getDefaultSync();
 
     private Long duration;
 
@@ -41,7 +42,7 @@ public class Context {
         traceId = Utils.generateId();
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
-        if (sync) action += "-sync";
+        if (sync) action += "/sync";
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
@@ -51,7 +52,7 @@ public class Context {
         traceId = Utils.generateId();
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
-        if (sync) action += "-sync";
+        if (sync) action += "/sync";
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
@@ -60,7 +61,7 @@ public class Context {
         this.traceId = traceId;
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
-        if (sync) action += "-sync";
+        if (sync) action += "/sync";
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 

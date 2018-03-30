@@ -57,24 +57,27 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/get/{key}",
             "/rdbcache/v1/get/{key}/{opt1}",
-            "/rdbcache/v1/get/{key}/{opt1}/{opt2}"
+            "/rdbcache/v1/get/{key}/{opt1}/{opt2}",
+            "/rdbcache/v1/get/{key}/{opt1}/{opt2}/{opt3}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> get_get(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
-            @PathVariable Optional<String> opt2) {
+            @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3) {
 
         Context context = new Context(true);
         KvPairs pairs = new KvPairs(key);
-        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2, opt3);
 
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
@@ -112,25 +115,28 @@ public class RdbcacheApis {
      * @param request HttpServletRequest
      * @param key String, hash key
      * @param value String, value
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/set/{key}/{value}",
             "/rdbcache/v1/set/{key}/{value}/{opt1}",
-            "/rdbcache/v1/set/{key}/{value}/{opt1}/{opt2}"
+            "/rdbcache/v1/set/{key}/{value}/{opt1}/{opt2}",
+            "/rdbcache/v1/set/{key}/{value}/{opt1}/{opt2}/{opt3}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> set_get(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable("value") String value,
             @PathVariable Optional<String> opt1,
-            @PathVariable Optional<String> opt2) {
+            @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3) {
 
         Context context = new Context();
         KvPairs pairs = new KvPairs(key, value);
-        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2, opt3);
 
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
@@ -147,20 +153,23 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/set/{key}",
             "/rdbcache/v1/set/{key}/{opt1}",
-            "/rdbcache/v1/set/{key}/{opt1}/{opt2}"
+            "/rdbcache/v1/set/{key}/{opt1}/{opt2}",
+            "/rdbcache/v1/set/{key}/{opt1}/{opt2}/{opt3}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> set_post(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3,
             @RequestBody String value) {
 
         if (value == null || value.length() == 0) {
@@ -169,7 +178,7 @@ public class RdbcacheApis {
 
         Context context = new Context();
         KvPairs pairs = new KvPairs(key, value);
-        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2, opt3);
 
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
@@ -186,20 +195,23 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/put/{key}",
             "/rdbcache/v1/put/{key}/{opt1}",
-            "/rdbcache/v1/put/{key}/{opt1}/{opt2}"
+            "/rdbcache/v1/put/{key}/{opt1}/{opt2}",
+            "/rdbcache/v1/put/{key}/{opt1}/{opt2}/{opt3}"
         }, method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<?> put_post(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3,
             @RequestBody String value) {
 
         if (value == null || value.length() == 0) {
@@ -208,7 +220,7 @@ public class RdbcacheApis {
 
         Context context = new Context();
         KvPairs pairs = new KvPairs(key, value);
-        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2, opt3);
 
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
@@ -235,25 +247,28 @@ public class RdbcacheApis {
      * @param request HttpServletRequest
      * @param key String, hash key
      * @param value String, value
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/getset/{key}/{value}",
             "/rdbcache/v1/getset/{key}/{value}/{opt1}",
-            "/rdbcache/v1/getset/{key}/{value}/{opt1}/{opt2}"
+            "/rdbcache/v1/getset/{key}/{value}/{opt1}/{opt2}",
+            "/rdbcache/v1/getset/{key}/{value}/{opt1}/{opt2}/{opt3}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> getset_get(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable("value") String value,
             @PathVariable Optional<String> opt1,
-            @PathVariable Optional<String> opt2) {
+            @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3) {
 
         Context context = new Context(true);
         KvPairs pairs = new KvPairs(key, value);
-        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2, opt3);
 
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
@@ -293,20 +308,23 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/getset/{key}",
             "/rdbcache/v1/getset/{key}/{opt1}",
-            "/rdbcache/v1/getset/{key}/{opt1}/{opt2}"
+            "/rdbcache/v1/getset/{key}/{opt1}/{opt2}",
+            "/rdbcache/v1/getset/{key}/{opt1}/{opt2}/{opt3}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> getset_post(
             HttpServletRequest request,
             @PathVariable("key") String key,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3,
             @RequestBody String value) {
 
         if (value == null || value.length() == 0) {
@@ -354,19 +372,22 @@ public class RdbcacheApis {
      * Once data found, it returns immediately. It queries redis first, then database. 
      *
      * @param request HttpServletRequest
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/pull",
             "/rdbcache/v1/pull/{opt1}",
-            "/rdbcache/v1/pull/{opt1}/{opt2}"
-        }, method = RequestMethod.POST)
+            "/rdbcache/v1/pull/{opt1}/{opt2}",
+            "/rdbcache/v1/pull/{opt1}/{opt2}/{opt3}"
+    }, method = RequestMethod.POST)
     public ResponseEntity<?> pull_post(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3,
             @RequestBody ArrayList<String> keys) {
 
         if (keys == null || keys.size() == 0) {
@@ -381,7 +402,7 @@ public class RdbcacheApis {
 
         Context context = new Context(true, true);
         KvPairs pairs = new KvPairs(keys);
-        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2, opt3);
 
         if (anyKey.size() != pairs.size()) {
             throw new NotFoundException("one or more keys not found");
@@ -431,20 +452,23 @@ public class RdbcacheApis {
      * It returns immediately, and asynchronously updates redis and database
      *
      * @param request HttpServletRequest
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @param map Map, a map of key and value pairs
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/push",
             "/rdbcache/v1/push/{opt1}",
-            "/rdbcache/v1/push/{opt1}/{opt2}"
-        }, method = RequestMethod.POST)
+            "/rdbcache/v1/push/{opt1}/{opt2}",
+            "/rdbcache/v1/push/{opt1}/{opt2}/{opt3}"
+    }, method = RequestMethod.POST)
     public ResponseEntity<?> push_post(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3,
             @RequestBody Map<String, Object> map) {
 
         if (map == null || map.size() == 0) {
@@ -459,7 +483,7 @@ public class RdbcacheApis {
 
         Context context = new Context(false, true);
         KvPairs pairs = new KvPairs(map);
-        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2, opt3);
 
         if (anyKey.size() != map.size()) {
             throw new BadRequestException("one or more keys not found");
@@ -488,7 +512,7 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
-     * @param opt1 String, can be sync only
+     * @param opt1 String, can be "sync" only
      * @return ResponseEntity
      */
     @RequestMapping(value = {
@@ -529,7 +553,7 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param keys List, list of keys for returned entries
-     * @param opt1 String, can be sync only
+     * @param opt1 String, can be "sync" only
      * @return ResponseEntity
      */
     @RequestMapping(value = {
@@ -582,7 +606,7 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
-     * @param opt1 String, can be sync only
+     * @param opt1 String, can be "sync" only
      * @return ResponseEntity
      */
     @RequestMapping(value = {
@@ -624,7 +648,7 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param keys List, list of keys for returned entries
-     * @param opt1 String, can be sync only
+     * @param opt1 String, can be "sync" only
      * @return ResponseEntity
      */
     @RequestMapping(value = {
@@ -671,23 +695,26 @@ public class RdbcacheApis {
      * It queries database and return immediately, and asynchronously saves the data to redis
      *
      * @param request HttpServletRequest
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/select",
             "/rdbcache/v1/select/{opt1}",
-            "/rdbcache/v1/select/{opt1}/{opt2}"
+            "/rdbcache/v1/select/{opt1}/{opt2}",
+            "/rdbcache/v1/select/{opt1}/{opt2}/{opt3}"
         }, method = RequestMethod.GET)
     public ResponseEntity<?> select_get(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
-            @PathVariable Optional<String> opt2) {
+            @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3) {
 
         Context context = new Context(true, true);
         KvPairs pairs = new KvPairs();
-        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2, opt3);
 
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
@@ -721,20 +748,23 @@ public class RdbcacheApis {
      * It queries database and return immediately, and asynchronously saves the data to redis
      *
      * @param request HttpServletRequest
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @param keys List, list of keys for returned entries
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/select",
             "/rdbcache/v1/select/{opt1}",
-            "/rdbcache/v1/select/{opt1}/{opt2}"
+            "/rdbcache/v1/select/{opt1}/{opt2}",
+            "/rdbcache/v1/select/{opt1}/{opt2}/{opt3}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> select_post(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3,
             @RequestBody ArrayList<String> keys) {
 
         Context context = new Context(true, true);
@@ -772,20 +802,23 @@ public class RdbcacheApis {
      * It returns immediately, and asynchronously inserts into redis and database
      *
      * @param request HttpServletRequest
-     * @param opt1 String, can be expire or table
-     * @param opt2 String, can be expire or table, but not otp1
+     * @param opt1 String, can be expire or table or "sync" or "async"
+     * @param opt2 String, can be expire or table or "sync" or "async", but not otp1
+     * @param opt3 String, can be expire or table or "sync" or "async", but not otp1 and opt2
      * @param list List, a list of map, than contains key and other fields
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/save",
             "/rdbcache/v1/save/{opt1}",
-            "/rdbcache/v1/save/{opt1}/{opt2}"
+            "/rdbcache/v1/save/{opt1}/{opt2}",
+            "/rdbcache/v1/save/{opt1}/{opt2}/{opt3}"
         }, method = RequestMethod.POST)
     public ResponseEntity<?> save_post(
             HttpServletRequest request,
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
+            @PathVariable Optional<String> opt3,
             @RequestBody List<Map<String, Object>> list){
 
         if (request.getParameterMap().size() != 0) {

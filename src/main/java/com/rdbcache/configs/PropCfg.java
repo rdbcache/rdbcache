@@ -25,6 +25,8 @@ public class PropCfg {
 
     private static String defaultExpire = "180";
 
+    private static Boolean defaultSync = false;
+    
     private static Boolean enableMonitor = false;
 
     private static Long eventLockTimeout = 60L;
@@ -110,6 +112,15 @@ public class PropCfg {
 
     public static String getDefaultExpire() {
         return defaultExpire;
+    }
+
+    @Value("${rdbcache.default_sync}")
+    public void setDefaultSync(Boolean sync) {
+        defaultSync = sync;
+    }
+
+    public static Boolean getDefaultSync() {
+        return defaultSync;
     }
 
     @Value("${rdbcache.enable_monitor}")
