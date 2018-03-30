@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rdbcache.queries.QueryInfo;
 
 import java.io.Serializable;
+import java.security.Key;
 import java.util.*;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -38,6 +39,9 @@ public class KeyInfo implements Cloneable {
 
     @JsonProperty("expire_old")
     private String expireOld = PropCfg.getDefaultExpire();
+
+    @JsonProperty("created_at")
+    private Long createdAt = System.currentTimeMillis();
 
     private QueryInfo query;
 
@@ -83,6 +87,12 @@ public class KeyInfo implements Cloneable {
         if (params != null) params.clear();
     }
 
+    public boolean hasParams() {
+        if (params == null || params.size() == 0) {
+            return false;
+        }
+        return true;
+    }
     public String getClause() {
         return clause;
     }
@@ -123,6 +133,28 @@ public class KeyInfo implements Cloneable {
 
     public String getExpireOld() {
         return expireOld;
+    }
+
+    public void setExpireOld(String expireOld) {
+        this.expireOld = expireOld;
+    }
+
+    public Long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Long createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    // created within 30 seconds
+    //
+    public Boolean ifJustCreated() {
+        long duration = System.currentTimeMillis() - createdAt;
+        if (duration < 30001l) {
+            return true;
+        }
+        return false;
     }
 
     public void restoreExpire() {

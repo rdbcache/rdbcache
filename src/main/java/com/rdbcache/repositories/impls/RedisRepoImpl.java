@@ -224,6 +224,9 @@ public class RedisRepoImpl implements RedisRepo {
                     LOGGER.error(msg);
                     context.logTraceMessage(msg);
                     e.printStackTrace();
+                    if (context.isSync()) {
+                        throw new ServerErrorException(context, msg);
+                    }
                     continue;
                 }
             }
@@ -284,6 +287,9 @@ public class RedisRepoImpl implements RedisRepo {
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
                 e.printStackTrace();
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
             }
         }
 

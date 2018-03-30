@@ -1,10 +1,12 @@
 package com.rdbcache.queries;
 
 import com.google.common.io.CharStreams;
+import com.rdbcache.configs.AppCtx;
 import com.rdbcache.helpers.Context;
 import com.rdbcache.helpers.Utils;
 import com.rdbcache.models.KeyInfo;
 import com.rdbcache.models.KvPair;
+import com.rdbcache.services.DbaseOps;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -72,6 +74,9 @@ public class ParserTest {
         Map<String, Object> testTable = Utils.toMap(text);
         assertNotNull(testTable);
 
+        DbaseOps dbaseOps = new DbaseOps();
+        AppCtx.setDbaseOps(dbaseOps);
+
         Context context = new Context();
 
         String json = "{\n" +
@@ -83,28 +88,34 @@ public class ParserTest {
 
         KvPair pair = new KvPair("*", "data", Utils.toMap(json));
 
-        KeyInfo keyInfo = new KeyInfo();
-        keyInfo.setExpire("100");
-        keyInfo.setTable("user_table");
+        try {
+            KeyInfo keyInfo = new KeyInfo();
+            keyInfo.setExpire("100");
+            keyInfo.setTable("user_table");
+            keyInfo.setCreatedAt(1522367710621L);
 
-        String json2 = "{\"table\":\"user_table\",\"conditions\":{\"id\":{\"=\":[\"1\",\"2\",\"3\"]}},\"limit\":2}";
-        QueryInfo queryInfo = Utils.toPojo(Utils.toMap(json2), QueryInfo.class);
+            String json2 = "{\"table\":\"user_table\",\"conditions\":{\"id\":{\"=\":[\"1\",\"2\",\"3\"]}},\"limit\":2}";
+            QueryInfo queryInfo = Utils.toPojo(Utils.toMap(json2), QueryInfo.class);
 
-        keyInfo.setQuery(queryInfo);
-        keyInfo.setColumns((Map<String, Object>) testTable.get("table_columns::user_table"));
-        keyInfo.setPrimaryIndexes(Arrays.asList("id"));
+            keyInfo.setQuery(queryInfo);
+            keyInfo.setColumns((Map<String, Object>) testTable.get("table_columns::user_table"));
+            keyInfo.setPrimaryIndexes(Arrays.asList("id"));
 
-        Parser.prepareStandardClauseParams(context, pair, keyInfo);
-        //System.out.println(Utils.toJsonMap(keyInfo));
-        assertEquals("{\"expire\":\"100\",\"table\":\"user_table\",\"clause\":\"id = ?\"," +
-                "\"params\":[12467],\"query\":{\"table\":\"user_table\",\"conditions\":{\"id\":{\"=\":" +
-                "[\"1\",\"2\",\"3\"]}},\"limit\":2},\"query_key\":\"87677684c30a46c6e5afec88d0131410\","+
-                "\"is_new\":false,\"expire_old\":\"180\"}",
-                Utils.toJsonMap(keyInfo));
-        keyInfo.cleanup();
-        //System.out.println(Utils.toJsonMap(keyInfo));
-        assertEquals("{\"expire\":\"100\",\"table\":\"user_table\",\"clause\":\"id = ?\"," +
-                "\"params\":[12467],\"query_key\":\"87677684c30a46c6e5afec88d0131410\",\"is_new\":false}",
-                Utils.toJsonMap(keyInfo));
+            Parser.prepareStandardClauseParams(context, pair, keyInfo);
+            //System.out.println(Utils.toJsonMap(keyInfo));
+            assertEquals("{\"expire\":\"100\",\"table\":\"user_table\",\"clause\":\"id = ?\"," +
+                            "\"params\":[12467],\"query\":{\"table\":\"user_table\",\"conditions\":{\"id\":{\"=\":" +
+                            "[\"1\",\"2\",\"3\"]}},\"limit\":2},\"query_key\":\"87677684c30a46c6e5afec88d0131410\"," +
+                            "\"is_new\":false,\"expire_old\":\"180\",\"created_at\":1522367710621}",
+                    Utils.toJsonMap(keyInfo));
+            keyInfo.cleanup();
+            //System.out.println(Utils.toJsonMap(keyInfo));
+            assertEquals("{\"expire\":\"100\",\"table\":\"user_table\",\"clause\":\"id = ?\",\"params\":[12467]" +
+                            ",\"query_key\":\"87677684c30a46c6e5afec88d0131410\",\"is_new\":false,\"created_at\":1522367710621}",
+                    Utils.toJsonMap(keyInfo));
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e.getCause().getMessage());
+        }
     }
 }

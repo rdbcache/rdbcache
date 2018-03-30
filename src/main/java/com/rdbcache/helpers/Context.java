@@ -41,6 +41,7 @@ public class Context {
         traceId = Utils.generateId();
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
+        if (sync) action += "-sync";
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
@@ -50,6 +51,7 @@ public class Context {
         traceId = Utils.generateId();
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
+        if (sync) action += "-sync";
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
@@ -58,6 +60,7 @@ public class Context {
         this.traceId = traceId;
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
+        if (sync) action += "-sync";
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
@@ -67,6 +70,7 @@ public class Context {
         action = Thread.currentThread().getStackTrace()[2].getMethodName();
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
+        if (sync) action += "-sync";
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 

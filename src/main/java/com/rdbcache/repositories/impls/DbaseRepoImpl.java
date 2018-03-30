@@ -8,6 +8,7 @@ package com.rdbcache.repositories.impls;
 
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.configs.PropCfg;
+import com.rdbcache.exceptions.ServerErrorException;
 import com.rdbcache.helpers.*;
 import com.rdbcache.models.*;
 import com.rdbcache.queries.Parser;
@@ -379,9 +380,6 @@ public class DbaseRepoImpl implements DbaseRepo {
 
     private boolean kvFind(Context context, KvPairs pairs, AnyKey anyKey) {
 
-        Assert.isTrue(pairs.size() <= 1, "pairs.size() = " +
-                pairs.size() + ", select only supports pairs size <= 1");
-
         LOGGER.trace("kvFind: " + pairs.printKey() + anyKey.print());
 
         KeyInfo keyInfo = anyKey.getKeyInfo();
@@ -505,6 +503,9 @@ public class DbaseRepoImpl implements DbaseRepo {
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
                 e.printStackTrace();
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
             }
 
         } else {
@@ -527,6 +528,9 @@ public class DbaseRepoImpl implements DbaseRepo {
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
                 e.printStackTrace();
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
             }
         }
 
@@ -562,6 +566,9 @@ public class DbaseRepoImpl implements DbaseRepo {
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
                 e.printStackTrace();
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
             }
 
         } else {
@@ -584,6 +591,9 @@ public class DbaseRepoImpl implements DbaseRepo {
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
                 e.printStackTrace();
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
             }
         }
 

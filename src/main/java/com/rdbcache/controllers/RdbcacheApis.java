@@ -488,19 +488,24 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
+     * @param opt1 String, can be sync only
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/rdbcache/v1/delkey/{key}"
+            "/rdbcache/v1/delkey/{key}",
+            "/rdbcache/v1/delkey/{key}/{opt1}"
     }, method = {RequestMethod.GET, RequestMethod.DELETE})
     public ResponseEntity<?> delkey_get(
             HttpServletRequest request,
-            @PathVariable("key") String key) {
+            @PathVariable("key") String key,
+            @PathVariable Optional<String> opt1) {
 
         if (key.equals("*")) {
             throw new BadRequestException("no * allowed as key");
         }
-
+        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
+            throw new BadRequestException("only option allowed is sync");
+        }
         Context context = new Context();
         KvPairs pairs = new KvPairs(key);
         AnyKey anyKey = Request.process(context, request, pairs);
@@ -524,17 +529,23 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param keys List, list of keys for returned entries
+     * @param opt1 String, can be sync only
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/rdbcache/v1/delkey"
+            "/rdbcache/v1/delkey",
+            "/rdbcache/v1/delkey/{opt1}"
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delkey_post(
             HttpServletRequest request,
-            @RequestBody List<String> keys) {
+            @RequestBody List<String> keys,
+            @PathVariable Optional<String> opt1) {
 
         if (keys.contains("*")) {
             throw new BadRequestException("no * allowed as key");
+        }
+        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
+            throw new BadRequestException("only option allowed is sync");
         }
 
         Context context = new Context();
@@ -543,6 +554,9 @@ public class RdbcacheApis {
 
         if (anyKey.size() != keys.size()) {
             context.logTraceMessage("one or more keys not found");
+        }
+        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
+            throw new BadRequestException("only option allowed is sync");
         }
 
         for (int i = 0; i < anyKey.size(); i++) {
@@ -568,17 +582,23 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
+     * @param opt1 String, can be sync only
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/rdbcache/v1/delall/{key}"
+            "/rdbcache/v1/delall/{key}",
+            "/rdbcache/v1/delall/{key}/{opt1}"
     }, method = RequestMethod.GET)
     public ResponseEntity<?> delall_get(
             HttpServletRequest request,
-            @PathVariable("key") String key) {
+            @PathVariable("key") String key,
+            @PathVariable Optional<String> opt1) {
 
         if (key.equals("*")) {
             throw new BadRequestException("no * allowed as key");
+        }
+        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
+            throw new BadRequestException("only option allowed is sync");
         }
 
         Context context = new Context();
@@ -604,17 +624,23 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param keys List, list of keys for returned entries
+     * @param opt1 String, can be sync only
      * @return ResponseEntity
      */
     @RequestMapping(value = {
-            "/rdbcache/v1/delall"
+            "/rdbcache/v1/delall",
+            "/rdbcache/v1/delall/{opt1}"
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delall_post(
             HttpServletRequest request,
-            @RequestBody List<String> keys) {
+            @RequestBody List<String> keys,
+            @PathVariable Optional<String> opt1) {
 
         if (keys.contains("*")) {
             throw new BadRequestException("no * allowed as key");
+        }
+        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
+            throw new BadRequestException("only option allowed is sync");
         }
 
         Context context = new Context();

@@ -73,7 +73,7 @@ public class Query {
     public boolean ifSelectOk() {
 
         Assert.isTrue(anyKey.size() == 1, "anyKey.size() = " +
-                anyKey.size() + ", select only supports anyKey size == 1 : " + Utils.toJsonMap(anyKey));
+                anyKey.size() + ", select only supports anyKey size == 1");
 
         KeyInfo keyInfo = anyKey.getKeyInfo();
 
@@ -100,8 +100,13 @@ public class Query {
                 ready = true;
             } else if (pairs.size() > 0) {
                 ready = true;
-            } else if (Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
-                ready = true;
+            } else {
+                if (!keyInfo.getIsNew() && !keyInfo.hasParams() && keyInfo.ifJustCreated()) {
+                    waitForParamsUpdate(pair.getId(), keyInfo);
+                }
+                if (Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
+                    ready = true;
+                }
             }
             if (!ready) {
                 return false;
@@ -166,6 +171,9 @@ public class Query {
                         String msg = "executeSelect failed when prepareStandardClauseParams for " + pair.getId();
                         LOGGER.error(msg);
                         context.logTraceMessage(msg);
+                        if (context.isSync()) {
+                            throw new ServerErrorException(context, msg);
+                        }
                     }
 
                     LOGGER.trace("found " + pair.getId() + " from " + table);
@@ -180,6 +188,9 @@ public class Query {
             String msg = e.getCause().getMessage();
             LOGGER.error(msg);
             context.logTraceMessage(msg);
+            if (context.isSync()) {
+                throw new ServerErrorException(context, msg);
+            }
         }
 
         return false;
@@ -275,6 +286,9 @@ public class Query {
                 String msg = e.getCause().getMessage();
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
             }
 
             if (rowCount > 0) {
@@ -298,6 +312,9 @@ public class Query {
                     String msg = "executeInsert failed when prepareStandardClauseParams for " + pair.getId();
                     LOGGER.error(msg);
                     context.logTraceMessage(msg);
+                    if (context.isSync()) {
+                        throw new ServerErrorException(context, msg);
+                    }
                 }
 
                 LOGGER.trace("inserted " + pair.getId() + " into " + table);
@@ -343,8 +360,11 @@ public class Query {
 
             KvPair pair  = pairs.get(i);
             KeyInfo keyInfo = anyKey.getAny(i);
-
             String table = keyInfo.getTable();
+
+            if (!keyInfo.getIsNew() && !keyInfo.hasParams() && keyInfo.ifJustCreated()) {
+                waitForParamsUpdate(pair.getId(), keyInfo);
+            }
 
             //convertDbMap will be called within prepareStandardClauseParams
             //
@@ -353,6 +373,9 @@ public class Query {
                 String msg = "executeUpdate failed when calling prepareStandardClauseParams for " + pair.getId();
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
                 continue;
             }
 
@@ -397,6 +420,9 @@ public class Query {
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
                 e.printStackTrace();
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
             }
 
             keyInfo.setQueryKey(null);
@@ -433,13 +459,19 @@ public class Query {
 
             KvPair pair  = pairs.get(i);
             KeyInfo keyInfo = anyKey.getAny(i);
-
             String table = keyInfo.getTable();
+
+            if (!keyInfo.getIsNew() && !keyInfo.hasParams() && keyInfo.ifJustCreated()) {
+                waitForParamsUpdate(pair.getId(), keyInfo);
+            }
 
             if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
                 String msg = "executeDelete failed when calling prepareStandardClauseParams for " + pair.getId();
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
                 continue;
             }
             params = keyInfo.getParams();
@@ -474,6 +506,9 @@ public class Query {
                 LOGGER.error(msg);
                 context.logTraceMessage(msg);
                 e.printStackTrace();
+                if (context.isSync()) {
+                    throw new ServerErrorException(context, msg);
+                }
             }
 
             keyInfo.setQueryKey(null);
@@ -501,5 +536,29 @@ public class Query {
             limit = 1;
         }
         return limit;
+    }
+
+    // it could be the data is just inserted, not synchronized yet
+    // max wait for 30 seconds
+    private void waitForParamsUpdate(String key, KeyInfo keyInfo) {
+        if (keyInfo.hasParams()) {
+            return;
+        }
+        for (int j = 0; j < 300; j++) {
+            KeyInfo cachedKeyInfo = AppCtx.getLocalCache().getKeyInfo(key);
+            if (cachedKeyInfo.hasParams()) {
+                keyInfo.setClause(cachedKeyInfo.getClause());
+                keyInfo.setParams(cachedKeyInfo.getParams());
+                return;
+            }
+            // allow time to synchronize data
+            try {
+                LOGGER.trace("waitForParamsUpdate 100 ms ...");
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        LOGGER.warn("failed on waitForParamsUpdate");
     }
 }

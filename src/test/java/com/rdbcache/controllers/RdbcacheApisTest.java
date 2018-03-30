@@ -1,5 +1,6 @@
 package com.rdbcache.controllers;
 
+import com.google.common.io.CharStreams;
 import com.rdbcache.configs.AppCtx;
 import com.rdbcache.configs.Configurations;
 import com.rdbcache.configs.MockRedis;
@@ -12,10 +13,14 @@ import com.rdbcache.models.KvPair;
 import com.rdbcache.repositories.DbaseRepo;
 import com.rdbcache.services.LocalCache;
 
+import org.mockito.BDDMockito;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import org.springframework.test.annotation.DirtiesContext;
@@ -32,7 +37,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URLEncoder;
+import java.sql.Connection;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -40,7 +49,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringRunner.class)
 @WebMvcTest(secure = false)
 @ContextConfiguration(classes = {Configurations.class, PropCfg.class})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+//@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class RdbcacheApisTest {
 
     private MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new RdbcacheApis()).build();
@@ -51,8 +60,38 @@ public class RdbcacheApisTest {
     @Autowired
     DbaseRepo dbaseRepo;
 
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
     @Before
     public void setup() {
+
+        // allow time to synchronize data
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+
+        try {
+            InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test-data.sql");
+            assertNotNull(inputStream);
+            String sql = null;
+            try (final Reader reader = new InputStreamReader(inputStream)) {
+                sql = CharStreams.toString(reader);
+            }
+            assertNotNull(sql);
+
+            jdbcTemplate.execute(sql);
+
+            AppCtx.getLocalCache().removeAllData();
+            AppCtx.getLocalCache().removeAllKeyInfos();
+            MockRedis.getData().clear();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e.getCause().getMessage());
+        }
     }
 
     @Test
@@ -269,13 +308,6 @@ public class RdbcacheApisTest {
                 assertEquals("test_hash_key", key);
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         get("/rdbcache/v1/get/test_hash_key").
@@ -320,13 +352,6 @@ public class RdbcacheApisTest {
                 assertEquals(200, response.getStatus());
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             // assume local cache and redis data are expired
             AppCtx.getLocalCache().removeAllData();
             AppCtx.getLocalCache().removeAllKeyInfos();
@@ -355,7 +380,7 @@ public class RdbcacheApisTest {
         }
     }
 
-    @Test
+    @Test // with sync option
     public void set_post1() {
 
         try {
@@ -364,7 +389,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/set/test_hash_key_post/user_table").
+                        post("/rdbcache/v1/set/test_hash_key_post/user_table/sync").
                         contentType(MediaType.APPLICATION_JSON).content(json).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -373,13 +398,6 @@ public class RdbcacheApisTest {
                 MockHttpServletResponse response = result.getResponse();
 
                 assertEquals(200, response.getStatus());
-            }
-
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
             }
 
             {
@@ -437,13 +455,6 @@ public class RdbcacheApisTest {
 
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         get("/rdbcache/v1/get/" + key).
@@ -472,7 +483,7 @@ public class RdbcacheApisTest {
         }
     }
 
-    @Test
+    @Test  // with sync option
     public void put_post1() {
 
         try {
@@ -482,7 +493,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/put/*/user_table/66?id=3").
+                        post("/rdbcache/v1/put/*/user_table/66-sync?id=3").
                         contentType(MediaType.APPLICATION_JSON).content(json).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -498,13 +509,6 @@ public class RdbcacheApisTest {
                 assertNotNull(key);
                 assertNull(map.get("data"));
 
-            }
-
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
             }
 
             {
@@ -646,13 +650,6 @@ public class RdbcacheApisTest {
 
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             String value2 = "test value 002";
 
             {
@@ -737,13 +734,6 @@ public class RdbcacheApisTest {
 
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         get("/rdbcache/v1/get/" + key).
@@ -802,7 +792,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(250);
+                Thread.sleep(500);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -864,13 +854,6 @@ public class RdbcacheApisTest {
                 assertTrue(data1.size() > 1);
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             {
                 Set<String> keys = data1.keySet();
 
@@ -923,13 +906,6 @@ public class RdbcacheApisTest {
                 data1 = (Map<String, Object>) map.get("data");
                 assertNotNull(data1);
                 assertTrue(data1.size() > 1);
-            }
-
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
             }
 
             // assume local cache and redis data are expired
@@ -1180,13 +1156,6 @@ public class RdbcacheApisTest {
                 assertEquals(3, data1.size());
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         post("/rdbcache/v1/pull").
@@ -1234,19 +1203,12 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                //System.out.println(body);
+                System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 data1 = (Map<String, Object>) map.get("data");
                 assertNotNull(data1);
                 assertEquals(3, data1.size());
-            }
-
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
             }
 
             String batchUpdate = "{\"hash_key011\":{\"name\":\"Mike 001\"},"+
@@ -1275,7 +1237,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(250);
+                Thread.sleep(500);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -1322,7 +1284,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/select/user_table?id=1").
+                        get("/rdbcache/v1/select/user_table?limit=1").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -1337,13 +1299,6 @@ public class RdbcacheApisTest {
                 data1 = (Map<String, Object>) map.get("data");
                 assertNotNull(data1);
                 assertEquals(1, data1.size());
-            }
-
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
             }
 
             String key = (String) data1.keySet().toArray()[0];
@@ -1415,13 +1370,6 @@ public class RdbcacheApisTest {
                 assertEquals(3, data1.size());
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             Set<String> keys = data1.keySet();
 
             {
@@ -1436,7 +1384,7 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                //System.out.println(body);
+                System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 assertNotNull(map.get("data"));
@@ -1444,7 +1392,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(250);
+                Thread.sleep(500);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -1477,7 +1425,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/select/user_table?id=1").
+                        get("/rdbcache/v1/select/user_table?email=mike@example.com").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -1492,13 +1440,6 @@ public class RdbcacheApisTest {
                 data1 = (Map<String, Object>) map.get("data");
                 assertNotNull(data1);
                 assertEquals(1, data1.size());
-            }
-
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
             }
 
             String key = (String) data1.keySet().toArray()[0];
@@ -1581,13 +1522,6 @@ public class RdbcacheApisTest {
                 assertEquals(3, data1.size());
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             Set<String> keys = data1.keySet();
 
             {
@@ -1623,6 +1557,7 @@ public class RdbcacheApisTest {
                 assertFalse(AppCtx.getLocalCache().containsKey(key));
                 assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
                 Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::keyinfo");
+                //System.out.println(Utils.toJsonMap(rdchkeys));
                 assertFalse(rdchkeys.containsKey(key));
 
                 Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "info"));
@@ -1673,13 +1608,6 @@ public class RdbcacheApisTest {
                 assertEquals(3, data1.size());
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             {
                 //System.out.println("data1.values(): " + Utils.toJsonMap(data1.values()));
 
@@ -1704,7 +1632,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(250);
+                Thread.sleep(500);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -1768,13 +1696,6 @@ public class RdbcacheApisTest {
                 traceIds.add(traceId);
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         get("/rdbcache/v1/trace/"+traceId).
@@ -1817,7 +1738,7 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(250);
+                Thread.sleep(500);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -1840,13 +1761,6 @@ public class RdbcacheApisTest {
                 assertNotNull(data);
                 assertTrue(data.size() > 0);
                 traceIds.add((String) map.get("trace_id"));
-            }
-
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
             }
 
             {

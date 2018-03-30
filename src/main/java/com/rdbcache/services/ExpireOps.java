@@ -130,27 +130,32 @@ public class ExpireOps {
     public void setExpireKey(Context context, KvPairs pairs, AnyKey anyKey) {
 
         for (int i = 0; i < pairs.size(); i++) {
+            try {
+                KvPair pair = pairs.get(i);
+                String key = pair.getId();
 
-            KvPair pair = pairs.get(i);
-            String key = pair.getId();
+                KeyInfo keyInfo = anyKey.getAny(i);
 
-            KeyInfo keyInfo = anyKey.getAny(i);
+                LOGGER.trace("setExpireKey: " + pair.printKey() + " expire: " + keyInfo.getExpire());
 
-            LOGGER.trace("setExpireKey: " + pair.printKey() + " expire: " + keyInfo.getExpire());
+                String expire = keyInfo.getExpire();
+                String expKey = eventPrefix + "::" + key;
 
-            String expire = keyInfo.getExpire();
-            String expKey = eventPrefix + "::" + key;
+                StopWatch stopWatch = context.startStopWatch("redis", "scriptExecutor.execute");
+                Long result = scriptExecutor.execute(set_expire_key_script,
+                        Collections.singletonList(expKey), context.getTraceId(), expire);
+                if (stopWatch != null) stopWatch.stopNow();
 
-            StopWatch stopWatch = context.startStopWatch("redis", "scriptExecutor.execute");
-            Long result = scriptExecutor.execute(set_expire_key_script,
-                    Collections.singletonList(expKey), context.getTraceId(), expire);
-            if (stopWatch != null) stopWatch.stopNow();
-
-            if (result != 1) {
-                keyInfo.restoreExpire();
-            }
-            if (keyInfo.getIsNew()) {
-                AppCtx.getKeyInfoRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
+                if (result != 1) {
+                    keyInfo.restoreExpire();
+                }
+                if (keyInfo.getIsNew()) {
+                    AppCtx.getKeyInfoRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
+                }
+            } catch (Exception e) {
+                String msg = e.getCause().getMessage();
+                LOGGER.error(msg);
+                context.logTraceMessage(msg);
             }
         }
     }

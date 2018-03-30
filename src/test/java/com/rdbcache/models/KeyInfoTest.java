@@ -47,6 +47,8 @@ public class KeyInfoTest {
                 "\"expire_old\":\"180\"}");
         KeyInfo keyInfo1 = Utils.toPojo(map1, KeyInfo.class);
         Map<String, Object> map2 = Utils.toMap(keyInfo1);
+        assertNotNull(map2.get("created_at"));
+        map2.remove("created_at");
         KeyInfo keyInfo2 = Utils.toPojo(map2, KeyInfo.class);
 
         //System.out.println(Utils.toJsonMap(map2));
@@ -61,7 +63,7 @@ public class KeyInfoTest {
         Map<String, Object> map1 = Utils.toMap("{\"expire\":\"30\",\"table\":\"user_table\",\"clause\":"+
                 "\"id = ?\",\"params\":[12466],\"query\":{\"table\":\"user_table\",\"conditions\":{\"id\":"+
                 "{\"=\":[\"12466\"]}}},\"query_key\":\"28f0a2d90b3c9d340e853b838d27845c\",\"is_new\":"+
-                "false,\"expire_old\":\"180\"}");
+                "false,\"expire_old\":\"180\",\"created_at\":1522367412704}");
         KeyInfo keyInfo1 = Utils.toPojo(map1, KeyInfo.class);
 
         QueryInfo queryInfo = new QueryInfo("user_table");

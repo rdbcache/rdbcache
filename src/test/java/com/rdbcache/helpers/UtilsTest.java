@@ -66,6 +66,8 @@ public class UtilsTest {
         keyInfo.cleanup();
         Map<String, Object> map = Utils.toMap(keyInfo);
         //System.out.println(Utils.toJsonMap(map));
+        assertNotNull(map.get("created_at"));
+        map.remove("created_at");
         String json = "{\"expire\":\"100\",\"table\":\"table\",\"clause\":\"\",\"query_key\":\"\",\"is_new\":false}";
         Map<String, Object> newMap = Utils.toMap(json);
         assertEquals(map, newMap);
