@@ -3,17 +3,17 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>rdbcache.com</groupId>
-  <artifactId>rdbcache</artifactId>
+  <groupId>doitincloud.rdbcache.com</groupId>
+  <artifactId>doitincloud.rdbcache</artifactId>
   <version>1.1.0</version>
-  <name>rdbcache</name>
+  <name>doitincloud.rdbcache</name>
   <description>redis database cache asynchronous api server</description>
-  <url>http://rdbcache.com/</url>
+  <url>http://doitincloud.rdbcache.com/</url>
   <packaging>jar</packaging>
 
   <scm>
-    <connection>scm:git:git@github.com:rdbcache/rdbcache.git</connection>
-    <url>https://github.com/rdbcache/rdbcache</url>
+    <connection>scm:git:git@github.com:doitincloud.rdbcache/doitincloud.rdbcache.git</connection>
+    <url>https://github.com/doitincloud.rdbcache/doitincloud.rdbcache</url>
   </scm>
 
   <parent>

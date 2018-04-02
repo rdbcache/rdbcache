@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-# install rdbcache
+# install doitincloud.rdbcache
 #
 # By Sam Wen @ 02/10/2018
 #
 ##########################
 
-DOWNLOAD_URL='https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.zip'
+DOWNLOAD_URL='https://raw.githubusercontent.com/doitincloud.rdbcache/doitincloud.rdbcache/master/download/doitincloud.rdbcache.zip'
 
 if [ "$(id -u)" -ne 0 ] ; then
   echo "This script must run under root."
@@ -54,20 +54,20 @@ if [ -z "$WGET_BIN" ]; then
   echo "Unable to find wget. Please install wget."
   exit 1
 fi
-if [ -f ./rdbcache.zip ]; then
-  rm -f ./rdbcache.zip
+if [ -f ./doitincloud.rdbcache.zip ]; then
+  rm -f ./doitincloud.rdbcache.zip
 fi
 $WGET_BIN -q $DOWNLOAD_URL
 if [ $? -ne 0 ]; then
   echo "Run wget failed"
   exit 1
 fi
-if [ ! -f ./rdbcache.zip ]; then
-  echo "Failed to locate rdbcache.zip"
+if [ ! -f ./doitincloud.rdbcache.zip ]; then
+  echo "Failed to locate doitincloud.rdbcache.zip"
   exit 1
 fi
-if [ -d ./rdbcache ]; then
-  rm -rf rdbcache
+if [ -d ./doitincloud.rdbcache ]; then
+  rm -rf doitincloud.rdbcache
 fi
 
 UNZIP_BIN=$(which unzip)
@@ -76,27 +76,27 @@ if [ -z "$UNZIP_BIN" ]; then
   exit 1
 fi
 
-$UNZIP_BIN ./rdbcache.zip
+$UNZIP_BIN ./doitincloud.rdbcache.zip
 
-DOWNLOAD_DIR=$(pwd)/rdbcache
-rm -f ./rdbcache.zip
+DOWNLOAD_DIR=$(pwd)/doitincloud.rdbcache
+rm -f ./doitincloud.rdbcache.zip
 
-if [ ! -f $DOWNLOAD_DIR/rdbcache.jar ]; then
-  echo "File rdbcache.jar not found."
+if [ ! -f $DOWNLOAD_DIR/doitincloud.rdbcache.jar ]; then
+  echo "File doitincloud.rdbcache.jar not found."
   exit 1
 fi
 
-if [ -d /opt/rdbcache ]; then
-  rm -rf /opt/rdbcache
+if [ -d /opt/doitincloud.rdbcache ]; then
+  rm -rf /opt/doitincloud.rdbcache
 fi
 
-mkdir -p /opt/rdbcache
+mkdir -p /opt/doitincloud.rdbcache
 
-cp $DOWNLOAD_DIR/* /opt/rdbcache
+cp $DOWNLOAD_DIR/* /opt/doitincloud.rdbcache
 
-rm -rf ./rdbcache
+rm -rf ./doitincloud.rdbcache
 
-cat <<EOT > /opt/rdbcache/rdbcache
+cat <<EOT > /opt/doitincloud.rdbcache/doitincloud.rdbcache
 #!/bin/bash
 #
 # By Sam Wen @ 02/10/2018
@@ -142,23 +142,23 @@ if [ -z "\$DB_USER_PASS" ]; then
   exit 1
 fi
 
-cd /opt/rdbcache
-$JAVA_BIN -jar ./rdbcache.jar "\$@"
+cd /opt/doitincloud.rdbcache
+$JAVA_BIN -jar ./doitincloud.rdbcache.jar "\$@"
 EOT
 
-chmod +x /opt/rdbcache/rdbcache
+chmod +x /opt/doitincloud.rdbcache/doitincloud.rdbcache
 
-if [ -L /usr/bin/rdbcache ]; then
-  rm -f /usr/bin/rdbcache
+if [ -L /usr/bin/doitincloud.rdbcache ]; then
+  rm -f /usr/bin/doitincloud.rdbcache
 fi
 
 BIN_FOLDER=$(dirname /usr/local/bin/wget)
 
-ln -s /opt/rdbcache/rdbcache $BIN_FOLDER/rdbcache
+ln -s /opt/doitincloud.rdbcache/doitincloud.rdbcache $BIN_FOLDER/doitincloud.rdbcache
 
 echo ""
-echo "rdbcache is installed in /opt/rdbcache folder"
-echo "symlink $BIN_FOLDER/rdbcache is created"
+echo "doitincloud.rdbcache is installed in /opt/doitincloud.rdbcache folder"
+echo "symlink $BIN_FOLDER/doitincloud.rdbcache is created"
 if [ "$(uname -s)" == "Linux" ]; then
-  echo "You can run /opt/rdbcache/install_service to install rdbcache as service"
+  echo "You can run /opt/doitincloud.rdbcache/install_service to install doitincloud.rdbcache as service"
 fi

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# rdbcache service
+# doitincloud.rdbcache service
 #
 # chkconfig: 2345 99 01
 #
@@ -8,9 +8,9 @@
 #
 ##########################
 return
-pid_file=/var/run/rdbcache.pid
-log_file=/var/log/rdbcache.log
-app_file=/opt/rdbcache/rdbcache
+pid_file=/var/run/doitincloud.rdbcache.pid
+log_file=/var/log/doitincloud.rdbcache.log
+app_file=/opt/doitincloud.rdbcache/doitincloud.rdbcache
 
 is_running() {
   running=0
