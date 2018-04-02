@@ -75,7 +75,67 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     }
 
     @Override
-    public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
+    public boolean find(final Context context, final KvPair pair, final KeyInfo keyInfo) {
+
+        LOGGER.trace("find " + pair.printKey() + " " + keyInfo.toString());
+
+        boolean foundAll = true;
+
+        String key = pair.getId();
+
+        if (!pair.isNewUuid()) {
+
+            KeyInfo keyInfoCached = AppCtx.getLocalCache().getKeyInfo(key);
+
+            if (keyInfoCached != null) {
+                keyInfo.copy(keyInfoCached);
+                LOGGER.trace("find - found from cache: " + key);
+                return true;
+            }
+
+            if (enableRedisCache) {
+                StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.get");
+                KeyInfo keyInfoRedis = keyInfoOps.get(hkeyPrefix + "::keyinfo", key);
+                if (stopWatch != null) stopWatch.stopNow();
+
+                if (keyInfoRedis != null) {
+                    keyInfo.copy(keyInfoCached);
+                    AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+                    LOGGER.trace("find - found from cache: " + key);
+                    return true;
+                }
+            }
+        }
+
+        KvIdType idType = new KvIdType(key, "info");
+
+        StopWatch stopWatch = context.startStopWatch("redis", "kvPairRepo.findAll");
+        Optional<KvPair> dbPairOpt = AppCtx.getKvPairRepo().findById(idType);
+        if (stopWatch != null) stopWatch.stopNow();
+
+        if (!dbPairOpt.isPresent()) {
+            LOGGER.debug("find - not found from anywhere: " + key);
+            return false;
+        }
+
+        KvPair dbPair = dbPairOpt.get();
+        Map<String, Object> map = dbPair.getData();
+        KeyInfo keyInfoDb = Utils.toPojo(map, KeyInfo.class);
+
+        keyInfo.copy(keyInfoDb);
+        AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+
+        Utils.getExcutorService().submit(() -> {
+            StopWatch stopWatch2 = context.startStopWatch("dbase", "finalQuery.save");
+            keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
+            if (stopWatch2 != null) stopWatch2.stopNow();
+        });
+
+        return true;
+    }
+
+    @Override
+    public boolean find(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         LOGGER.trace("find " + pairs.printKey() + "anyKey(" + anyKey.size() + ")");
 
@@ -99,7 +159,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 keys.add(key);
             }
 
-            KeyInfo keyInfo = AppCtx.getLocalCache().getKeyInfo(key);
+            KeyInfo keyInfo = null;
+            if (!pair.isNewUuid()) {
+                keyInfo = AppCtx.getLocalCache().getKeyInfo(key);
+            }
 
             if (keyInfo != null) {
                 anyKey.add(keyInfo);
@@ -234,7 +297,39 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     }
 
     @Override
-    public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
+    public boolean save(final Context context, final KvPair pair, final KeyInfo keyInfo) {
+
+
+        LOGGER.trace("save " + pair.printKey() + " " + keyInfo.toString());
+
+        String key = pair.getId();
+
+        if (!keyInfo.getIsNew()) {
+            LOGGER.trace("save KeyInfo is not new, skipped for " + key);
+            return false;
+        }
+
+        keyInfo.cleanup();
+
+        AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+
+        if (enableRedisCache) {
+            StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.put");
+            keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
+            if (stopWatch != null) stopWatch.stopNow();
+        }
+
+        StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
+        AppCtx.getKvPairRepo().save(new KvPair(key, "info", Utils.toMap(keyInfo)));
+        if (stopWatch != null) stopWatch.stopNow();
+
+        LOGGER.debug("save Ok: " + pair.printKey());
+
+        return true;
+    }
+
+    @Override
+    public boolean save(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         Assert.isTrue(anyKey.size() == pairs.size(), anyKey.size() + " != " +
                 pairs.size() + ", only supports that pairs and anyKey have the same size");
@@ -283,7 +378,25 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     }
 
     @Override
-    public void delete(Context context, KvPairs pairs) {
+    public void delete(final Context context, final KvPair pair) {
+
+        LOGGER.trace("delete " + pair.printKey());
+
+        AppCtx.getLocalCache().removeKeyInfo(pair.getId());
+
+        if (enableRedisCache) {
+            StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.delete");
+            keyInfoOps.delete(hkeyPrefix + "::keyinfo", pair.getId());
+            if (stopWatch != null) stopWatch.stopNow();
+        }
+
+        //intentional leave database not deleted
+
+        LOGGER.debug("delete Ok: " + pair.printKey());
+    }
+
+    @Override
+    public void delete(final Context context, final KvPairs pairs) {
 
         LOGGER.trace("delete " + pairs.printKey());
 

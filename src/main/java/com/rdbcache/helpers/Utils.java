@@ -44,22 +44,18 @@ public class Utils {
             json = json.trim();
             if (json.startsWith("{") && json.endsWith("}")) {
                 try {
-                    return getObjectMapper().readValue(json, new TypeReference<LinkedHashMap<String, Object>>() {
-                    });
+                    return getObjectMapper().readValue(json,
+                            new TypeReference<LinkedHashMap<String, Object>>() {});
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
             if (json.startsWith("[") && json.endsWith("]")) {
                 try {
-                    List<Object> list = getObjectMapper().readValue(json, new TypeReference<ArrayList<Object>>() {});
+                    List<Object> list = getObjectMapper().readValue(json,
+                            new TypeReference<ArrayList<Object>>() {});
                     if (list != null) {
-                        Map<String, Object> map = new LinkedHashMap<String, Object>();
-                        int i = 0;
-                        for (Object obj : list) {
-                            map.put(String.valueOf(i++), obj);
-                        }
-                        return map;
+                        return convertListToMap(list);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -70,12 +66,7 @@ public class Utils {
             return new LinkedHashMap<>((Map) object);
         } else if (object instanceof List) {
             List<Object> list = (List<Object>) object;
-            Map<String, Object> map = new LinkedHashMap<String, Object>();
-            int i = 0;
-            for (Object obj : list) {
-                map.put(String.valueOf(i++), obj);
-            }
-            return map;
+            return convertListToMap(list);
         } else {
             try {
                 return getObjectMapper().convertValue(object, new TypeReference<LinkedHashMap<String, Object>>() {});
@@ -84,6 +75,89 @@ public class Utils {
             }
             return null;
         }
+    }
+
+    public static Map<String, Object> convertListToMap(List<Object> list) {
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        int i = 0;
+        for (Object obj : list) {
+            map.put(String.valueOf(i++), obj);
+        }
+        return map;
+    }
+
+    public static List<Object> toList(Object object) {
+        if (object == null) return null;
+        if (object instanceof String) {
+            String json = (String) object;
+            if (json.length() < 3) return null;
+            json = json.trim();
+            if (json.startsWith("{") && json.endsWith("}")) {
+                try {
+                    Map<String, Object> map = getObjectMapper().readValue(json,
+                            new TypeReference<LinkedHashMap<String, Object>>() {});
+                    if (map == null) {
+                        return null;
+                    }
+                    return convertMapToList(map);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (json.startsWith("[") && json.endsWith("]")) {
+                try {
+                    List<Object> list = getObjectMapper().readValue(json, new TypeReference<ArrayList<Object>>() {});
+                    return list;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        } else if (object instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) object;
+            return convertMapToList(map);
+        } else if (object instanceof List) {
+            return new ArrayList<>((List) object);
+        } else {
+            try {
+                return getObjectMapper().convertValue(object, new TypeReference<List<Object>>() {});
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
+    public static List<Object> convertMapToList(Map<String, Object> map) {
+        List<String> doneKeys = new ArrayList<>();
+        List<Object> list = new ArrayList<>(map.size());
+        for (int i = 0; i < map.size(); i++) {
+            String key = Integer.toString(i);
+            Object value = map.get(key);
+            if (value != null) {
+                list.set(i, value);
+                doneKeys.add(key);
+            }
+        }
+        if (doneKeys.size() < map.size() ) {
+            int i = 0;
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String key = entry.getKey();
+                if (doneKeys.contains(key)) {
+                    continue;
+                }
+                for (; i < list.size(); i++) {
+                    if (list.get(i) == null) {
+                        break;
+                    }
+                }
+                if (i == list.size()) {
+                    break;
+                }
+                list.set(i, entry);
+            }
+        }
+        return list;
     }
 
     public static <T> T toPojo(Map<String, Object> map, Class<T> type) {

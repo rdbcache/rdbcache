@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.util.Assert;
 
+import java.security.Key;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,6 +28,25 @@ public class SimpleKeyInfoRepo implements KeyInfoRepo {
 
     public SimpleKeyInfoRepo() {
         data = new LinkedHashMap<>();
+    }
+
+    @Override
+    public boolean find(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("find: " + pair.printKey() + " " + keyInfo.toString());
+
+        boolean foundAll = true;
+        String key = pair.getId();
+        Map<String, Object> map = (Map<String, Object>) data.get(key);
+        if (map == null) {
+            foundAll = false;
+            LOGGER.trace("find: Not Found " + key);
+        } else {
+            KeyInfo keyInfo2 = Utils.toPojo(map,  KeyInfo.class);
+            keyInfo.copy(keyInfo2);
+            LOGGER.trace("find: Found " + key);
+        }
+        return foundAll;
     }
 
     @Override
@@ -54,6 +74,16 @@ public class SimpleKeyInfoRepo implements KeyInfoRepo {
     }
 
     @Override
+    public boolean save(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        String key = pair.getId();
+        Map<String, Object> map = Utils.toMap(keyInfo);
+        data.put(key, map);
+        LOGGER.trace("save: " + key);
+        return true;
+    }
+
+    @Override
     public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
 
         Assert.isTrue(anyKey.size() == pairs.size(), anyKey.size() + " != " +
@@ -68,6 +98,15 @@ public class SimpleKeyInfoRepo implements KeyInfoRepo {
             LOGGER.trace("save: " + key);
         }
         return true;
+    }
+
+    @Override
+    public void delete(Context context, KvPair pair) {
+
+        LOGGER.trace("delete: " + pair.printKey());
+        String key = pair.getId();
+        data.remove(key);
+        LOGGER.trace("delete: " + key);
     }
 
     @Override

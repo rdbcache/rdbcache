@@ -94,7 +94,14 @@ public class DbaseRepoImpl implements DbaseRepo {
     }
 
     @Override
-    public boolean find(Context context, KvPairs pairs, AnyKey anyKey) {
+    public boolean find(final Context context, final KvPair pair, final KeyInfo keyInfo) {
+        KvPairs pairs = new KvPairs(pair);
+        AnyKey anyKey = new AnyKey(keyInfo);
+        return find(context, pairs, anyKey);
+    }
+
+    @Override
+    public boolean find(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         LOGGER.trace("find: " + pairs.printKey() + anyKey.print());
 
@@ -141,7 +148,19 @@ public class DbaseRepoImpl implements DbaseRepo {
     }
 
     @Override
-    public boolean save(Context context, KvPairs pairs, AnyKey anyKey) {
+    public boolean save(final Context context, final KvPair pair, final KeyInfo keyInfo) {
+        if (saveOne(context, pair, keyInfo)) {
+            LOGGER.debug("save - saveOne Ok: " + pair.printKey());
+            AppCtx.getKeyInfoRepo().save(context, pair, keyInfo);
+            return true;
+        } else {
+            LOGGER.debug("save - saveOne failed: " + pair.printKey());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean save(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         LOGGER.trace("save: " + pairs.printKey() + anyKey.print());
 
@@ -177,7 +196,14 @@ public class DbaseRepoImpl implements DbaseRepo {
     }
 
     @Override
-    public boolean insert(Context context, KvPairs pairs, AnyKey anyKey) {
+    public boolean insert(final Context context, final KvPair pair, final KeyInfo keyInfo) {
+        KvPairs pairs = new KvPairs(pair);
+        AnyKey anyKey = new AnyKey(keyInfo);
+        return insert(context, pairs, anyKey);
+    }
+
+    @Override
+    public boolean insert(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         LOGGER.trace("insert: " + pairs.printKey() + anyKey.print());
 
@@ -221,7 +247,14 @@ public class DbaseRepoImpl implements DbaseRepo {
     }
 
     @Override
-    public boolean update(Context context, KvPairs pairs, AnyKey anyKey) {
+    public boolean update(final Context context, final KvPair pair, final KeyInfo keyInfo) {
+        KvPairs pairs = new KvPairs(pair);
+        AnyKey anyKey = new AnyKey(keyInfo);
+        return update(context, pairs, anyKey);
+    }
+
+    @Override
+    public boolean update(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         LOGGER.trace("update: " + pairs.printKey() + anyKey.print());
 
@@ -262,7 +295,14 @@ public class DbaseRepoImpl implements DbaseRepo {
     }
 
     @Override
-    public boolean delete(Context context, KvPairs pairs, AnyKey anyKey) {
+    public boolean delete(final Context context, final KvPair pair, final KeyInfo keyInfo) {
+        KvPairs pairs = new KvPairs(pair);
+        AnyKey anyKey = new AnyKey(keyInfo);
+        return delete(context, pairs, anyKey);
+    }
+
+    @Override
+    public boolean delete(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         LOGGER.trace("delete: " + pairs.printKey() + anyKey.print());
 
@@ -302,7 +342,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         return true;
     }
 
-    private boolean saveOne(Context context, KvPair pair, KeyInfo keyInfo) {
+    private boolean saveOne(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
         LOGGER.trace("saveOne: " + pair.getId() + " " + keyInfo.toString());
 
@@ -388,7 +428,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         return update(context, new KvPairs(pair), new AnyKey(keyInfo));
     }
 
-    private boolean kvFind(Context context, KvPairs pairs, AnyKey anyKey) {
+    private boolean kvFind(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         LOGGER.trace("kvFind: " + pairs.printKey() + anyKey.print());
 
@@ -473,7 +513,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         }
     }
 
-    private boolean kvUpdate(Context context, KvPairs pairs, AnyKey anyKey) {
+    private boolean kvUpdate(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         KvPairs pairsClone = pairs.clone();
         kvFind(context, pairsClone, anyKey);
@@ -487,7 +527,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         return kvSave(context, pairsClone, anyKey);
     }
 
-    private boolean kvSave(Context context, KvPairs pairs, AnyKey anyKey) {
+    private boolean kvSave(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         LOGGER.trace("kvSave: " + pairs.printKey() + anyKey.print());
 
@@ -550,7 +590,7 @@ public class DbaseRepoImpl implements DbaseRepo {
     }
 
 
-    private boolean kvDelete(Context context, KvPairs pairs, AnyKey anyKey) {
+    private boolean kvDelete(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         LOGGER.trace("kvDelete: " + pairs.printKey() + anyKey.print());
 

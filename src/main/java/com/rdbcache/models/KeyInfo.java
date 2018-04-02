@@ -238,6 +238,26 @@ public class KeyInfo implements Cloneable {
         isNew = null;
     }
 
+    public void copy(KeyInfo keyInfo) {
+        expire = keyInfo.expire;
+        table = keyInfo.table;
+        clause = keyInfo.clause;
+        if (keyInfo.params != null) {
+            if (params == null) {
+                params = new ArrayList<>();
+            }
+            for (Object p: keyInfo.params) {
+                params.add(p);
+            }
+        } else {
+            params = null;
+        }
+        queryKey = keyInfo.queryKey;
+        isNew = keyInfo.isNew;
+        expireOld = keyInfo.expireOld;
+        query = keyInfo.query;
+    }
+
     @Override
     public KeyInfo clone() {
         try {

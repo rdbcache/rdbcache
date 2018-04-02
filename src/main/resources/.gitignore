@@ -1,4 +1,5 @@
 *
 !.gitignore
+!oauth2*
 !scripts/
 !scripts/*

@@ -869,7 +869,6 @@ public class RdbcacheApis {
 
         LOGGER.trace("pairs(" + pairs.size() +"): " + pairs.printKey());
 
-        KvPair pairKey = new KvPair(traceId, "trace");
         Optional<KvPair> opt = AppCtx.getKvPairRepo().findById(new KvIdType(traceId, "trace"));
         if (opt.isPresent()) {
             pairs.add(opt.get());

@@ -60,16 +60,6 @@ public class KvPair implements Serializable, Cloneable {
         data = new LinkedHashMap<String, Object>();
     }
 
-    public KvPair(String id, Object value) {
-        if (id.equals("*")) {
-            idType = new KvIdType(Utils.generateId());
-            isNewUuid = true;
-        } else {
-            idType = new KvIdType(id);
-        }
-        setValue(value);
-    }
-
     public KvPair(String id) {
         if (id.equals("*")) {
             idType = new KvIdType(Utils.generateId());

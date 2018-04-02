@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS rdbcache_kv_pair (
 );
 
 CREATE TABLE IF NOT EXISTS rdbcache_monitor (
-  id int not null auto_increment,
+  id bigint not null auto_increment,
   name varchar(255) not null,
   thread_id int,
   duration bigint,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS rdbcache_monitor (
 );
 
 CREATE TABLE IF NOT EXISTS rdbcache_client_test (
-  id int not null auto_increment,
+  id bigint not null auto_increment,
   trace_id varchar(64),
   status varchar(32),
   passed boolean,
@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS rdbcache_client_test (
 );
 
 CREATE TABLE IF NOT EXISTS rdbcache_stopwatch (
-  id int not null auto_increment,
-  monitor_id int not null,
+  id bigint not null auto_increment,
+  monitor_id bigint not null,
   type varchar(16) not null,
   action varchar(255),
   thread_id int,
@@ -51,6 +51,41 @@ CREATE TABLE IF NOT EXISTS rdbcache_stopwatch (
   KEY (monitor_id),
   PRIMARY KEY(id),
   FOREIGN KEY(monitor_id) REFERENCES rdbcache_monitor(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS rdbcache_user_details (
+  user_id varchar(255) PRIMARY KEY,
+  username varchar(255) NOT NULL,
+  password varchar(255) DEFAULT '',
+  enabled boolean DEFAULT 1,
+  account_non_locked boolean DEFAULT 1,
+  credentials_non_expired boolean DEFAULT 1,
+  authorities varchar(255),
+  additional_information VARCHAR(4096),
+  expires_at long DEFAULT NULL,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY username_unique (username)
+);
+
+CREATE TABLE IF NOT EXISTS rdbcache_client_details (
+  client_id varchar(255) PRIMARY KEY,
+  resource_ids varchar(255),
+  secret_required boolean DEFAULT 1,
+  client_secret varchar(255),
+  scoped boolean DEFAULT 1,
+  scope varchar(255),
+  authorized_grant_types varchar(255),
+  registered_redirect_uri varchar(4096),
+  authorities varchar(255),
+  access_token_validity_seconds int DEFAULT 3600,
+  refresh_token_validity_seconds int DEFAULT 86400,
+  auto_approve_scopes varchar(255),
+  additional_information varchar(4095),
+  autoapprove varchar(255),
+  expires_at long NULL DEFAULT NULL,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS departments (

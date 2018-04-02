@@ -2,6 +2,7 @@ package com.rdbcache.controllers;
 
 import com.google.common.io.CharStreams;
 import com.rdbcache.configs.AppCtx;
+import com.rdbcache.configs.Configurations;
 import com.rdbcache.configs.PropCfg;
 import com.rdbcache.helpers.Utils;
 import com.rdbcache.services.LocalCache;
@@ -20,6 +21,7 @@ import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ContextConfiguration;

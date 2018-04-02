@@ -74,7 +74,7 @@ public class QueryTest {
 
             Map<String, Object> map1 = Utils.toMap(json);
 
-            KvPair pair = new KvPair("*", map1);
+            KvPair pair = new KvPair("*", "data", map1);
 
             pairs.setPair(pair);
 
@@ -137,7 +137,7 @@ public class QueryTest {
             String json2 = "{\"name\" : \"David Copper\"}";
             Map<String, Object> map1 = Utils.toMap(json2);
 
-            KvPair pair = new KvPair(key, map1);
+            KvPair pair = new KvPair(key, "data", map1);
             pairs.setPair(pair);
             KeyInfo keyInfo2 = new KeyInfo();
             keyInfo2.setExpire("100");

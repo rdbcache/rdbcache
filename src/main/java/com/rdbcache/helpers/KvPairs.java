@@ -33,14 +33,17 @@ public class KvPairs extends ArrayList<KvPair>{
                 String key = (String) object;
                 add(new KvPair(key));
             } else if (object instanceof Map) {
-                add(new KvPair("*", object));
+                KvPair pair = new KvPair("*");
+                pair.setValue(object);
+                add(pair);
             }
         }
     }
 
     public KvPairs(Map<String, Object> map) {
         for (Map.Entry<String, Object> entry: map.entrySet()) {
-            KvPair pair = new KvPair(entry.getKey(), entry.getValue());
+            KvPair pair = new KvPair(entry.getKey());
+            pair.setValue(entry.getValue());
             add(pair);
         }
     }

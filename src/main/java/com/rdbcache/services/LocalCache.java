@@ -257,7 +257,11 @@ public class LocalCache extends Thread {
         }
         Long ttl = keyInfo.getExpireTTL();
         if (ttl > dataMaxCacheTLL) ttl = dataMaxCacheTLL;
-        put("data::" + pair.getId(), pair.getDataClone(), ttl * 1000);
+        String type = pair.getType();
+        if (type.equals("info")) {
+            type = "data";
+        }
+        put(type + "::" + pair.getId(), pair.getDataClone(), ttl * 1000);
     }
 
     public void updateData(KvPair pair) {
@@ -265,26 +269,56 @@ public class LocalCache extends Thread {
         if (dataMaxCacheTLL <= 0L || update.size() == 0) {
             return ;
         }
-        update("data::" + pair.getId(), update);
+        String type = pair.getType();
+        if (type.equals("info")) {
+            type = "data";
+        }
+        update(type + "::" + pair.getId(), update);
     }
-
+    /*
     public Map<String, Object> getData(String key) {
         return (Map<String, Object>) get("data::" + key);
     }
-
+    */
+    public Map<String, Object> getData(String key, String type) {
+        return (Map<String, Object>) get(type + "::" + key);
+    }
+    /*
     public boolean containsData(String key) {
         return containsKey("data::" + key);
     }
-
+    */
+    public boolean containsData(String key, String type) {
+        return containsKey(type + "::" + key);
+    }
+    /*
     public void removeData(String key) {
         cache.remove("data::" + key);
+    }
+    */
+    public void removeData(String key, String type) {
+        cache.remove(type + "::" + key);
+    }
+
+    public void removeKeyAndData(KvPair pair) {
+        String key = pair.getId();
+        cache.remove("key::" + key);
+        String type = pair.getType();
+        if (type.equals("info")) {
+            type = "data";
+        }
+        cache.remove(type + "::" + key);
     }
 
     public void removeKeyAndData(List<KvPair> pairs) {
         for (KvPair pair: pairs) {
             String key = pair.getId();
             cache.remove("key::" + key);
-            cache.remove("data::" + key);
+            String type = pair.getType();
+            if (type.equals("info")) {
+                type = "data";
+            }
+            cache.remove(type + "::" + key);
         }
     }
 
