@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS rdbcache_kv_pair;
 
 CREATE TABLE IF NOT EXISTS rdbcache_kv_pair (
   id varchar(255) not null,
-  type varchar(16) not null,
+  type varchar(255) not null,
   value text,
   PRIMARY KEY (id, type)
 );

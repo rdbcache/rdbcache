@@ -10,8 +10,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import doitincloud.commons.exceptions.BadRequestException;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -207,16 +209,57 @@ public class Utils {
         return null;
     }
 
+    private static SimpleDateFormat yearFormat;
+
+    public static SimpleDateFormat getYearFormat() {
+        if (yearFormat == null) {
+            yearFormat = new SimpleDateFormat("yyyy");
+        }
+        return yearFormat;
+    }
+
+    private static SimpleDateFormat timeFormat;
+
+    public static SimpleDateFormat getTimeFormat() {
+        if (timeFormat == null) {
+            timeFormat = new SimpleDateFormat("HH:mm:ss");
+        }
+        return timeFormat;
+    }
+
+    private static SimpleDateFormat dateFormat;
+
+    public static SimpleDateFormat getDateFormat() {
+        if (dateFormat == null) {
+            dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        }
+        return dateFormat;
+    }
+
+    private static SimpleDateFormat dateTimeFormat;
+
+    public static SimpleDateFormat getDateTimeFormat() {
+        if (dateTimeFormat == null) {
+            //dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
+            dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        }
+        return dateTimeFormat;
+    }
+
     // 4c93c407-7915-4413-89e0-194b2a02314c
     // 012345678901234567890123456789012345
     //           1         2         3
-    public static String generateId() {
-        String uuid = UUID.randomUUID().toString();
+    public static String uuidConvert(String uuid) {
         return uuid.substring(0,8) +
                 uuid.substring(9,13) +
                 uuid.substring(14,18) +
                 uuid.substring(19,23) +
                 uuid.substring(24,36);
+    }
+
+    public static String generateId() {
+        String uuid = UUID.randomUUID().toString();
+        return uuidConvert(uuid);
     }
 
     // loosely check if object a equals object b
@@ -328,6 +371,7 @@ public class Utils {
 
             String key = entry.getKey();
             if (!map.containsKey(key)) {
+                changes.put(key, entry.getValue()); // for report purpose
                 return false;
             }
             Object value = entry.getValue();

@@ -88,22 +88,17 @@ public class DbaseOps {
     }
 
     public String formatDate(String type, Date date) {
-        if (type.equals("year(4)") || type.equals("year")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
+        if (type.startsWith("year") || type.equals("year")) {
+            SimpleDateFormat sdf = Utils.getYearFormat();
             return sdf.format(date);
         } else if (type.equals("time")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
+            SimpleDateFormat sdf = Utils.getTimeFormat();
             return sdf.format(date);
         } else if (type.equals("date")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat sdf = Utils.getDateFormat();
             return sdf.format(date);
-        } else if (type.equals("datetime")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss'Z'");
-            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
-            return sdf.format(date);
-        } else if (type.equals("timestamp")) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss'Z'");
-            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+        } else if (type.equals("datetime") || type.equals("timestamp")) {
+            SimpleDateFormat sdf = Utils.getDateTimeFormat();
             return sdf.format(date);
         }
         assert false : "not supported type " + type;
@@ -269,12 +264,12 @@ public class DbaseOps {
 
     public List<String> getTableList(Context context) {
 
-        Map<String, Object> tablesMap = (Map<String, Object>) AppCtx.getLocalCache().get("table_list");
+        Map<String, Object> tablesMap = (Map<String, Object>) AppCtx.getCacheOps().get("table_list");
         if (tablesMap != null) {
             return (List<String>) tablesMap.get("tables");
         }
 
-        tablesMap = (Map<String, Object>) AppCtx.getLocalCache().put("table_list", tableInfoCacheTTL * 1000L, () -> {
+        tablesMap = (Map<String, Object>) AppCtx.getCacheOps().put("table_list", tableInfoCacheTTL * 1000L, () -> {
             List<String> alltables = fetchTableList(context);
             if (alltables == null) {
                 LOGGER.error("failed to get table list");
@@ -302,12 +297,12 @@ public class DbaseOps {
 
     public Map<String, Object> getTableColumns(Context context, String table) {
 
-        Map<String, Object> columns = (Map<String, Object>) AppCtx.getLocalCache().get("table_columns::" + table);
+        Map<String, Object> columns = (Map<String, Object>) AppCtx.getCacheOps().get("table_columns::" + table);
         if (columns != null) {
             return columns;
         }
 
-        columns = (Map<String, Object>) AppCtx.getLocalCache().put("table_columns::" + table, tableInfoCacheTTL * 1000L, () -> {
+        columns = (Map<String, Object>) AppCtx.getCacheOps().put("table_columns::" + table, tableInfoCacheTTL * 1000L, () -> {
             Map<String, Object> map = fetchTableColumns(context, table);
             if (map == null) {
                 String msg = "failed to get table columns";
@@ -328,13 +323,13 @@ public class DbaseOps {
 
     public String getTableAutoIncColumn(Context context, String table) {
 
-        Map<String, Object> columns = (Map<String, Object>) AppCtx.getLocalCache().get("table_auto_inc_columns");
+        Map<String, Object> columns = (Map<String, Object>) AppCtx.getCacheOps().get("table_auto_inc_columns");
         if (columns != null) {
             if (table == null) return null;
             return (String) columns.get(table);
         }
 
-        columns = (Map<String, Object>) AppCtx.getLocalCache().put("table_auto_inc_columns", tableInfoCacheTTL * 1000L, () -> {
+        columns = (Map<String, Object>) AppCtx.getCacheOps().put("table_auto_inc_columns", tableInfoCacheTTL * 1000L, () -> {
             Map<String, Object> map = fetchTableAutoIncrementColumns(context);
             if (map == null) {
                 String msg = "failed to get table auto increment column map";
@@ -356,12 +351,12 @@ public class DbaseOps {
 
     public Map<String, Object> getTableIndexes(Context context, String table) {
 
-        Map<String, Object> map = (Map<String, Object>) AppCtx.getLocalCache().get("table_indexes::" + table);
+        Map<String, Object> map = (Map<String, Object>) AppCtx.getCacheOps().get("table_indexes::" + table);
         if (map != null) {
             return map;
         }
 
-        Object object = AppCtx.getLocalCache().put("table_indexes::" + table, tableInfoCacheTTL * 1000L, () -> {
+        Object object = AppCtx.getCacheOps().put("table_indexes::" + table, tableInfoCacheTTL * 1000L, () -> {
             Map<String, Object> indexes = fetchTableUniqueIndexes(context, table);
             if (indexes == null) {
                 String msg = "failed to get table indexes";

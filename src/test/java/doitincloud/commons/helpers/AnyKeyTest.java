@@ -3,7 +3,7 @@ package doitincloud.commons.helpers;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.rdbcache.models.KeyInfo;
 
-import doitincloud.rdbcache.services.LocalCache;
+import doitincloud.rdbcache.services.CacheOps;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -77,11 +77,11 @@ public class AnyKeyTest {
         assertNotNull(keyInfo2);
         assertTrue(keyInfo == keyInfo2);
 
-        LocalCache localCache = new LocalCache();
-        localCache.init();
-        localCache.handleEvent(null);
+        CacheOps cacheOps = new CacheOps();
+        cacheOps.init();
+        cacheOps.handleEvent(null);
 
-        AppCtx.setLocalCache(localCache);
+        AppCtx.setCacheOps(cacheOps);
 
         try {
             for (int i = 0; i < 10; i++) {

@@ -2,12 +2,13 @@ package doitincloud.commons.helpers;
 
 import com.google.common.io.CharStreams;
 import doitincloud.rdbcache.configs.AppCtx;
+import doitincloud.rdbcache.controllers.supports.Request;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.repositories.KeyInfoRepo;
 import doitincloud.rdbcache.repositories.SimpleKeyInfoRepo;
+import doitincloud.rdbcache.services.CacheOps;
 import doitincloud.rdbcache.services.DbaseOps;
 
-import doitincloud.rdbcache.services.LocalCache;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
@@ -68,11 +69,11 @@ public class RequestTest {
 
         BDDMockito.when(AppCtx.getDbaseOps()).thenReturn(dbaseOps);
 
-        LocalCache localCache = new LocalCache();
-        localCache.init();
-        localCache.handleEvent(null);
+        CacheOps cacheOps = new CacheOps();
+        cacheOps.init();
+        cacheOps.handleEvent(null);
 
-        BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
+        BDDMockito.when(AppCtx.getCacheOps()).thenReturn(cacheOps);
     }
 
     protected HttpServletRequest getRequest(String api, String key, Object value, Optional<String> tableOpt,

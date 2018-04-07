@@ -19,7 +19,7 @@ public class KvPairTest {
                 "    \"query_key\" : \"28f0a2d90b3c9d340e853b838d27845c\"\n" +
                 "  }");
 
-        KvPair pair1 = new KvPair("*", "info", map);
+        KvPair pair1 = new KvPair("*", "keyInfo", map);
 
         Map<String, Object> pairMap1 = Utils.toMap(pair1);
 

@@ -28,9 +28,9 @@ import javax.annotation.PostConstruct;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class TaskQueue extends Thread {
+public class QueueOps extends Thread {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskQueue.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueueOps.class);
 
     private Boolean enableMonitor = PropCfg.getEnableMonitor();
 
@@ -157,13 +157,15 @@ public class TaskQueue extends Thread {
         }
 
         String action = parts[0];
-        String key = parts[1];
+        String hashKey = parts[1];
+        String[] subParts = hashKey.split(":");
+        String type = subParts[0];
+        String key = subParts[1];
         String traceId = parts[2];
 
         Context context = new Context(traceId);
         if (enableMonitor) context.enableMonitor(task, "queue", action);
-
-        KvPair pair = new KvPair(key);
+        KvPair pair = new KvPair(key, type);
 
         KvPairs pairs = new KvPairs(pair);
         AnyKey anyKey = new AnyKey();

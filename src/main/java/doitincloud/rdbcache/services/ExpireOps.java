@@ -126,36 +126,41 @@ public class ExpireOps {
     //
     // expire = 0,  it removes existing event and not to set any event
     //
+    public void setExpireKey(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        try {
+            String key = pair.getId();
+            String type = pair.getType();
+
+            LOGGER.trace("setExpireKey: " + pair.printKey() + " expire: " + keyInfo.getExpire());
+
+            String expire = keyInfo.getExpire();
+            String expKey = eventPrefix + "::" + type + ":" + key;
+
+            StopWatch stopWatch = context.startStopWatch("redis", "scriptExecutor.execute");
+            Long result = scriptExecutor.execute(set_expire_key_script,
+                    Collections.singletonList(expKey), context.getTraceId(), expire);
+            if (stopWatch != null) stopWatch.stopNow();
+
+            if (result != 1) {
+                keyInfo.restoreExpire();
+            }
+            if (keyInfo.getIsNew()) {
+                AppCtx.getKeyInfoRepo().save(context, pair, keyInfo);
+            }
+        } catch (Exception e) {
+            String msg = e.getCause().getMessage();
+            LOGGER.error(msg);
+            context.logTraceMessage(msg);
+        }
+    }
+
     public void setExpireKey(Context context, KvPairs pairs, AnyKey anyKey) {
 
         for (int i = 0; i < pairs.size(); i++) {
-            try {
-                KvPair pair = pairs.get(i);
-                String key = pair.getId();
-
-                KeyInfo keyInfo = anyKey.getAny(i);
-
-                LOGGER.trace("setExpireKey: " + pair.printKey() + " expire: " + keyInfo.getExpire());
-
-                String expire = keyInfo.getExpire();
-                String expKey = eventPrefix + "::" + key;
-
-                StopWatch stopWatch = context.startStopWatch("redis", "scriptExecutor.execute");
-                Long result = scriptExecutor.execute(set_expire_key_script,
-                        Collections.singletonList(expKey), context.getTraceId(), expire);
-                if (stopWatch != null) stopWatch.stopNow();
-
-                if (result != 1) {
-                    keyInfo.restoreExpire();
-                }
-                if (keyInfo.getIsNew()) {
-                    AppCtx.getKeyInfoRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
-                }
-            } catch (Exception e) {
-                String msg = e.getCause().getMessage();
-                LOGGER.error(msg);
-                context.logTraceMessage(msg);
-            }
+            KvPair pair = pairs.get(i);
+            KeyInfo keyInfo = anyKey.getAny(i);
+            setExpireKey(context, pair, keyInfo);
         }
     }
 
@@ -179,15 +184,18 @@ public class ExpireOps {
             return;
         }
 
-        String key = parts[1];
+        String hashKey = parts[1];
+        String[] subParts = hashKey.split(":");
+        String type = subParts[0];
+        String key = subParts[1];
         String traceId = parts[2];
 
         Context context = new Context(traceId);
-        KvPair pair = new KvPair(key);
+        KvPair pair = new KvPair(key, type);
 
         if (enableMonitor) context.enableMonitor(event, "event", key);
 
-        String lockKey = "lock_" + eventPrefix + "::" + key + "::" + traceId;
+        String lockKey = "lock_" + eventPrefix + "::" + hashKey + "::" + traceId;
         String signature = Utils.generateId();
 
         StopWatch stopWatch = context.startStopWatch("redis", "scriptExecutor.execute");

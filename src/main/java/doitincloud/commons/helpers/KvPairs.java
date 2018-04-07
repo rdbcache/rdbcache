@@ -30,7 +30,7 @@ public class KvPairs extends ArrayList<KvPair>{
                 add(new KvPair(key));
             } else if (object instanceof Map) {
                 KvPair pair = new KvPair("*");
-                pair.setValue(object);
+                pair.setObject(object);
                 add(pair);
             }
         }
@@ -39,7 +39,7 @@ public class KvPairs extends ArrayList<KvPair>{
     public KvPairs(Map<String, Object> map) {
         for (Map.Entry<String, Object> entry: map.entrySet()) {
             KvPair pair = new KvPair(entry.getKey());
-            pair.setValue(entry.getValue());
+            pair.setObject(entry.getValue());
             add(pair);
         }
     }
@@ -79,7 +79,12 @@ public class KvPairs extends ArrayList<KvPair>{
         if (index > size()) {
             throw new ServerErrorException("getAny index out of range");
         } else if (index == size()) {
-            add(new KvPair("*"));
+            if (index == 0) {
+                add(new KvPair("*"));
+            } else {
+                String type = get(0).getType();
+                add(new KvPair("*", type));
+            }
         }
         return get(index);
     }

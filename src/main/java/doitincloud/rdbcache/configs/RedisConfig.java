@@ -6,7 +6,7 @@
 
 package doitincloud.rdbcache.configs;
 
-import doitincloud.commons.helpers.Nullable;
+import doitincloud.commons.supports.Nullable;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.services.ExpireOps;
 

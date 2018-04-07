@@ -141,39 +141,35 @@ public class KvPair implements Serializable, Cloneable {
     }
 
     public void setValue(String value) {
-        Map<String, Object> map = Utils.toMap(value);
-        if (map == null) {
+        if (data == null) {
             data = new LinkedHashMap<String, Object>();
+        } else {
+            data.clear();
+        }
+        Map<String, Object> map = Utils.toMap(value);
+        if (map != null) {
+            for (Map.Entry<String, Object> entry: map.entrySet()) {
+                data.put(entry.getKey(), entry.getValue());
+            }
+            return;
+        }
+        if (value.charAt(0) == '"') {
             int length = value.length();
-            if (value.charAt(0) == '"' && value.charAt(length-1) == '"') {
+            if (value.charAt(length-1) == '"') {
                 value = value.substring(1, length - 1);
             }
-            data.put("_DEFAULT_", value);
-        } else {
-            data = filterOutNull(map);
         }
+        data.put("_DEFAULT_", value);
     }
 
-    public void setValue(Object value) {
+    public void setObject(Object value) {
         if (value instanceof Map) {
             setData((Map<String, Object>) value);
+        } else if (value instanceof String) {
+            setValue((String) value);
         } else {
-            setValue(value.toString());
+            setData(Utils.toMap(value));
         }
-    }
-
-    private Map<String, Object> filterOutNull(Map<String, Object> map) {
-        Map<String, Object> newMap = new LinkedHashMap<>();
-        for (Map.Entry<String, Object> entry: map.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            if (value != null && "null".equals(value)) {
-                newMap.put(key, null);
-            } else {
-                newMap.put(key, value);
-            }
-        }
-        return newMap;
     }
 
     public Map<String, Object> getData() {
@@ -181,7 +177,7 @@ public class KvPair implements Serializable, Cloneable {
     }
 
     public void setData(Map<String, Object> map) {
-        data = filterOutNull(map);;
+        data = map;
     }
 
     public void clearData() {
@@ -202,9 +198,7 @@ public class KvPair implements Serializable, Cloneable {
     }
 
     public KvPair clone() {
-        KvPair clone = new KvPair();
-        clone.idType.setId(idType.getId());
-        clone.idType.setId(idType.getId());
+        KvPair clone = new KvPair(idType.clone());
         clone.isNewUuid = isNewUuid;
         clone.data = getDataClone();
         return clone;

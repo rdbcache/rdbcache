@@ -11,6 +11,8 @@ import doitincloud.rdbcache.configs.PropCfg;
 import doitincloud.commons.exceptions.ServerErrorException;
 import doitincloud.commons.helpers.*;
 
+import doitincloud.rdbcache.controllers.supports.Request;
+import doitincloud.rdbcache.controllers.supports.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.AbstractEnvironment;
@@ -149,11 +151,11 @@ public class RTQueryApis {
                 data.put("dataMaxCacheTLL", PropCfg.getDataMaxCacheTLL());
                 data.put("tableInfoCacheTTL", PropCfg.getTableInfoCacheTTL());
             } else if (action.equals("table")) {
-                data = AppCtx.getLocalCache().listAllTables();
+                data = AppCtx.getCacheOps().listAllTables();
             } else if (action.equals("key")) {
-                data = AppCtx.getLocalCache().listAllKeyInfos();
+                data = AppCtx.getCacheOps().listAllKeyInfo(null);
             } else if (action.equals("data")) {
-                data = AppCtx.getLocalCache().listAllData();
+                data = AppCtx.getCacheOps().listAllData(null);
             }
         } catch (Exception e) {
             String msg = e.getCause().getMessage();

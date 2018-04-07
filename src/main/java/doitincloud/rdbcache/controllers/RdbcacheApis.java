@@ -9,6 +9,8 @@ package doitincloud.rdbcache.controllers;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.commons.helpers.*;
 
+import doitincloud.rdbcache.controllers.supports.Request;
+import doitincloud.rdbcache.controllers.supports.Response;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.KvIdType;
 import doitincloud.rdbcache.models.KvPair;
@@ -273,13 +275,13 @@ public class RdbcacheApis {
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
         KvPairs pairsClone = pairs.clone();
+        KvPair pair = pairs.getPair();
 
         if (key.equals("*")) {
 
             if (!AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
-                pairs.getPair().clearData();
+                pair.clearData();
             }
-
             AppCtx.getAsyncOps().doSaveToRedis(context, pairsClone, anyKey);
 
         } else if (AppCtx.getRedisRepo().findAndSave(context, pairs, anyKey)) {
@@ -289,11 +291,8 @@ public class RdbcacheApis {
         } else {
 
             if (!AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
-                if (pairs.size() > 0)  {
-                    pairs.getPair().clearData();
-                }
+                pair.clearData();
             }
-
             AppCtx.getAsyncOps().doSaveToDbase(context, pairsClone, anyKey);
         }
 
@@ -338,13 +337,12 @@ public class RdbcacheApis {
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
         KvPairs pairsClone = pairs.clone();
+        KvPair pair = pairs.getPair();
 
         if (key.equals("*")) {
 
             if (!AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
-                if (pairs.size() > 0) {
-                    pairs.getPair().clearData();
-                }
+                pair.clearData();
             }
 
             AppCtx.getAsyncOps().doSaveToRedisAndDbase(context, pairsClone, anyKey);
@@ -356,7 +354,7 @@ public class RdbcacheApis {
         } else {
 
             if (!AppCtx.getDbaseRepo().find(context, pairs, anyKey)) {
-                pairs.getPair().clearData();
+                pair.clearData();
             }
 
             AppCtx.getAsyncOps().doSaveToDbase(context, pairsClone, anyKey);
@@ -390,6 +388,9 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt3,
             @RequestBody ArrayList<String> keys) {
 
+        if (request.getParameterMap().size() != 0) {
+            throw  new BadRequestException("query string is not supported");
+        }
         if (keys == null || keys.size() == 0) {
             throw new BadRequestException("missing keys");
         }
@@ -471,6 +472,9 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt3,
             @RequestBody Map<String, Object> map) {
 
+        if (request.getParameterMap().size() != 0) {
+            throw  new BadRequestException("query string is not supported");
+        }
         if (map == null || map.size() == 0) {
             throw new BadRequestException("missing request body");
         }
@@ -512,27 +516,31 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
-     * @param opt1 String, can be "sync" only
+     * @param opt1 String, can be "sync" or "async" and table
+     * @param opt2 String, can be "sync" or "async"  and table, but not the same as opt1
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/delkey/{key}",
-            "/rdbcache/v1/delkey/{key}/{opt1}"
+            "/rdbcache/v1/delkey/{key}/{opt1}",
+            "/rdbcache/v1/delkey/{key}/{opt1}/{opt2}"
     }, method = {RequestMethod.GET, RequestMethod.DELETE})
     public ResponseEntity<?> delkey_get(
             HttpServletRequest request,
             @PathVariable("key") String key,
-            @PathVariable Optional<String> opt1) {
+            @PathVariable Optional<String> opt1,
+            @PathVariable Optional<String> opt2) {
 
+        if (request.getParameterMap().size() != 0) {
+            throw  new BadRequestException("query string is not supported");
+        }
         if (key.equals("*")) {
             throw new BadRequestException("no * allowed as key");
         }
-        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
-            throw new BadRequestException("only option allowed is sync");
-        }
+
         Context context = new Context();
         KvPairs pairs = new KvPairs(key);
-        AnyKey anyKey = Request.process(context, request, pairs);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
 
         if (anyKey.getKeyInfo().getIsNew()) {
             throw new NotFoundException("key not found for " + key);
@@ -553,34 +561,34 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param keys List, list of keys for returned entries
-     * @param opt1 String, can be "sync" only
+     * @param opt1 String, can be "sync" or "async" and table
+     * @param opt2 String, can be "sync" or "async"  and table, but not the same as opt1
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/delkey",
-            "/rdbcache/v1/delkey/{opt1}"
+            "/rdbcache/v1/delkey/{opt1}",
+            "/rdbcache/v1/delkey/{opt1}/{opt2}"
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delkey_post(
             HttpServletRequest request,
             @RequestBody List<String> keys,
-            @PathVariable Optional<String> opt1) {
+            @PathVariable Optional<String> opt1,
+            @PathVariable Optional<String> opt2) {
 
+        if (request.getParameterMap().size() != 0) {
+            throw  new BadRequestException("query string is not supported");
+        }
         if (keys.contains("*")) {
             throw new BadRequestException("no * allowed as key");
-        }
-        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
-            throw new BadRequestException("only option allowed is sync");
         }
 
         Context context = new Context();
         KvPairs pairs = new KvPairs(keys);
-        AnyKey anyKey = Request.process(context, request, pairs);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
 
         if (anyKey.size() != keys.size()) {
             context.logTraceMessage("one or more keys not found");
-        }
-        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
-            throw new BadRequestException("only option allowed is sync");
         }
 
         for (int i = 0; i < anyKey.size(); i++) {
@@ -606,28 +614,31 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param key String, hash key
-     * @param opt1 String, can be "sync" only
+     * @param opt1 String, can be "sync" or "async" and table
+     * @param opt2 String, can be "sync" or "async"  and table, but not the same as opt1
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/delall/{key}",
-            "/rdbcache/v1/delall/{key}/{opt1}"
+            "/rdbcache/v1/delall/{key}/{opt1}",
+            "/rdbcache/v1/delall/{key}/{opt1}/{opt2}"
     }, method = RequestMethod.GET)
     public ResponseEntity<?> delall_get(
             HttpServletRequest request,
             @PathVariable("key") String key,
-            @PathVariable Optional<String> opt1) {
+            @PathVariable Optional<String> opt1,
+            @PathVariable Optional<String> opt2) {
 
+        if (request.getParameterMap().size() != 0) {
+            throw  new BadRequestException("query string is not supported");
+        }
         if (key.equals("*")) {
             throw new BadRequestException("no * allowed as key");
-        }
-        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
-            throw new BadRequestException("only option allowed is sync");
         }
 
         Context context = new Context();
         KvPairs pairs = new KvPairs(key);
-        AnyKey anyKey = Request.process(context, request, pairs);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
 
         if (anyKey.getKeyInfo().getIsNew()) {
             throw new NotFoundException("key not found for " + key);
@@ -648,28 +659,31 @@ public class RdbcacheApis {
      *
      * @param request HttpServletRequest
      * @param keys List, list of keys for returned entries
-     * @param opt1 String, can be "sync" only
+     * @param opt1 String, can be "sync" and table
+     * @param opt2 String, can be "sync" and table, but not the same as opt1
      * @return ResponseEntity
      */
     @RequestMapping(value = {
             "/rdbcache/v1/delall",
-            "/rdbcache/v1/delall/{opt1}"
+            "/rdbcache/v1/delall/{opt1}",
+            "/rdbcache/v1/delall/{opt1}/{opt2}"
     }, method = RequestMethod.POST)
     public ResponseEntity<?> delall_post(
             HttpServletRequest request,
             @RequestBody List<String> keys,
-            @PathVariable Optional<String> opt1) {
+            @PathVariable Optional<String> opt1,
+            @PathVariable Optional<String> opt2) {
 
+        if (request.getParameterMap().size() != 0) {
+            throw  new BadRequestException("query string is not supported");
+        }
         if (keys.contains("*")) {
             throw new BadRequestException("no * allowed as key");
-        }
-        if (opt1.isPresent() && !"sync".equals(opt1.get())) {
-            throw new BadRequestException("only option allowed is sync");
         }
 
         Context context = new Context();
         KvPairs pairs = new KvPairs(keys);
-        AnyKey anyKey = Request.process(context, request, pairs);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
 
         if (anyKey.size() != keys.size()) {
             context.logTraceMessage("one or more keys not found");
@@ -711,6 +725,10 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt1,
             @PathVariable Optional<String> opt2,
             @PathVariable Optional<String> opt3) {
+
+        if (request.getParameterMap().size() == 0) {
+            throw  new BadRequestException("query string is needed, try add ?limit=256 to url");
+        }
 
         Context context = new Context(true, true);
         KvPairs pairs = new KvPairs();
@@ -767,9 +785,13 @@ public class RdbcacheApis {
             @PathVariable Optional<String> opt3,
             @RequestBody ArrayList<String> keys) {
 
+        if (request.getParameterMap().size() == 0) {
+            throw  new BadRequestException("query string is needed");
+        }
+
         Context context = new Context(true, true);
         KvPairs pairs = new KvPairs(keys);
-        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2);
+        AnyKey anyKey = Request.process(context, request, pairs, opt1, opt2, opt3);
 
         LOGGER.trace(anyKey.print() + " pairs(" + pairs.size() +"): " + pairs.printKey());
 
@@ -822,7 +844,7 @@ public class RdbcacheApis {
             @RequestBody List<Map<String, Object>> list){
 
         if (request.getParameterMap().size() != 0) {
-            throw  new BadRequestException("no query string is needed");
+            throw  new BadRequestException("query string is not supported");
         }
         if (list == null || list.size() == 0) {
             throw new BadRequestException("missing request body");
@@ -856,6 +878,9 @@ public class RdbcacheApis {
             HttpServletRequest request,
             @PathVariable("traceId") String traceId){
 
+        if (request.getParameterMap().size() != 0) {
+            throw  new BadRequestException("query string is not supported");
+        }
         if (traceId.equals("*")) {
             throw new BadRequestException("no * allowed as trace id");
         }
@@ -893,6 +918,9 @@ public class RdbcacheApis {
             HttpServletRequest request,
             @RequestBody List<String> traceIds){
 
+        if (request.getParameterMap().size() != 0) {
+            throw  new BadRequestException("query string is not supported");
+        }
         if (traceIds == null || traceIds.size() == 0) {
             throw new BadRequestException("missing trace ids");
         }
@@ -938,22 +966,28 @@ public class RdbcacheApis {
             HttpServletRequest request,
             @PathVariable Optional<String> opt) {
 
+        if (request.getParameterMap().size() != 0) {
+            throw  new BadRequestException("query string is not supported");
+        }
         Context context = new Context();
         Request.process(context, request);
 
         if (!opt.isPresent()) {
-            AppCtx.getLocalCache().removeAllKeyInfos();
-            AppCtx.getLocalCache().removeAllData();
+            AppCtx.getCacheOps().removeAllKeyAndData();
         } else {
-            String action = opt.get();
-            if (action.equals("all")) {
-                AppCtx.getLocalCache().removeAll();
-            } else if (action.equals("table")) {
-                AppCtx.getLocalCache().removeAllTables();
-            } else if (action.equals("key")) {
-                AppCtx.getLocalCache().removeAllKeyInfos();
-            } else if (action.equals("data")) {
-                AppCtx.getLocalCache().removeAllData();
+            String option = opt.get();
+            if (option.equals("all")) {
+                AppCtx.getCacheOps().removeAll();
+            } else if (option.equals("table")) {
+                AppCtx.getCacheOps().removeAllTables();
+            } else if (option.equals("key")) {
+                AppCtx.getCacheOps().removeAllKeyInfo(null);
+            } else if (option.equals("data")) {
+                AppCtx.getCacheOps().removeAllData(null);
+            } else if (option.equals("key-and-data")) {
+                AppCtx.getCacheOps().removeAllKeyAndData();
+            } else {
+                throw new BadRequestException("unknown option: " + option);
             }
         }
 

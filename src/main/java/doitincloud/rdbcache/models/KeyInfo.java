@@ -52,6 +52,13 @@ public class KeyInfo implements Cloneable {
     public KeyInfo() {
     }
 
+    public KeyInfo(String table, String indexKey, Object indexValue) {
+        this.table = table;
+        clause = indexKey + " = ?";
+        params = new ArrayList<>();
+        params.add(indexValue);
+    }
+
     public String getExpire() {
         return expire;
     }

@@ -9,6 +9,7 @@ package doitincloud.rdbcache.services;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.commons.helpers.*;
 
+import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -211,13 +212,8 @@ public class AsyncOps {
 
             AppCtx.getRedisRepo().delete(context, pairs, anyKey);
             AppCtx.getKeyInfoRepo().delete(context, pairs);
+            deleteKvPairsKeyInfo(context, pairs, anyKey);
 
-            for (KvPair pair: pairs) {
-                pair.setType("info");
-                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
-                AppCtx.getKvPairRepo().delete(pair);
-                if (stopWatch != null) stopWatch.stopNow();
-            }
             Utils.getExcutorService().submit(() -> {
                 context.closeMonitor();
             });
@@ -228,13 +224,7 @@ public class AsyncOps {
 
             AppCtx.getRedisRepo().delete(context, pairs, anyKey);
             AppCtx.getKeyInfoRepo().delete(context, pairs);
-
-            for (KvPair pair: pairs) {
-                pair.setType("info");
-                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
-                AppCtx.getKvPairRepo().delete(pair);
-                if (stopWatch != null) stopWatch.stopNow();
-            }
+            deleteKvPairsKeyInfo(context, pairs, anyKey);
             context.closeMonitor();
         });
     }
@@ -248,13 +238,8 @@ public class AsyncOps {
             AppCtx.getRedisRepo().delete(context, pairs, anyKey);
             AppCtx.getDbaseRepo().delete(context, pairs, anyKey);
             AppCtx.getKeyInfoRepo().delete(context, pairs);
+            deleteKvPairsKeyInfo(context, pairs, anyKey);
 
-            for (KvPair pair: pairs) {
-                pair.setType("info");
-                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
-                AppCtx.getKvPairRepo().delete(pair);
-                if (stopWatch != null) stopWatch.stopNow();
-            }
             Utils.getExcutorService().submit(() -> {
                 context.closeMonitor();
             });
@@ -266,15 +251,37 @@ public class AsyncOps {
             AppCtx.getRedisRepo().delete(context, pairs, anyKey);
             AppCtx.getDbaseRepo().delete(context, pairs, anyKey);
             AppCtx.getKeyInfoRepo().delete(context, pairs);
-
-            for (KvPair pair: pairs) {
-                pair.setType("info");
-                StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
-                AppCtx.getKvPairRepo().delete(pair);
-                if (stopWatch != null) stopWatch.stopNow();
-            }
+            deleteKvPairsKeyInfo(context, pairs, anyKey);
             context.closeMonitor();
         });
     }
 
+    public void deleteKvPairKeyInfo(Context context, KvPair pair, KeyInfo keyInfo) {
+        String kvType = "keyInfo";
+        String type = pair.getType();
+        if (!type.equals("data")) {
+            kvType += ":" + type;
+        }
+        KvPair toDeletePair = new KvPair(pair.getId(), kvType);
+        StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.delete");
+        AppCtx.getKvPairRepo().delete(toDeletePair);
+        if (stopWatch != null) stopWatch.stopNow();
+    }
+
+    public void deleteKvPairsKeyInfo(Context context, KvPairs pairs, AnyKey anyKey) {
+        KvPairs toDeletePairs = new KvPairs();
+        for (KvPair pair: pairs) {
+            String kvType = "keyInfo";
+            String type = pair.getType();
+            if (!type.equals("data")) {
+                kvType += ":" + type;
+            }
+            toDeletePairs.add(new KvPair(pair.getId(), kvType));
+        }
+        if (toDeletePairs.size() > 0) {
+            StopWatch stopWatch = context.startStopWatch("dbase", "KvPairRepo.deleteAll");
+            AppCtx.getKvPairRepo().deleteAll(toDeletePairs);
+            if (stopWatch != null) stopWatch.stopNow();
+        }
+    }
 }

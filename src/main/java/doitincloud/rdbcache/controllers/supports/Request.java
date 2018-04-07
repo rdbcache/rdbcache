@@ -4,19 +4,24 @@
  * @license http://rdbcache.com/license/
  */
 
-package doitincloud.commons.helpers;
+package doitincloud.rdbcache.controllers.supports;
 
+import doitincloud.commons.helpers.AnyKey;
+import doitincloud.commons.helpers.Context;
+import doitincloud.commons.helpers.KvPairs;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.rdbcache.configs.PropCfg;
 import doitincloud.commons.exceptions.BadRequestException;
 import doitincloud.commons.exceptions.ServerErrorException;
 import doitincloud.rdbcache.models.KeyInfo;
+import doitincloud.rdbcache.models.KvPair;
 import doitincloud.rdbcache.queries.QueryInfo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,22 +44,50 @@ public class Request {
 
         if (PropCfg.getEnableMonitor()) context.enableMonitor(request);
 
+        String[] options = {null, null}; // {expire, table}
+
+        for (int i = 0; i < opts.length; i++) {
+            Optional<String> opt = opts[i];
+            if (opt != null && opt.isPresent()) {
+                assignOption(context, opt.get(), options);
+            }
+        }
+
         AnyKey anyKey = new AnyKey();
 
         if (pairs == null) {
             return anyKey;
         }
 
-        // find key info for the first item in pairs
-        //
-        if (pairs.size() > 0) {
-            AppCtx.getKeyInfoRepo().find(context, new KvPairs(pairs.getPair()), anyKey);
-        }
         KeyInfo keyInfo = anyKey.getAny();
+        String table = options[1];
 
-        processOptions(context, request, keyInfo, opts);
+        if (pairs.size() > 0) {
 
-        if (pairs.size() == 0 || context.getAction().startsWith("select_")) {
+            if (table != null) {
+                // populate table info into all pairs
+                for (KvPair pair: pairs) {
+                    pair.setType(table);
+                }
+            }
+
+            // find key info for the first pair
+            //
+            KvPair pair = pairs.get(0);
+            if (!pair.isNewUuid()) {
+                AppCtx.getKeyInfoRepo().find(context, pair, keyInfo);
+            }
+        }
+
+        processOptions(context, request, keyInfo, options);
+
+        if (pairs.size() == 0) {
+            return anyKey;
+        }
+
+        // query string precedes all caches
+        //
+        if (keyInfo.getQuery() != null) {
             return anyKey;
         }
 
@@ -64,15 +97,18 @@ public class Request {
             AppCtx.getKeyInfoRepo().find(context, pairs, anyKey);
         }
 
+        // save key info to local cahce
+        //
         for (int i = 0; i < pairs.size() && i < anyKey.size(); i++) {
             keyInfo = anyKey.get(i);
             if (keyInfo.getIsNew()) {
                 keyInfo.setIsNew(false);
-                String key = pairs.get(i).getId();
-                AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+                KvPair pair = pairs.get(i);
+                AppCtx.getCacheOps().putKeyInfo(pair.getIdType(), keyInfo);
                 keyInfo.setIsNew(true);
             }
         }
+
         if (anyKey.size() != 1 && pairs.size() != anyKey.size()) {
             throw new ServerErrorException(context, "case not supported, anyKey size(" + anyKey.size() +
                     ") != 1 && pairs size(" + pairs.size() + ") != anyKey size(" + anyKey.size() + ")");
@@ -82,16 +118,7 @@ public class Request {
     }
 
     private static void processOptions(Context context, HttpServletRequest request,
-                                            KeyInfo keyInfo, Optional<String>[] opts) {
-
-        String[] options = {null, null}; // {expire, table}
-
-        for (int i = 0; i < opts.length; i++) {
-            Optional<String> opt = opts[i];
-            if (opt != null && opt.isPresent()) {
-                assignOption(context, opt.get(), options);
-            }
-        }
+                                            KeyInfo keyInfo, String[] options) {
 
         Map<String, String[]> params = request.getParameterMap();
 
@@ -123,7 +150,7 @@ public class Request {
         }
     }
 
-    private static void assignOption(Context context, String opt, String[] opts) {
+    private static void assignOption(Context context, String opt, String[] options) {
 
         opt = opt.trim();
         if (opt.equals("async")) {
@@ -142,14 +169,14 @@ public class Request {
             }
             return;
         }
-        if (opts[0] == null && expPattern.matcher(opt).matches()) {
-            opts[0] = opt;
+        if (options[0] == null && expPattern.matcher(opt).matches()) {
+            options[0] = opt;
             return;
         }
-        if (opts[1] == null) {
+        if (options[1] == null) {
             List<String> tables = AppCtx.getDbaseOps().getTableList(context);
             if (tables.contains(opt)) {
-                opts[1] = opt;
+                options[1] = opt;
                 return;
             }
         }

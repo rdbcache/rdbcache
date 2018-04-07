@@ -33,11 +33,11 @@ public class AppCtx {
 
     private static ExpireOps expireOps;
 
-    private static LocalCache localCache;
+    private static CacheOps cacheOps;
 
     private static RedisOps redisOps;
 
-    private static TaskQueue taskQueue;
+    private static QueueOps queueOps;
 
     private static DbaseRepo dbaseRepo;
 
@@ -151,34 +151,34 @@ public class AppCtx {
         AppCtx.redisOps = redisOps;
     }
 
-    public static LocalCache getLocalCache() {
-        if (ctx != null && localCache == null) {
+    public static CacheOps getCacheOps() {
+        if (ctx != null && cacheOps == null) {
             try {
-                localCache = ctx.getBean(LocalCache.class);
+                cacheOps = ctx.getBean(CacheOps.class);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        return localCache;
+        return cacheOps;
     }
 
-    public static void setLocalCache(LocalCache cache) {
-        localCache = cache;
+    public static void setCacheOps(CacheOps cache) {
+        cacheOps = cache;
     }
 
-    public static TaskQueue getTaskQueue() {
-        if (ctx != null && taskQueue == null) {
+    public static QueueOps getQueueOps() {
+        if (ctx != null && queueOps == null) {
             try {
-                taskQueue = ctx.getBean(TaskQueue.class);
+                queueOps = ctx.getBean(QueueOps.class);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        return taskQueue;
+        return queueOps;
     }
 
-    public static void setTaskQueue(TaskQueue taskQueue) {
-        AppCtx.taskQueue = taskQueue;
+    public static void setQueueOps(QueueOps queueOps) {
+        AppCtx.queueOps = queueOps;
     }
 
     public static DbaseRepo getDbaseRepo() {

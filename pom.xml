@@ -3,12 +3,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>doitincloud.rdbcache.com</groupId>
-  <artifactId>doitincloud.rdbcache</artifactId>
-  <version>1.1.0</version>
-  <name>doitincloud.rdbcache</name>
+  <groupId>doitincloud</groupId>
+  <artifactId>rdbcache</artifactId>
+  <version>1.2.0</version>
+  <name>rdbcache</name>
   <description>redis database cache asynchronous api server</description>
-  <url>http://doitincloud.rdbcache.com/</url>
+  <url>http://rdbcache.com/</url>
   <packaging>jar</packaging>
 
   <scm>
@@ -41,7 +41,6 @@
     <httpclient.version>4.4.1</httpclient.version>
     <commons-lang.version>2.3</commons-lang.version>
     <guava.version>r05</guava.version>
-    <spring-security-oauth2.version>2.3.0.RELEASE</spring-security-oauth2.version>
     <junit.version>4.12</junit.version>
     <mockito-core.version>2.1.0</mockito-core.version>
     <powermock.version>1.7.0RC2</powermock.version>
@@ -77,11 +76,6 @@
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-actuator</artifactId>
-    </dependency>
-
     <!-- exclude tomcat jdbc connection pool, use HikariCP -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -100,25 +94,6 @@
       <artifactId>HikariCP</artifactId>
       <version>${hikaricp.version}</version>
     </dependency>
-
-    <!--
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>jstl</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.tomcat.embed</groupId>
-      <artifactId>tomcat-embed-jasper</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.security.oauth</groupId>
-      <artifactId>spring-security-oauth2</artifactId>
-      <version>${spring-security-oauth2.version}</version>
-    </dependency>
-    -->
 
     <dependency>
       <groupId>mysql</groupId>

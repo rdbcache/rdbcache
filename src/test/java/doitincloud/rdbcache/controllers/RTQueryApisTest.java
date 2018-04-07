@@ -3,7 +3,7 @@ package doitincloud.rdbcache.controllers;
 import com.google.common.io.CharStreams;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.commons.helpers.Utils;
-import doitincloud.rdbcache.services.LocalCache;
+import doitincloud.rdbcache.services.CacheOps;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +34,8 @@ import java.io.Reader;
 import java.util.Map;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringRunner.class)
@@ -163,7 +165,7 @@ public class RTQueryApisTest {
     }
 
     @MockBean
-    private LocalCache localCache;
+    private CacheOps cacheOps;
 
     @Test
     public void retrieveLocalCacheTable() throws Exception {
@@ -179,9 +181,9 @@ public class RTQueryApisTest {
             Map<String, Object> testTable = Utils.toMap(text);
             assertNotNull(testTable);
 
-            Mockito.when(localCache.listAllTables()).thenReturn(testTable);
+            Mockito.when(cacheOps.listAllTables()).thenReturn(testTable);
             PowerMockito.mockStatic(AppCtx.class);
-            BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
+            BDDMockito.when(AppCtx.getCacheOps()).thenReturn(cacheOps);
 
             RequestBuilder requestBuilder = MockMvcRequestBuilders.
                     get("/rtquery/v1/cache/table").
@@ -227,20 +229,20 @@ public class RTQueryApisTest {
             Map<String, Object> testKeys = Utils.toMap(text);
             assertNotNull(testKeys);
 
-            //Mockito.when(localCache.listAllKeyInfos()).thenReturn(testKeys);
+            //Mockito.when(cacheOps.listAllKeyInfos()).thenReturn(testKeys);
             //PowerMockito.mockStatic(AppCtx.class);
-            //BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
+            //BDDMockito.when(AppCtx.getCacheOps()).thenReturn(cacheOps);
 
             // try different way
             //
-            LocalCache cache = new LocalCache();
+            CacheOps cache = new CacheOps();
             cache.init();
             cache.handleEvent(null);
             //cache.handleApplicationReadyEvent(null);
             for (Map.Entry<String, Object> entry: testKeys.entrySet()) {
                 cache.put(entry.getKey(), (Map<String, Object>) entry.getValue());
             }
-            AppCtx.setLocalCache(cache);
+            AppCtx.setCacheOps(cache);
 
             RequestBuilder requestBuilder = MockMvcRequestBuilders.
                     get("/rtquery/v1/cache/key").
@@ -287,9 +289,10 @@ public class RTQueryApisTest {
             Map<String, Object> testData = Utils.toMap(text);
             assertNotNull(testData);
 
-            Mockito.when(localCache.listAllData()).thenReturn(testData);
+            //CacheOps cacheOps = mock(CacheOps.class, Mockito.RETURNS_DEEP_STUBS);
+            Mockito.when(cacheOps.listAllData(null)).thenReturn(testData);
             PowerMockito.mockStatic(AppCtx.class);
-            BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
+            BDDMockito.when(AppCtx.getCacheOps()).thenReturn(cacheOps);
 
             RequestBuilder requestBuilder = MockMvcRequestBuilders.
                     get("/rtquery/v1/cache/data").
@@ -327,7 +330,7 @@ public class RTQueryApisTest {
 
             PowerMockito.mockStatic(AppCtx.class);
 
-            BDDMockito.when(AppCtx.getLocalCache()).thenReturn(localCache);
+            BDDMockito.when(AppCtx.getCacheOps()).thenReturn(cacheOps);
 
             RequestBuilder requestBuilder = MockMvcRequestBuilders.
                     get("/rtquery/v1/app-ctx").

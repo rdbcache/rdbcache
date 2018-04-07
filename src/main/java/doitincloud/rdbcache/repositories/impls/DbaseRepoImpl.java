@@ -119,26 +119,68 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             boolean allOk = true;
 
-            Query query = new Query(context, jdbcTemplate, pairs, anyKey);
+            if (anyKey.size() == 1) {
 
-            if (!query.ifSelectOk() || !query.executeSelect()) {
-                if (enableDbFallback) {
-                    if (!kvFind(context, pairs, anyKey)) {
-                        String msg = "find - not found fallbacked to default table: " + pairs.printKey();
-                        LOGGER.trace(msg);
-                        allOk = false;
+                Query query = new Query(context, jdbcTemplate, pairs, anyKey);
+
+                if (!query.ifSelectOk() || !query.executeSelect()) {
+                    if (enableDbFallback) {
+                        if (!kvFind(context, pairs, anyKey)) {
+                            String msg = "find - not found fallbacked to default table: " + pairs.printKey();
+                            LOGGER.trace(msg);
+                            allOk = false;
+                        } else {
+                            String msg = "find - found fallbacked to default table Ok: " + pairs.printKey();
+                            context.logTraceMessage(msg);
+                            LOGGER.warn(msg);
+                        }
                     } else {
-                        String msg = "find - found fallbacked to default table Ok: " + pairs.printKey();
-                        context.logTraceMessage(msg);
-                        LOGGER.warn(msg);
+                        LOGGER.debug("find - not found: from " + table + " " + pairs.printKey());
+                        allOk = false;
                     }
                 } else {
-                    LOGGER.debug("find - not found: from " + table + " " + pairs.printKey());
-                    allOk = false;
+                    LOGGER.debug("find - found Ok: from " + table + " " + pairs.printKey());
+                    AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
                 }
+
             } else {
-                LOGGER.debug("find - found Ok: from " + table + " " + pairs.printKey());
-                AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
+
+                for (int i = 0; i < anyKey.size(); i++) {
+
+                    KeyInfo keyInfo = anyKey.get(i);
+
+                    if (keyInfo.getQuery() != null) {
+                        throw new ServerErrorException("query for muliple keyInfos is not supported");
+                    }
+
+                    table = keyInfo.getTable();
+                    AnyKey newAnyKey = new AnyKey(keyInfo);
+
+                    KvPair pair = pairs.getAny(i);
+                    KvPairs newPairs = new KvPairs(pair);
+
+                    Query query = new Query(context, jdbcTemplate, newPairs, newAnyKey);
+
+                    if (!query.ifSelectOk() || !query.executeSelect()) {
+                        if (enableDbFallback) {
+                            if (!kvFind(context, newPairs, newAnyKey)) {
+                                String msg = "find - not found fallbacked to default table: " + newPairs.printKey();
+                                LOGGER.trace(msg);
+                                allOk = false;
+                            } else {
+                                String msg = "find - found fallbacked to default table Ok: " + newPairs.printKey();
+                                context.logTraceMessage(msg);
+                                LOGGER.warn(msg);
+                            }
+                        } else {
+                            LOGGER.debug("find - not found: from " + table + " " + newPairs.printKey());
+                            allOk = false;
+                        }
+                    } else {
+                        LOGGER.debug("find - found Ok: from " + table + " " + pairs.printKey());
+                        AppCtx.getKeyInfoRepo().save(context, newPairs, newAnyKey);
+                    }
+                }
             }
 
             return allOk;
@@ -377,7 +419,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 if (autoIncKey != null && !map.containsKey(autoIncKey)) {
                     map.put(autoIncKey, dbMap.get(autoIncKey));
                     if (enableDataCache) {
-                        AppCtx.getLocalCache().updateData(pair);
+                        AppCtx.getCacheOps().updateData(pair);
                     }
                     if (enableRedisCache) {
                         if (AppCtx.getRedisRepo().ifExist(context, new KvPairs(pair), new AnyKey(keyInfo))) {
@@ -389,13 +431,13 @@ public class DbaseRepoImpl implements DbaseRepo {
                 Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
                 if (!Utils.mapChangesAfterUpdate(map, dbMap, todoMap)) {
                     if (enableDbFallback) {
-                        String msg = "switch to default table, unknown field found in input";
+                        String msg = "switch to default table, unknown field found in input: " + Utils.toJson(todoMap);
                         LOGGER.error(msg);
                         context.logTraceMessage(msg);
                         setUseDefaultTable(keyInfo);
                         todoMap = map;
                     } else {
-                        String msg = "sunknown field found in input";
+                        String msg = "unknown field found in input: " + Utils.toJson(todoMap);
                         LOGGER.error(msg);
                         context.logTraceMessage(msg);
                         if (context.isSync()) {
@@ -558,11 +600,9 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         } else {
 
-            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
+            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.saveAll");
             try {
-                for (KvPair pair: pairs) {
-                    AppCtx.getKvPairRepo().save(pair);
-                }
+                AppCtx.getKvPairRepo().saveAll(pairs);
                 if (stopWatch != null) stopWatch.stopNow();
 
                 LOGGER.trace("kvSave(" + pairs.size() + ") Ok");
@@ -598,7 +638,7 @@ public class DbaseRepoImpl implements DbaseRepo {
         }
         if (anyKey.size() == 1) {
 
-            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
+            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.delete");
             try {
                 AppCtx.getKvPairRepo().delete(pairs.getPair());
                 if (stopWatch != null) stopWatch.stopNow();
@@ -621,11 +661,9 @@ public class DbaseRepoImpl implements DbaseRepo {
 
         } else {
 
-            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
+            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.deleteAll");
             try {
-                for (KvPair pair: pairs) {
-                    AppCtx.getKvPairRepo().delete(pair);
-                }
+                AppCtx.getKvPairRepo().deleteAll(pairs);
                 if (stopWatch != null) stopWatch.stopNow();
 
                 LOGGER.trace("kvDelete(" + pairs.size() + ") Ok");

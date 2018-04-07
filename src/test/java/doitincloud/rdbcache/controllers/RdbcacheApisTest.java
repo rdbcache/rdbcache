@@ -9,7 +9,7 @@ import doitincloud.commons.helpers.Utils;
 import doitincloud.rdbcache.models.KvIdType;
 import doitincloud.rdbcache.models.KvPair;
 import doitincloud.rdbcache.repositories.DbaseRepo;
-import doitincloud.rdbcache.services.LocalCache;
+import doitincloud.rdbcache.services.CacheOps;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -47,7 +47,7 @@ public class RdbcacheApisTest {
     private MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new RdbcacheApis()).build();
 
     @Autowired
-    LocalCache localCache;
+    CacheOps cacheOps;
 
     @Autowired
     DbaseRepo dbaseRepo;
@@ -60,7 +60,7 @@ public class RdbcacheApisTest {
 
         // allow time to synchronize data
         try {
-            Thread.sleep(500);
+            Thread.sleep(250);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
@@ -76,8 +76,7 @@ public class RdbcacheApisTest {
 
             jdbcTemplate.execute(sql);
 
-            AppCtx.getLocalCache().removeAllData();
-            AppCtx.getLocalCache().removeAllKeyInfos();
+            AppCtx.getCacheOps().removeAllKeyAndData();
             MockRedis.getData().clear();
 
         } catch (Exception e) {
@@ -101,9 +100,7 @@ public class RdbcacheApisTest {
             assertEquals(200, response.getStatus());
 
             String body = response.getContentAsString();
-
             //System.out.println(body);
-
             Map<String, Object> map = Utils.toMap(body);
 
             assertTrue(map.containsKey("timestamp"));
@@ -196,13 +193,12 @@ public class RdbcacheApisTest {
             }
 
             // assume local cache and redis data are expired
-            AppCtx.getLocalCache().removeAllData();
-            AppCtx.getLocalCache().removeAllKeyInfos();
+            AppCtx.getCacheOps().removeAllKeyAndData();
             MockRedis.getData().clear();
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/get/" + key).
+                        get("/rdbcache/v1/get/" + key + "/user_table").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -345,8 +341,7 @@ public class RdbcacheApisTest {
             }
 
             // assume local cache and redis data are expired
-            AppCtx.getLocalCache().removeAllData();
-            AppCtx.getLocalCache().removeAllKeyInfos();
+            AppCtx.getCacheOps().removeAllKeyAndData();
             MockRedis.getData().clear();
 
             {
@@ -394,7 +389,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/get/test_hash_key_post").
+                        get("/rdbcache/v1/get/test_hash_key_post/user_table").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -449,7 +444,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/get/" + key).
+                        get("/rdbcache/v1/get/" + key+"/user_table").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -505,7 +500,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/get/" + key).
+                        get("/rdbcache/v1/get/" + key+"/user_table").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -565,15 +560,14 @@ public class RdbcacheApisTest {
             }
 
             // assume local cache and redis data are expired
-            AppCtx.getLocalCache().removeAllData();
-            AppCtx.getLocalCache().removeAllKeyInfos();
+            AppCtx.getCacheOps().removeAllKeyAndData();
             MockRedis.getData().clear();
 
             {
                 String update = "{\"name\":\"Test333\"}";
 
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        put("/rdbcache/v1/put/" + key).
+                        put("/rdbcache/v1/put/" + key+"/user_table").
                         contentType(MediaType.APPLICATION_JSON).content(update).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -593,7 +587,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/get/" + key).
+                        get("/rdbcache/v1/get/" + key+"/user_table").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -625,7 +619,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/getset/" + key + "/" + value1).
+                        get("/rdbcache/v1/set/" + key + "/" + value1).
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -637,16 +631,14 @@ public class RdbcacheApisTest {
                 //System.out.println(body);
                 Map<String, Object> map = Utils.toMap(body);
                 Map<String, Object> data = (Map<String, Object>) map.get("data");
-                assertNotNull(data);
-                assertEquals(0, data.size());
-
+                assertNull(data);
             }
 
             String value2 = "test value 002";
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/getset/" + key + "/" + value2).
+                        get("/rdbcache/v1/getset/" + key + "/" + value2 + "/sync").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -663,12 +655,8 @@ public class RdbcacheApisTest {
                 assertEquals(value1, value);
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
+            //Map<String, Object> map2 = MockRedis.getData();
+            //System.out.println(Utils.toPrettyJson(map2));
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
@@ -728,7 +716,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/get/" + key).
+                        get("/rdbcache/v1/get/" + key+"/user_table").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -784,19 +772,18 @@ public class RdbcacheApisTest {
 
             // allow time to synchronize data
             try {
-                Thread.sleep(500);
+                Thread.sleep(250);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
 
             // assume local cache and redis data are expired
-            AppCtx.getLocalCache().removeAllData();
-            AppCtx.getLocalCache().removeAllKeyInfos();
+            AppCtx.getCacheOps().removeAllKeyAndData();
             MockRedis.getData().clear();
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/get/" + key).
+                        get("/rdbcache/v1/get/" + key+"/user_table").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -850,7 +837,7 @@ public class RdbcacheApisTest {
                 Set<String> keys = data1.keySet();
 
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/pull").
+                        post("/rdbcache/v1/pull/user_table").
                         contentType(MediaType.APPLICATION_JSON).content(Utils.toJsonMap(keys)).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -883,7 +870,7 @@ public class RdbcacheApisTest {
             Map<String, Object>  data1 = null, data2 = null;
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/select/user_table?limit=3").
+                        get("/rdbcache/v1/select/user_table/sync?limit=3").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -900,23 +887,18 @@ public class RdbcacheApisTest {
                 assertTrue(data1.size() > 1);
             }
 
-            // assume local cache and redis data are expired
-            AppCtx.getLocalCache().removeAllData();
-            AppCtx.getLocalCache().removeAllKeyInfos();
-            MockRedis.getData().clear();
-
             {
                 Set<String> keys = data1.keySet();
 
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/pull").
+                        post("/rdbcache/v1/pull/user_table").
                         contentType(MediaType.APPLICATION_JSON).content(Utils.toJsonMap(keys)).
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
                 MvcResult result = actions.andReturn();
                 MockHttpServletResponse response = result.getResponse();
-
+                //System.out.println(response.getErrorMessage());
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
                 //System.out.println(body);
@@ -967,8 +949,7 @@ public class RdbcacheApisTest {
             }
 
             // assume local cache and redis data are expired
-            AppCtx.getLocalCache().removeAllData();
-            AppCtx.getLocalCache().removeAllKeyInfos();
+            AppCtx.getCacheOps().removeAllKeyAndData();
             MockRedis.getData().clear();
 
             {
@@ -1005,7 +986,7 @@ public class RdbcacheApisTest {
                 Set<String> keys = data1.keySet();
 
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/pull").
+                        post("/rdbcache/v1/pull/user_table").
                         contentType(MediaType.APPLICATION_JSON).content(Utils.toJsonMap(keys)).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -1130,7 +1111,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/select/employees").
+                        post("/rdbcache/v1/select/employees?limit=1024").
                         contentType(MediaType.APPLICATION_JSON).content(json).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -1150,7 +1131,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/pull").
+                        post("/rdbcache/v1/pull/employees").
                         contentType(MediaType.APPLICATION_JSON).content(json).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -1185,7 +1166,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/select/user_table").
+                        post("/rdbcache/v1/select/user_table?limit=3").
                         contentType(MediaType.APPLICATION_JSON).content(json).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -1209,7 +1190,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/push").
+                        post("/rdbcache/v1/push/user_table").
                         contentType(MediaType.APPLICATION_JSON).content(batchUpdate).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -1236,7 +1217,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/pull").
+                        post("/rdbcache/v1/pull/user_table").
                         contentType(MediaType.APPLICATION_JSON).content(json).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -1297,7 +1278,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/delkey/"+key).
+                        get("/rdbcache/v1/delkey/"+key+"/user_table").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -1320,14 +1301,14 @@ public class RdbcacheApisTest {
                 Thread.currentThread().interrupt();
             }
 
-            assertFalse(AppCtx.getLocalCache().containsKey(key));
+            assertFalse(AppCtx.getCacheOps().containsKey(key));
             Map<String, Object> redis = MockRedis.getData();
             //System.out.println(Utils.toJsonMap(redis));
             assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
-            Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::keyinfo");
+            Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::user_table");
             assertFalse(rdchkeys.containsKey(key));
 
-            Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "info"));
+            Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
             assertFalse(optional.isPresent());
 
         } catch (Exception e) {
@@ -1366,7 +1347,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/delkey/").
+                        post("/rdbcache/v1/delkey/user_table").
                         contentType(MediaType.APPLICATION_JSON).content(Utils.toJsonMap(keys)).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -1376,7 +1357,7 @@ public class RdbcacheApisTest {
 
                 assertEquals(200, response.getStatus());
                 String body = response.getContentAsString();
-                System.out.println(body);
+                //System.out.println(body);
 
                 Map<String, Object> map = Utils.toMap(body);
                 assertNotNull(map.get("data"));
@@ -1393,12 +1374,12 @@ public class RdbcacheApisTest {
             //System.out.println(Utils.toJsonMap(redis));
 
             for (String key : keys) {
-                assertFalse(AppCtx.getLocalCache().containsKey(key));
+                assertFalse(AppCtx.getCacheOps().containsKey(key));
                 assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
-                Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::keyinfo");
+                Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::user_table");
                 assertFalse(rdchkeys.containsKey(key));
 
-                Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "info"));
+                Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
                 assertFalse(optional.isPresent());
             }
 
@@ -1438,7 +1419,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        get("/rdbcache/v1/delall/"+key).
+                        get("/rdbcache/v1/delall/"+key+"/user_table").
                         accept(MediaType.APPLICATION_JSON);
 
                 ResultActions actions = mockMvc.perform(requestBuilder);
@@ -1461,13 +1442,13 @@ public class RdbcacheApisTest {
                 Thread.currentThread().interrupt();
             }
 
-            assertFalse(AppCtx.getLocalCache().containsKey(key));
+            assertFalse(AppCtx.getCacheOps().containsKey(key));
             Map<String, Object> redis = MockRedis.getData();
             //System.out.println(Utils.toJsonMap(redis));
             assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
-            Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::keyinfo");
+            Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::user_table");
             assertFalse(rdchkeys.containsKey(key));
-            Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "info"));
+            Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
             assertFalse(optional.isPresent());
 
             {
@@ -1518,7 +1499,7 @@ public class RdbcacheApisTest {
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
-                        post("/rdbcache/v1/delall/").
+                        post("/rdbcache/v1/delall/user_table/sync").
                         contentType(MediaType.APPLICATION_JSON).content(Utils.toJsonMap(keys)).
                         accept(MediaType.APPLICATION_JSON);
 
@@ -1534,25 +1515,18 @@ public class RdbcacheApisTest {
                 assertNotNull(map.get("data"));
             }
 
-            // allow time to synchronize data
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-
             Map<String, Object> redis = MockRedis.getData();
             //System.out.println(Utils.toJsonMap(redis));
 
             int i = 1;
             for (String key : keys) {
-                assertFalse(AppCtx.getLocalCache().containsKey(key));
+                assertFalse(AppCtx.getCacheOps().containsKey(key));
                 assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
-                Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::keyinfo");
+                Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::user_table");
                 //System.out.println(Utils.toJsonMap(rdchkeys));
                 assertFalse(rdchkeys.containsKey(key));
 
-                Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "info"));
+                Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
                 assertFalse(optional.isPresent());
 
                 {
@@ -1710,6 +1684,8 @@ public class RdbcacheApisTest {
             }
 
             {
+                // intentionally to generate a field not exists in dbase error
+                //
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
                         get("/rdbcache/v1/set/*/value/user_table?id=1").
                         accept(MediaType.APPLICATION_JSON);

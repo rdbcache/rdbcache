@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class KvIdType implements Serializable {
+public class KvIdType implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 20180316L;
 
@@ -50,6 +50,10 @@ public class KvIdType implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public KvIdType clone() {
+        return new KvIdType(id, type);
     }
 
     @Override

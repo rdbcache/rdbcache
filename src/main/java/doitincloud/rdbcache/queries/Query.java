@@ -13,6 +13,7 @@ import doitincloud.commons.helpers.Context;
 import doitincloud.commons.helpers.KvPairs;
 import doitincloud.commons.helpers.Utils;
 import doitincloud.rdbcache.models.KeyInfo;
+import doitincloud.rdbcache.models.KvIdType;
 import doitincloud.rdbcache.models.KvPair;
 import doitincloud.rdbcache.models.StopWatch;
 
@@ -101,7 +102,7 @@ public class Query {
                 ready = true;
             } else {
                 if (!keyInfo.getIsNew() && !keyInfo.hasParams() && keyInfo.ifJustCreated()) {
-                    waitForParamsUpdate(pair.getId(), keyInfo);
+                    waitForParamsUpdate(pair.getIdType(), keyInfo);
                 }
                 if (Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
                     ready = true;
@@ -161,8 +162,11 @@ public class Query {
                 for (int i = 0; i < list.size(); i++) {
 
                     KvPair pair = pairs.getAny(i);
-                    keyInfo = anyKey.getAny(i);
+                    if (pair.getType().equals("data")) {
+                        pair.setType(table);
+                    }
                     pair.setData(list.get(i));
+                    keyInfo = anyKey.getAny(i);
 
                     //convertDbMap will be called within prepareStandardClauseParams
                     //
@@ -300,7 +304,7 @@ public class Query {
 
                 if (cacheUpdate) {
                     if (enableLocal) {
-                        AppCtx.getLocalCache().putData(pair, keyInfo);
+                        AppCtx.getCacheOps().putData(pair, keyInfo);
                     }
                     if (enableRedis) {
                         AppCtx.getRedisRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
@@ -362,7 +366,7 @@ public class Query {
             String table = keyInfo.getTable();
 
             if (!keyInfo.getIsNew() && !keyInfo.hasParams() && keyInfo.ifJustCreated()) {
-                waitForParamsUpdate(pair.getId(), keyInfo);
+                waitForParamsUpdate(pair.getIdType(), keyInfo);
             }
 
             //convertDbMap will be called within prepareStandardClauseParams
@@ -461,7 +465,7 @@ public class Query {
             String table = keyInfo.getTable();
 
             if (!keyInfo.getIsNew() && !keyInfo.hasParams() && keyInfo.ifJustCreated()) {
-                waitForParamsUpdate(pair.getId(), keyInfo);
+                waitForParamsUpdate(pair.getIdType(), keyInfo);
             }
 
             if (!Parser.prepareStandardClauseParams(context, pair, keyInfo)) {
@@ -539,12 +543,12 @@ public class Query {
 
     // it could be the data is just inserted, not synchronized yet
     // max wait for 30 seconds
-    private void waitForParamsUpdate(String key, KeyInfo keyInfo) {
+    private void waitForParamsUpdate(KvIdType idType, KeyInfo keyInfo) {
         if (keyInfo.hasParams()) {
             return;
         }
         for (int j = 0; j < 300; j++) {
-            KeyInfo cachedKeyInfo = AppCtx.getLocalCache().getKeyInfo(key);
+            KeyInfo cachedKeyInfo = AppCtx.getCacheOps().getKeyInfo(idType);
             if (cachedKeyInfo.hasParams()) {
                 keyInfo.setClause(cachedKeyInfo.getClause());
                 keyInfo.setParams(cachedKeyInfo.getParams());

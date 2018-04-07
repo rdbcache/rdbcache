@@ -10,6 +10,7 @@ import doitincloud.rdbcache.configs.PropCfg;
 import doitincloud.commons.exceptions.ServerErrorException;
 import doitincloud.commons.helpers.*;
 import doitincloud.rdbcache.models.KeyInfo;
+import doitincloud.rdbcache.models.KvIdType;
 import doitincloud.rdbcache.models.KvPair;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -27,9 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-public class LocalCache extends Thread {
+public class CacheOps extends Thread {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocalCache.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CacheOps.class);
 
     private Long recycleSecs = PropCfg.getCacheRecycleSecs();
 
@@ -216,19 +217,21 @@ public class LocalCache extends Thread {
         cache.remove(key);
     }
 
-    public KeyInfo putKeyInfo(String key, KeyInfo keyInfo) {
+    public KeyInfo putKeyInfo(KvIdType idType, KeyInfo keyInfo) {
         if (keyMinCacheTTL <= 0l) {
             return null;
         }
         Long ttl = keyInfo.getExpireTTL();
         if (ttl < keyMinCacheTTL) ttl = keyMinCacheTTL;
         Map<String, Object> map = Utils.toMap(keyInfo);
-        put("key::" + key, map, ttl * 1000);
+        String hashKey = "keyInfo::"+ idType.getType() + ":" + idType.getId();
+        put(hashKey, map, ttl * 1000);
         return keyInfo;
     }
 
-    public KeyInfo getKeyInfo(String key) {
-        Map<String, Object> map = get("key::" + key);
+    public KeyInfo getKeyInfo(KvIdType idType) {
+        String hashKey = "keyInfo::"+ idType.getType() + ":" + idType.getId();
+        Map<String, Object> map = get(hashKey);
         if (map == null) {
             return null;
         }
@@ -236,17 +239,19 @@ public class LocalCache extends Thread {
         return keyInfo;
     }
 
-    public boolean containsKeyInfo(String key) {
-        return containsKey("key::" + key);
+    public boolean containsKeyInfo(KvIdType idType) {
+        String hashKey = "keyInfo::"+ idType.getType() + ":" + idType.getId();
+        return containsKey(hashKey);
     }
 
-    public void removeKeyInfo(String key) {
-        cache.remove("key::" + key);
+    public void removeKeyInfo(KvIdType idType) {
+        String hashKey = "keyInfo::"+ idType.getType() + ":" + idType.getId();
+        cache.remove(hashKey);
     }
 
     public void removeKeyInfo(List<KvPair> pairs) {
         for (KvPair pair: pairs) {
-            cache.remove("key::" + pair.getId());
+            removeKeyInfo(pair.getIdType());
         }
     }
 
@@ -256,11 +261,8 @@ public class LocalCache extends Thread {
         }
         Long ttl = keyInfo.getExpireTTL();
         if (ttl > dataMaxCacheTLL) ttl = dataMaxCacheTLL;
-        String type = pair.getType();
-        if (type.equals("info")) {
-            type = "data";
-        }
-        put(type + "::" + pair.getId(), pair.getDataClone(), ttl * 1000);
+        String hashKey = pair.getType() + "::" + pair.getId();
+        put(hashKey, pair.getDataClone(), ttl * 1000);
     }
 
     public void updateData(KvPair pair) {
@@ -269,102 +271,121 @@ public class LocalCache extends Thread {
             return ;
         }
         String type = pair.getType();
-        if (type.equals("info")) {
-            type = "data";
-        }
-        update(type + "::" + pair.getId(), update);
+        String hashKey = pair.getType() + "::" + pair.getId();
+        update(hashKey, update);
     }
-    /*
-    public Map<String, Object> getData(String key) {
-        return (Map<String, Object>) get("data::" + key);
+
+    public Map<String, Object> getData(KvIdType idType) {
+        String hashKey = idType.getType() + "::" + idType.getId();
+        return (Map<String, Object>) get(hashKey);
     }
-    */
-    public Map<String, Object> getData(String key, String type) {
-        return (Map<String, Object>) get(type + "::" + key);
+
+    public boolean containsData(KvIdType idType) {
+        String hashKey = idType.getType() + "::" + idType.getId();
+        return containsKey(hashKey);
     }
-    /*
-    public boolean containsData(String key) {
-        return containsKey("data::" + key);
-    }
-    */
-    public boolean containsData(String key, String type) {
-        return containsKey(type + "::" + key);
-    }
-    /*
-    public void removeData(String key) {
-        cache.remove("data::" + key);
-    }
-    */
-    public void removeData(String key, String type) {
-        cache.remove(type + "::" + key);
+
+    public void removeData(KvIdType idType) {
+        String hashKey = idType.getType() + "::" + idType.getId();
+        cache.remove(hashKey);
     }
 
     public void removeKeyAndData(KvPair pair) {
-        String key = pair.getId();
-        cache.remove("key::" + key);
-        String type = pair.getType();
-        if (type.equals("info")) {
-            type = "data";
-        }
-        cache.remove(type + "::" + key);
+        KvIdType idType = pair.getIdType();
+        removeKeyInfo(idType);
+        removeData(idType);
     }
 
     public void removeKeyAndData(List<KvPair> pairs) {
         for (KvPair pair: pairs) {
-            String key = pair.getId();
-            cache.remove("key::" + key);
-            String type = pair.getType();
-            if (type.equals("info")) {
-                type = "data";
-            }
-            cache.remove(type + "::" + key);
+            removeKeyAndData(pair);
         }
     }
 
-    public Map<String, Object> listAllKeyInfos() {
+    public Map<String, Object> listAllKeyInfo(String typePrefix) {
         Map<String, Object> map = new LinkedHashMap<>();
         Set<String> keys = cache.keySet();
         for (String key: keys) {
-            if (key == null) continue;
-            if (key.startsWith("key::")) {
-                map.put(key, get(key));
-            }
-        }
-        return map;
-    }
-
-    public void removeAllKeyInfos() {
-        Set<String> keys = cache.keySet();
-        for (String key: keys) {
-            if (key == null) continue;
-            if (key.startsWith("key::")) {
-                cache.remove(key);
-            }
-        }
-    }
-
-    public Map<String, Object> listAllData() {
-        Map<String, Object> map = new LinkedHashMap<>();
-        Set<String> keys = cache.keySet();
-        for (String key: keys) {
-            if (key == null) continue;
-            if (key.startsWith("data::")) {
-                Object value = get(key);
-                if (value != null) {
-                    map.put(key, value);
+            if (typePrefix == null || typePrefix.length() == 0) {
+                if (!key.startsWith("keyInfo::")) {
+                    continue;
+                }
+            } else {
+                if (!key.startsWith("keyInfo::"+typePrefix)) {
+                    continue;
                 }
             }
+            Object object = get(key);
+            if (object == null) continue;
+            map.put(key, object);
         }
         return map;
     }
 
-    public void removeAllData() {
+    public void removeAllKeyInfo(String typePrefix) {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
-            if (key == null) continue;
-            if (key.startsWith("data::")) {
+            if (key.startsWith("keyInfo::")) {
+                if (typePrefix == null || typePrefix.length() == 0) {
+                    if (!key.startsWith("keyInfo::")) {
+                        continue;
+                    }
+                } else {
+                    if (!key.startsWith("keyInfo::"+typePrefix)) {
+                        continue;
+                    }
+                }
                 cache.remove(key);
             }
+        }
+    }
+
+    public Map<String, Object> listAllData(String type) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (type == null || type.length() == 0) {
+                if (key.startsWith("keyInfo::") || key.startsWith("table_")) {
+                    continue;
+                }
+            } else {
+                if (!key.startsWith(type + "::")) {
+                    continue;
+                }
+            }
+            Object value = get(key);
+            if (value == null) {
+                continue;
+            }
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    public void removeAllData(String type) {
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (type == null || type.length() == 0) {
+                if (key.startsWith("keyInfo::") || key.startsWith("table_")) {
+                    continue;
+                }
+            } else {
+                if (!key.startsWith(type + "::")) {
+                    continue;
+                }
+            }
+            cache.remove(key);
+        }
+    }
+
+    public void removeAllKeyAndData() {
+        Map<String, Object> map = new LinkedHashMap<>();
+        Set<String> keys = cache.keySet();
+        for (String key: keys) {
+            if (key.startsWith("table_")) {
+                continue;
+            }
+            cache.remove(key);
         }
     }
 
@@ -372,10 +393,14 @@ public class LocalCache extends Thread {
         Map<String, Object> map = new LinkedHashMap<>();
         Set<String> keys = cache.keySet();
         for (String key: keys) {
-            if (key == null) continue;
-            if (key.startsWith("table_")) {
-                map.put(key, get(key));
+            if (!key.startsWith("table_")) {
+                continue;
             }
+            Object value = get(key);
+            if (value == null) {
+                continue;
+            }
+            map.put(key, value);
         }
         return map;
     }
@@ -383,10 +408,10 @@ public class LocalCache extends Thread {
     public void removeAllTables() {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
-            if (key == null) continue;
-            if (key.startsWith("table_")) {
-                cache.remove(key);
+            if (!key.startsWith("table_")) {
+                continue;
             }
+            cache.remove(key);
         }
     }
 
@@ -421,7 +446,7 @@ public class LocalCache extends Thread {
 
         isRunning = true;
 
-        LOGGER.debug("LocalCache is running on thread " + getName());
+        LOGGER.debug("CacheOps is running on thread " + getName());
 
         while (isRunning) {
 

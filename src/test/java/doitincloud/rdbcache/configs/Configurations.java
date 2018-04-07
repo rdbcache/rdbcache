@@ -155,8 +155,8 @@ public class Configurations implements ApplicationContextAware {
     }
 
     @Bean
-    public LocalCache localCache() {
-        return new LocalCache();
+    public CacheOps localCache() {
+        return new CacheOps();
     }
 
     @Bean
@@ -170,8 +170,8 @@ public class Configurations implements ApplicationContextAware {
     }
 
     @Bean
-    public TaskQueue taskQueue() {
-        return new TaskQueue();
+    public QueueOps taskQueue() {
+        return new QueueOps();
     }
 
     @Bean

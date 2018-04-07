@@ -6,6 +6,7 @@
 
 package doitincloud.rdbcache.repositories.impls;
 
+import doitincloud.commons.exceptions.ServerErrorException;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.rdbcache.configs.KeyInfoRedisTemplate;
 import doitincloud.rdbcache.configs.PropCfg;
@@ -79,13 +80,12 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         LOGGER.trace("find " + pair.printKey() + " " + keyInfo.toString());
 
-        boolean foundAll = true;
-
         String key = pair.getId();
+        String type = pair.getType();
 
         if (!pair.isNewUuid()) {
 
-            KeyInfo keyInfoCached = AppCtx.getLocalCache().getKeyInfo(key);
+            KeyInfo keyInfoCached = AppCtx.getCacheOps().getKeyInfo(pair.getIdType());
 
             if (keyInfoCached != null) {
                 keyInfo.copy(keyInfoCached);
@@ -95,21 +95,25 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             if (enableRedisCache) {
                 StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.get");
-                KeyInfo keyInfoRedis = keyInfoOps.get(hkeyPrefix + "::keyinfo", key);
+                KeyInfo keyInfoRedis = keyInfoOps.get(hkeyPrefix + "::" + type, key);
                 if (stopWatch != null) stopWatch.stopNow();
 
                 if (keyInfoRedis != null) {
                     keyInfo.copy(keyInfoCached);
-                    AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+                    AppCtx.getCacheOps().putKeyInfo(pair.getIdType(), keyInfo);
                     LOGGER.trace("find - found from cache: " + key);
                     return true;
                 }
             }
         }
 
-        KvIdType idType = new KvIdType(key, "info");
+        String kvType = "keyInfo";
+        if (!type.equals("data")) {
+            kvType += ":" + type;
+        }
 
-        StopWatch stopWatch = context.startStopWatch("redis", "kvPairRepo.findAll");
+        KvIdType idType = new KvIdType(key, kvType);
+        StopWatch stopWatch = context.startStopWatch("redis", "kvPairRepo.findById");
         Optional<KvPair> dbPairOpt = AppCtx.getKvPairRepo().findById(idType);
         if (stopWatch != null) stopWatch.stopNow();
 
@@ -123,11 +127,11 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         KeyInfo keyInfoDb = Utils.toPojo(map, KeyInfo.class);
 
         keyInfo.copy(keyInfoDb);
-        AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+        AppCtx.getCacheOps().putKeyInfo(pair.getIdType(), keyInfo);
 
         Utils.getExcutorService().submit(() -> {
             StopWatch stopWatch2 = context.startStopWatch("dbase", "finalQuery.save");
-            keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
+            keyInfoOps.put(hkeyPrefix + "::" + type, key, keyInfo);
             if (stopWatch2 != null) stopWatch2.stopNow();
         });
 
@@ -139,16 +143,28 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         LOGGER.trace("find " + pairs.printKey() + "anyKey(" + anyKey.size() + ")");
 
-        List<String> keys = new ArrayList<String>();
-        List<String> redisKeys = new ArrayList<String>();
+        List<String> keys = new ArrayList<>();
+        List<String> redisKeys = new ArrayList<>();
         List<KvIdType> idTypes = new ArrayList<KvIdType>();
 
         boolean foundAll = true;
+
+        String type = pairs.get(0).getType();
+
+        String kvType = "keyInfo";
+        if (!type.equals("data")) {
+            kvType += ":" + type;
+        }
 
         for (int i = 0; i < pairs.size(); i++) {
 
             KvPair pair = pairs.get(i);
             String key = pair.getId();
+            KvIdType idType = pair.getIdType();
+
+            if (!idType.getType().equals(type)) {
+                throw new ServerErrorException("must have the same type when finding multiple keyInfos");
+            }
 
             if (i < anyKey.size()) {
                 // already has it, no need to find
@@ -161,7 +177,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             KeyInfo keyInfo = null;
             if (!pair.isNewUuid()) {
-                keyInfo = AppCtx.getLocalCache().getKeyInfo(key);
+                keyInfo = AppCtx.getCacheOps().getKeyInfo(idType);
             }
 
             if (keyInfo != null) {
@@ -180,7 +196,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 if (enableRedisCache) {
                     redisKeys.add(key);
                 } else {
-                    idTypes.add(new KvIdType(key, "info"));
+                    idTypes.add(new KvIdType(key, kvType));
                 }
             } else {
                 // new generated uuid - skip finding it
@@ -203,14 +219,14 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 String key = redisKeys.get(0);
 
                 StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.get");
-                KeyInfo keyInfoRedis = keyInfoOps.get(hkeyPrefix + "::keyinfo", key);
+                KeyInfo keyInfoRedis = keyInfoOps.get(hkeyPrefix + "::" + type, key);
                 if (stopWatch != null) stopWatch.stopNow();
 
                 if (keyInfoRedis == null) {
                     foundAll = false;
-                    idTypes.add(new KvIdType(key, "info"));
+                    idTypes.add(new KvIdType(key, "keyInfo:" + type));
                 } else {
-                    KeyInfo keyInfo = AppCtx.getLocalCache().putKeyInfo(key, keyInfoRedis);
+                    KeyInfo keyInfo = AppCtx.getCacheOps().putKeyInfo(new KvIdType(key, type), keyInfoRedis);
                     int index = keys.indexOf(key);
                     anyKey.set(index, keyInfo);
                     keys.set(index, null);
@@ -219,7 +235,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             } else {
 
                 StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.multiGet");
-                List<KeyInfo> redisKeyInfos = keyInfoOps.multiGet(hkeyPrefix + "::keyinfo", redisKeys);
+                List<KeyInfo> redisKeyInfos = keyInfoOps.multiGet(hkeyPrefix + "::" + type, redisKeys);
                 if (stopWatch != null) stopWatch.stopNow();
 
                 for (int i = 0; i < redisKeys.size() && i < redisKeyInfos.size(); i++) {
@@ -229,9 +245,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
                     if (keyInfo == null) {
                         foundAll = false;
-                        idTypes.add(new KvIdType(key, "info"));
+                        idTypes.add(new KvIdType(key, kvType));
                     } else {
-                        keyInfo = AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+                        keyInfo = AppCtx.getCacheOps().putKeyInfo(new KvIdType(key, type), keyInfo);
                         int index = keys.indexOf(key);
                         anyKey.set(index, keyInfo);
                         keys.set(index, null);
@@ -269,7 +285,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 anyKey.set(index, keyInfo);
                 keys.set(index, null);
 
-                keyInfo = AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+                keyInfo = AppCtx.getCacheOps().putKeyInfo(new KvIdType(key, type), keyInfo);
                 if (enableRedisCache) {
                     redisKeyInfoMap.put(key, keyInfo);
                 }
@@ -277,8 +293,8 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             if (redisKeyInfoMap.size() > 0) {
                 Utils.getExcutorService().submit(() -> {
-                    StopWatch stopWatch2 = context.startStopWatch("dbase", "finalQuery.save");
-                    keyInfoOps.putAll(hkeyPrefix + "::keyinfo", redisKeyInfoMap);
+                    StopWatch stopWatch2 = context.startStopWatch("dbase", "keyInfoOps.putAll");
+                    keyInfoOps.putAll(hkeyPrefix + "::" + type, redisKeyInfoMap);
                     if (stopWatch2 != null) stopWatch2.stopNow();
                 });
             }
@@ -309,18 +325,25 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             return false;
         }
 
+        String type = pair.getType();
         keyInfo.cleanup();
 
-        AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+        AppCtx.getCacheOps().putKeyInfo(pair.getIdType(), keyInfo);
 
         if (enableRedisCache) {
             StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.put");
-            keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
+            keyInfoOps.put(hkeyPrefix + "::" + type, key, keyInfo);
             if (stopWatch != null) stopWatch.stopNow();
         }
 
+        String kvType = "keyInfo";
+        if (!type.equals("data")) {
+            kvType += ":" + type;
+        }
+        KvPair keyInfoPair = new KvPair(key, kvType, Utils.toMap(keyInfo));
+
         StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-        AppCtx.getKvPairRepo().save(new KvPair(key, "info", Utils.toMap(keyInfo)));
+        AppCtx.getKvPairRepo().save(keyInfoPair);
         if (stopWatch != null) stopWatch.stopNow();
 
         LOGGER.debug("save Ok: " + pair.printKey());
@@ -341,11 +364,26 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         LOGGER.trace("save " + pairs.printKey() + anyKey.print());
 
+        String type = pairs.get(0).getType();
+
+        String kvType = "keyInfo";
+        if (!type.equals("data")) {
+            kvType += ":" + type;
+        }
+
+        KvPairs keyInfoPairs = new KvPairs();
+        Map<String, KeyInfo> keyInfoMap = new LinkedHashMap<>();
+
         for (int i = 0; i < pairs.size() && i < anyKey.size(); i++) {
 
             KvPair pair = pairs.get(i);
+
+            if (!pair.getType().equals(type)) {
+                throw new ServerErrorException("must have the same type when saving multiple keyInfos");
+            }
+
             String key = pair.getId();
-            KeyInfo keyInfo = anyKey.get(i);
+            KeyInfo keyInfo = anyKey.getAny(i);
 
             if (keyInfo == null) {
                 LOGGER.trace("save KeyInfo is null for " + key);
@@ -359,16 +397,24 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             keyInfo.cleanup();
 
-            AppCtx.getLocalCache().putKeyInfo(key, keyInfo);
+            AppCtx.getCacheOps().putKeyInfo(pair.getIdType(), keyInfo);
 
             if (enableRedisCache) {
-                StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.put");
-                keyInfoOps.put(hkeyPrefix + "::keyinfo", key, keyInfo);
-                if (stopWatch != null) stopWatch.stopNow();
+                keyInfoMap.put(key, keyInfo);
             }
 
-            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.save");
-            AppCtx.getKvPairRepo().save(new KvPair(key, "info", Utils.toMap(keyInfo)));
+            keyInfoPairs.add(new KvPair(key, kvType, Utils.toMap(keyInfo)));
+        }
+
+        if (keyInfoMap.size() > 0) {
+            StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.putAll");
+            keyInfoOps.putAll(hkeyPrefix + "::" + type, keyInfoMap);
+            if (stopWatch != null) stopWatch.stopNow();
+        }
+
+        if (keyInfoPairs.size() > 0) {
+            StopWatch stopWatch = context.startStopWatch("dbase", "kvPairRepo.saveAll");
+            AppCtx.getKvPairRepo().saveAll(keyInfoPairs);
             if (stopWatch != null) stopWatch.stopNow();
         }
 
@@ -382,11 +428,11 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         LOGGER.trace("delete " + pair.printKey());
 
-        AppCtx.getLocalCache().removeKeyInfo(pair.getId());
+        AppCtx.getCacheOps().removeKeyInfo(pair.getIdType());
 
         if (enableRedisCache) {
             StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.delete");
-            keyInfoOps.delete(hkeyPrefix + "::keyinfo", pair.getId());
+            keyInfoOps.delete(hkeyPrefix + "::" + pair.getType(), pair.getId());
             if (stopWatch != null) stopWatch.stopNow();
         }
 
@@ -400,12 +446,15 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         LOGGER.trace("delete " + pairs.printKey());
 
-        AppCtx.getLocalCache().removeKeyInfo(pairs);
+        AppCtx.getCacheOps().removeKeyInfo(pairs);
+
 
         if (enableRedisCache) {
             for (KvPair pair: pairs) {
+                String key = pair.getId();
+                String type = pair.getType();
                 StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.delete");
-                keyInfoOps.delete(hkeyPrefix + "::keyinfo", pair.getId());
+                keyInfoOps.delete(hkeyPrefix + "::" + type, key);
                 if (stopWatch != null) stopWatch.stopNow();
             }
         }
