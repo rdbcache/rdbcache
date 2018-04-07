@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>rdbcache security login</title>
+    <meta charset="utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+
+    <link rel="icon" th:href="@{/images/favicon.ico}"/>
+
+    <link rel="stylesheet" type="text/css" href="/webjars/bootstrap/4.0.0-2/css/bootstrap.min.css" />
+    <link rel="stylesheet" th:href="@{/css/login.css}" href="/css/login.css" />
+</head>
+<body class="text-center">
+
+    <form class="form-signin" th:action="@{/login}" method="post" th:object="${loginInfo}" enctype="utf8">
+        <img class="mb-4" th:src="@{/images/favicon.ico}" alt="" width="72" height="72">
+        <h2 class="h2 mb-3 font-weight-normal">Please login in</h2>
+        <div th:if="${param.error}">
+            <div class="alert alert-danger">
+                Invalid username and password.
+            </div>
+        </div>
+        <div th:if="${param.logout}">
+            <div class="alert alert-info">
+                You have been logged out.
+            </div>
+        </div>
+        <label for="username" class="sr-only">Email address</label>
+        <input type="email" th:field="*{username}" id="username" name="username" class="form-control" placeholder="Email address" required autofocus>
+        <label for="password" class="sr-only">Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+        <div class="checkbox mb-3">
+            <label>
+                <input th:field="*{rememberMe}" type="checkbox" value="remember-me"> Remember me
+            </label>
+        </div>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        <p class="mt-5 mb-3 text-muted">rdbcache security login page</p>
+    </form>
+
+</body>
+</html>

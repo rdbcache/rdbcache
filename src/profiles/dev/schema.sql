@@ -53,6 +53,45 @@ CREATE TABLE IF NOT EXISTS rdbcache_stopwatch (
   FOREIGN KEY(monitor_id) REFERENCES rdbcache_monitor(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS rdbcache_user_details (
+  user_id varchar(255) NOT NULL,
+  username varchar(255) NOT NULL PRIMARY KEY,
+  password varchar(255) DEFAULT '',
+  first_name varchar(255),
+  last_name varchar(255),
+  phone_number varchar(255),
+  enabled boolean DEFAULT true,
+  account_non_locked boolean DEFAULT true,
+  credentials_non_expired boolean DEFAULT true,
+  authorities varchar(255),
+  additional_information VARCHAR(4096),
+  expires_at bigint DEFAULT NULL,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY(user_id),
+  KEY phone_number_key (phone_number)
+);
+
+CREATE TABLE IF NOT EXISTS rdbcache_client_details (
+  client_id varchar(255) NOT NULL PRIMARY KEY,
+  resource_ids varchar(255),
+  secret_required boolean DEFAULT true,
+  client_secret varchar(255),
+  scoped boolean DEFAULT true,
+  scope varchar(4095),
+  authorized_grant_types varchar(255),
+  registered_redirect_uri varchar(4096),
+  authorities varchar(255),
+  access_token_validity_seconds int DEFAULT 3600,
+  refresh_token_validity_seconds int DEFAULT 86400,
+  auto_approve_scopes varchar(4095),
+  additional_information varchar(4095),
+  autoapprove varchar(255),
+  expires_at bigint DEFAULT NULL,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS departments (
     dept_no     CHAR(4)         NOT NULL,
     dept_name   VARCHAR(40)     NOT NULL,

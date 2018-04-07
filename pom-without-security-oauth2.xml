@@ -41,7 +41,6 @@
     <httpclient.version>4.4.1</httpclient.version>
     <commons-lang.version>2.3</commons-lang.version>
     <guava.version>r05</guava.version>
-    <spring-security-oauth2.version>2.3.0.RELEASE</spring-security-oauth2.version>
     <junit.version>4.12</junit.version>
     <mockito-core.version>2.1.0</mockito-core.version>
     <powermock.version>1.7.0RC2</powermock.version>
@@ -147,57 +146,6 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-thymeleaf</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.thymeleaf.extras</groupId>
-      <artifactId>thymeleaf-extras-springsecurity4</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-mail</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.webjars</groupId>
-      <artifactId>bootstrap</artifactId>
-      <version>4.0.0-2</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.webjars</groupId>
-      <artifactId>jquery</artifactId>
-      <version>3.3.1-1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.webjars</groupId>
-      <artifactId>jquery-ui</artifactId>
-      <version>1.12.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.webjars.npm</groupId>
-      <artifactId>validate.js</artifactId>
-      <version>0.12.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.security.oauth</groupId>
-      <artifactId>spring-security-oauth2</artifactId>
-      <version>${spring-security-oauth2.version}</version>
-    </dependency>
-
 
     <dependency>
       <groupId>org.mockito</groupId>

@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>rdbcache security error page</title>
+    <div th:replace="fragments/head :: head"/>
+</head>
+<body>
+
+<div th:replace="fragments/navbar :: navbar('error')"/>
+
+<div class="container">
+
+    <div class="row">
+        <div class="starter-template">
+            <h1>403 - Access is denied</h1>
+            <div th:inline="text">Hello '[[${#httpServletRequest.remoteUser}]]', you do not have permission to access this page.</div>
+        </div>
+    </div>
+
+</div>
+
+<div th:replace="fragments/footer :: footer"/>
+
+</body>
+</html>

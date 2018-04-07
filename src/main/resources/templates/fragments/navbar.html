@@ -1,0 +1,46 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+
+<body>
+
+<div th:fragment="navbar(activeTab)">
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <img src="../../images/favicon-32x32.png" width="32" height="32" class="d-inline-block align-top" alt="rdbcache">
+                rdbcache
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li th:class="${activeTab == 'home'} ? 'nav-item active' : 'nav-item'">
+                        <a class="nav-link" <a th:href="@{/home}">Home</a>
+                    </li>
+                    <li th:class="${activeTab == 'login'} ? 'nav-item active' : 'nav-item'">
+                        <a sec:authorize="isAuthenticated()" class="nav-link" <a th:href="@{/logout}">Logout</a>
+                        <a sec:authorize="isAnonymous()" class="nav-link" <a th:href="@{/login}">Login</a>
+                    </li>
+                    <li sec:authorize="isAnonymous()" th:class="${activeTab == 'signup'} ? 'nav-item active' : 'nav-item'">
+                        <a class="nav-link" <a th:href="@{/signup}">Signup</a>
+                    </li>
+                    <li th:class="${activeTab == 'user'} ? 'nav-item active' : 'nav-item'">
+                        <a class="nav-link" <a th:href="@{/user}">User</a>
+                    </li>
+                    <li th:class="${activeTab == 'admin'} ? 'nav-item active' : 'nav-item'">
+                        <a class="nav-link" <a th:href="@{/admin}">Admin</a>
+                    </li>
+                    <li th:class="${activeTab == 'about'} ? 'nav-item active' : 'nav-item'">
+                        <a class="nav-link" <a th:href="@{/about}">About</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+</div>
+
+</body>
+</html>
