@@ -1,16 +1,16 @@
-This README serves as a quick start docuement. For more detailed documentation, please visit website: http://doitincloud.rdbcache.com
+This README serves as a quick start docuement. For more detailed documentation, please visit website: http://rdbcache.com
 
-Install doitincloud.rdbcache
+Install rdbcache
 ----------------
 
-doitincloud.rdbcache is a java application. It requires Java version 1.8+ runtime environment.
+rdbcache is a java application. It requires Java version 1.8+ runtime environment.
 
 #### For Mac/Linux:
 
-    curl https://raw.githubusercontent.com/doitincloud.rdbcache/doitincloud.rdbcache/master/download/install | sh
+    curl https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/install | sh
 
     # check if OK
-    doitincloud.rdbcache -v
+    rdbcache -v
 
     Put following environment variables in your ~/.bash_profile.
     Please replace the values with the proper ones for your environment.
@@ -20,16 +20,16 @@ doitincloud.rdbcache is a java application. It requires Java version 1.8+ runtim
     export DATABASE_NAME=testdb
     export DATABASE_SERVER=localhost
     export DB_USER_NAME=dbuser
-    export DB_USER_PASS=doitincloud.rdbcache
+    export DB_USER_PASS=rdbcache
 
-    doitincloud.rdbcache
+    rdbcache
 
 #### For Windows:
 
-click [download doitincloud.rdbcache.zip](https://raw.githubusercontent.com/doitincloud.rdbcache/doitincloud.rdbcache/master/download/doitincloud.rdbcache.zip)
+click [download rdbcache.zip](https://raw.githubusercontent.com/rdbcache/rdbcache/master/download/rdbcache.zip)
 
     # check if OK
-    java -jar doitincloud.rdbcache.jar -v
+    java -jar rdbcache.jar -v
 
     Please replace the values with the proper ones for your environment.
 
@@ -38,12 +38,12 @@ click [download doitincloud.rdbcache.zip](https://raw.githubusercontent.com/doit
     SET DATABASE_NAME=testdb
     SET DATABASE_SERVER=localhost
     SET DB_USER_NAME=dbuser
-    SET DB_USER_PASS=doitincloud.rdbcache
+    SET DB_USER_PASS=rdbcache
 
-    java -jar doitincloud.rdbcache.jar
+    java -jar rdbcache.jar
 
 
-Playing with doitincloud.rdbcache
+Playing with rdbcache
 ---------------------
 
     curl http://localhost:8181/v1/set/my-hash-key/my-value
@@ -59,18 +59,18 @@ Playing with doitincloud.rdbcache
     ...
 
 
-You can find all the available APIs and complete documentation at http://doitincloud.rdbcache.com.
+You can find all the available APIs and complete documentation at http://rdbcache.com.
 
 Playing with source code
 ------------------------
 
-doitincloud.rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and JDK version 1.8+.
+rdbcache uses maven and build on top of Java Spring Boot 1.5.10. It requires maven 3.5+ and JDK version 1.8+.
 
 Download source from github
 
-git clone https://github.com/doitincloud.rdbcache/doitincloud.rdbcache.git
+git clone https://github.com/rdbcache/rdbcache.git
 
-cd doitincloud.rdbcache
+cd rdbcache
 
 mvn clean test
 
