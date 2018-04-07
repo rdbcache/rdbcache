@@ -18,25 +18,25 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
   
-if [ ! -f target/doitincloud.rdbcache.jar ]; then
-  echo "target/doitincloud.rdbcache.jar not found!"
+if [ ! -f target/rdbcache.jar ]; then
+  echo "target/rdbcache.jar not found!"
   exit 1
 fi
 
-mkdir target/doitincloud.rdbcache
+mkdir target/rdbcache
 
-cp target/doitincloud.rdbcache.jar target/doitincloud.rdbcache
-cp license.md target/doitincloud.rdbcache
-cp README.md target/doitincloud.rdbcache
-cp -r src/install/* target/doitincloud.rdbcache
+cp target/rdbcache.jar target/rdbcache
+cp license.md target/rdbcache
+cp README.md target/rdbcache
+cp -r src/install/* target/rdbcache
 
 cd target
 
-#tar --exclude=.DS_Store --exclude=.* -zcf doitincloud.rdbcache.tar.gz doitincloud.rdbcache
-#cp -f doitincloud.rdbcache.tar.gz download/
+#tar --exclude=.DS_Store --exclude=.* -zcf rdbcache.tar.gz rdbcache
+#cp -f rdbcache.tar.gz download/
 
-zip doitincloud.rdbcache.zip doitincloud.rdbcache/*
-cp -f doitincloud.rdbcache.zip ../download/
+zip rdbcache.zip rdbcache/*
+cp -f rdbcache.zip ../download/
 
 cd ..
 
