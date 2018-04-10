@@ -140,7 +140,7 @@ public class Configurations implements ApplicationContextAware {
     }
 
     @Bean
-    public KeyInfoRedisTemplate keyInfoRedisTemplate() {
+    public RedisKeyInfoTemplate keyInfoRedisTemplate() {
         return MockRedis.mockKeyInfoRedisTemplate();
     }
 

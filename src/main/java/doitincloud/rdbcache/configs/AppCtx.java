@@ -43,7 +43,7 @@ public class AppCtx {
 
     private static KeyInfoRepo keyInfoRepo;
 
-    private static KeyInfoRedisTemplate keyInfoRedisTemplate;
+    private static RedisKeyInfoTemplate redisKeyInfoTemplate;
 
     private static KvPairRepo kvPairRepo;
 
@@ -226,19 +226,19 @@ public class AppCtx {
         AppCtx.kvPairRepo = kvPairRepo;
     }
 
-    public static KeyInfoRedisTemplate getKeyInfoRedisTemplate() {
-        if (ctx != null && keyInfoRedisTemplate == null) {
+    public static RedisKeyInfoTemplate getRedisKeyInfoTemplate() {
+        if (ctx != null && redisKeyInfoTemplate == null) {
             try {
-                keyInfoRedisTemplate = (KeyInfoRedisTemplate) ctx.getBean("keyInfoRedisTemplate");
+                redisKeyInfoTemplate = ctx.getBean(RedisKeyInfoTemplate.class);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        return keyInfoRedisTemplate;
+        return redisKeyInfoTemplate;
     }
 
-    public static void setKeyInfoRedisTemplate(KeyInfoRedisTemplate template) {
-        AppCtx.keyInfoRedisTemplate = template;
+    public static void setRedisKeyInfoTemplate(RedisKeyInfoTemplate template) {
+        AppCtx.redisKeyInfoTemplate = template;
     }
 
     public static MonitorRepo getMonitorRepo() {

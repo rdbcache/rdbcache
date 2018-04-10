@@ -45,9 +45,9 @@ public class RedisConfig {
     }
 
     @Bean
-    public KeyInfoRedisTemplate keyInfoRedisTemplate() {
+    public RedisKeyInfoTemplate redisKeyInfoTemplate() {
 
-        KeyInfoRedisTemplate template =  new KeyInfoRedisTemplate();
+        RedisKeyInfoTemplate template =  new RedisKeyInfoTemplate();
 
         template.setConnectionFactory(redisConnectionFactory());
 

@@ -124,9 +124,9 @@ public class MockRedis {
         return template;
    }
 
-   public static KeyInfoRedisTemplate mockKeyInfoRedisTemplate() {
+   public static RedisKeyInfoTemplate mockKeyInfoRedisTemplate() {
 
-       KeyInfoRedisTemplate template = mock(KeyInfoRedisTemplate.class, Mockito.RETURNS_DEEP_STUBS);
+       RedisKeyInfoTemplate template = mock(RedisKeyInfoTemplate.class, Mockito.RETURNS_DEEP_STUBS);
 
        HashOperations keyInfoOps = mock(HashOperations.class, Mockito.RETURNS_DEEP_STUBS);
 
@@ -138,7 +138,7 @@ public class MockRedis {
            Object[] args = invocation.getArguments();
            String key = (String) args[0];
            String subKey = (String) args[1];
-           LOGGER.trace("KeyInfoRedisTemplate HashOperations get " + key + " " + subKey);
+           LOGGER.trace("RedisKeyInfoTemplate HashOperations get " + key + " " + subKey);
            Map<String, Object> map = (Map<String, Object>) data.get(key);
            if (map == null) {
                return null;
@@ -153,7 +153,7 @@ public class MockRedis {
            Object[] args = invocation.getArguments();
            String key = (String) args[0];
            String subKey = (String) args[1];
-           LOGGER.trace("KeyInfoRedisTemplate HashOperations put " + key + " " + subKey);
+           LOGGER.trace("RedisKeyInfoTemplate HashOperations put " + key + " " + subKey);
            KeyInfo keyInfo = (KeyInfo) args[2];
            Map<String, Object> subMap = Utils.toMap(keyInfo);
            Map<String, Object> map = (Map<String, Object>) data.get(key);
@@ -171,7 +171,7 @@ public class MockRedis {
            Object[] args = invocation.getArguments();
            String key = (String) args[0];
            Map<String, Object> subMaps = (Map<String, Object>) args[1];
-           LOGGER.trace("KeyInfoRedisTemplate HashOperations putAll " + key + " " + subMaps.keySet());
+           LOGGER.trace("RedisKeyInfoTemplate HashOperations putAll " + key + " " + subMaps.keySet());
            Map<String, Object> map = (Map<String, Object>) data.get(key);
            if (map == null) {
                map = new LinkedHashMap<>();
@@ -191,7 +191,7 @@ public class MockRedis {
            Object[] args = invocation.getArguments();
            String key = (String) args[0];
            List<String> keys = (List<String>) args[1];
-           LOGGER.trace("KeyInfoRedisTemplate HashOperations multiGet " + key);
+           LOGGER.trace("RedisKeyInfoTemplate HashOperations multiGet " + key);
            Map<String, Object> map = (Map<String, Object>) data.get(key);
            List<KeyInfo> resultList = new ArrayList<>();
            if (map == null) {
@@ -215,7 +215,7 @@ public class MockRedis {
            Object[] args = invocation.getArguments();
            String key = (String) args[0];
            String subKey = (String) args[1];
-           LOGGER.trace("KeyInfoRedisTemplate HashOperations delete " + key + " " + subKey);
+           LOGGER.trace("RedisKeyInfoTemplate HashOperations delete " + key + " " + subKey);
            Map<String, Object> map = (Map<String, Object>) data.get(key);
            if (map == null) {
                return null;
@@ -235,7 +235,7 @@ public class MockRedis {
                return null;
            }
            List<String> keys = (List<String>) args[1];
-           LOGGER.trace("KeyInfoRedisTemplate HashOperations delete " + key + " " + keys);
+           LOGGER.trace("RedisKeyInfoTemplate HashOperations delete " + key + " " + keys);
            for (String subKey: keys) {
                map.remove(subKey);
            }

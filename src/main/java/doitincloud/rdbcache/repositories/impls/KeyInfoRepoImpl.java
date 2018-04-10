@@ -8,7 +8,7 @@ package doitincloud.rdbcache.repositories.impls;
 
 import doitincloud.commons.exceptions.ServerErrorException;
 import doitincloud.rdbcache.configs.AppCtx;
-import doitincloud.rdbcache.configs.KeyInfoRedisTemplate;
+import doitincloud.rdbcache.configs.RedisKeyInfoTemplate;
 import doitincloud.rdbcache.configs.PropCfg;
 import doitincloud.commons.helpers.*;
 import doitincloud.rdbcache.models.*;
@@ -51,7 +51,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     @EventListener
     public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
 
-        KeyInfoRedisTemplate template = AppCtx.getKeyInfoRedisTemplate();
+        RedisKeyInfoTemplate template = AppCtx.getRedisKeyInfoTemplate();
         if (template == null) {
             LOGGER.error("failed to get key info redis template");
             return;
