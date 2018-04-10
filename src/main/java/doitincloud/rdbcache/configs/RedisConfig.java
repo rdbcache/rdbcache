@@ -6,7 +6,6 @@
 
 package doitincloud.rdbcache.configs;
 
-import doitincloud.commons.supports.JsonRedisSerializer;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.services.ExpireOps;
 
@@ -64,7 +63,7 @@ public class RedisConfig {
         StringRedisTemplate template = new StringRedisTemplate();
 
         template.setConnectionFactory(redisConnectionFactory());
-        template.setHashValueSerializer(new JsonRedisSerializer());
+        template.setHashValueSerializer(new RedisJsonSerializer());
 
         return template;
     }

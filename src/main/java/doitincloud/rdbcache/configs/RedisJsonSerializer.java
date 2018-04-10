@@ -1,4 +1,4 @@
-package doitincloud.commons.supports;
+package doitincloud.rdbcache.configs;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -6,7 +6,7 @@ import doitincloud.commons.helpers.Utils;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
 
-public class JsonRedisSerializer implements RedisSerializer<Object> {
+public class RedisJsonSerializer implements RedisSerializer<Object> {
 
     private static byte[] bytesNull = "null".getBytes();
 

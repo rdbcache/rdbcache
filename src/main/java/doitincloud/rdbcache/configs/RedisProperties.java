@@ -10,7 +10,7 @@ import redis.clients.jedis.JedisPoolConfig;
 
 import java.net.URL;
 
-@ComponentScan(basePackages = { "com.doitincloud.rdbcache.*" })
+@ComponentScan(basePackages = { "doitincloud.rdbcache.*" })
 @ConfigurationProperties(prefix = "spring.redis")
 @PropertySources({
         @PropertySource("classpath:application.properties"),
