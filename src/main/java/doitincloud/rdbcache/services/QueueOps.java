@@ -99,7 +99,7 @@ public class QueueOps extends Thread {
 
         isRunning = true;
 
-        LOGGER.debug("Task Queue is running on thread " + getName());
+        LOGGER.debug("QueueOps is running on thread " + getName());
 
         while (isRunning) {
 

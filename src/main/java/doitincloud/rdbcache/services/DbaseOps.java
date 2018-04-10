@@ -236,6 +236,9 @@ public class DbaseOps {
     //
     public static boolean saveQuery(Context context, QueryInfo queryInfo) {
 
+        if (context == null || context.getMonitor() == null  || !context.isMonitorEnabled()) {
+            return false;
+        }
         KvPairRepo kvPairRepo = AppCtx.getKvPairRepo();
         if (kvPairRepo == null) {
             return false;

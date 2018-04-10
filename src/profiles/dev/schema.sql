@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS rdbcache_user_details (
 
 CREATE TABLE IF NOT EXISTS rdbcache_client_details (
   client_id varchar(255) NOT NULL PRIMARY KEY,
-  resource_ids varchar(255),
+  resource_ids varchar(4095),
   secret_required boolean DEFAULT true,
   client_secret varchar(255),
   scoped boolean DEFAULT true,
@@ -84,9 +84,9 @@ CREATE TABLE IF NOT EXISTS rdbcache_client_details (
   authorities varchar(255),
   access_token_validity_seconds int DEFAULT 3600,
   refresh_token_validity_seconds int DEFAULT 86400,
-  auto_approve_scopes varchar(4095),
+  auto_approve_scopes varchar(255),
+  auto_approve varchar(255),
   additional_information varchar(4095),
-  autoapprove varchar(255),
   expires_at bigint DEFAULT NULL,
   created_at timestamp DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

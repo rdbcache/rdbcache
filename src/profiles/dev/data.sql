@@ -1,10 +1,15 @@
-delete from rdbcache_kv_pair where type in ('data', 'info', 'queryInfo');
+delete from rdbcache_kv_pair;
+
+delete from rdbcache_client_details;
 
 delete from tb1;
 
 delete from tb2;
 
 delete from user_table;
+
+insert into rdbcache_client_details (client_id, client_secret, scope, authorized_grant_types, authorities)
+  values("client_001", "secret", "[\"read\",\"write\"]", "[\"password\",\"authorization_code\",\"refresh_token\"]", "[\"ROLE_USER\",\"ROLE_POWER\"]");
 
 insert into rdbcache_kv_pair (id, type, value) values('id1', 'data', 'value1');
 insert into rdbcache_kv_pair (id, type, value) values('id2', 'data', '{"f1":"v21"}');

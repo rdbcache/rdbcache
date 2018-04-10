@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import doitincloud.commons.exceptions.BadRequestException;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -32,9 +31,12 @@ public class Utils {
     private static ObjectMapper mapper;
 
     public static ObjectMapper getObjectMapper() {
+
         if (null != mapper) return mapper;
+
         mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+
         return mapper;
     }
 
@@ -132,12 +134,12 @@ public class Utils {
 
     public static List<Object> convertMapToList(Map<String, Object> map) {
         List<String> doneKeys = new ArrayList<>();
-        List<Object> list = new ArrayList<>(map.size());
+        List<Object> list = new ArrayList<>();
         for (int i = 0; i < map.size(); i++) {
             String key = Integer.toString(i);
             Object value = map.get(key);
+            list.add(value);
             if (value != null) {
-                list.set(i, value);
                 doneKeys.add(key);
             }
         }
@@ -164,7 +166,8 @@ public class Utils {
 
     public static <T> T toPojo(Map<String, Object> map, Class<T> type) {
         try {
-            return getObjectMapper().convertValue(map, type);
+            ObjectMapper om = getObjectMapper();
+            return om.convertValue(map, type);
         } catch (Exception e) {
             e.printStackTrace();
         }
