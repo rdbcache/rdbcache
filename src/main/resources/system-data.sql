@@ -1,3 +1,5 @@
+select 1;
+
 delete from rdbcache_kv_pair;
 
 insert into rdbcache_kv_pair (id, type, value) values('id1', 'data', 'value1');
