@@ -13,6 +13,7 @@ import doitincloud.commons.helpers.*;
 
 import doitincloud.rdbcache.controllers.supports.Request;
 import doitincloud.rdbcache.controllers.supports.Response;
+import doitincloud.rdbcache.supports.Context;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.AbstractEnvironment;

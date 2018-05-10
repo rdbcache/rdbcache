@@ -11,7 +11,11 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MonitorRepo extends CrudRepository<Monitor, Long> {
+public interface MonitorRepo {
+
+    Monitor findById(Long id);
+
+    void save(Monitor monitor);
 }
 
 

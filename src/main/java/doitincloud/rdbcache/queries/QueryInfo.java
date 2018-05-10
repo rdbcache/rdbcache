@@ -15,9 +15,7 @@ import java.io.Serializable;
 import java.util.*;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class QueryInfo implements Serializable {
-
-    private static final long serialVersionUID = 20180316L;
+public class QueryInfo {
 
     private String table;
 

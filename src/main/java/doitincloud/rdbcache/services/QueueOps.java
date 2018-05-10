@@ -6,10 +6,10 @@
 
 package doitincloud.rdbcache.services;
 
-import doitincloud.commons.helpers.AnyKey;
-import doitincloud.commons.helpers.KvPairs;
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.KvPairs;
 import doitincloud.rdbcache.configs.PropCfg;
-import doitincloud.commons.helpers.Context;
+import doitincloud.rdbcache.supports.Context;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.KvPair;
@@ -158,9 +158,13 @@ public class QueueOps extends Thread {
 
         String action = parts[0];
         String hashKey = parts[1];
-        String[] subParts = hashKey.split(":");
-        String type = subParts[0];
-        String key = subParts[1];
+        int index = hashKey.indexOf(":");
+        if (index < 0) {
+            LOGGER.error("invalid event format, failed to figure out type and key");
+            return;
+        }
+        String type = hashKey.substring(0, index);
+        String key = hashKey.substring(index+1);
         String traceId = parts[2];
 
         Context context = new Context(traceId);

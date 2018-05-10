@@ -4,7 +4,7 @@
  * @license http://rdbcache.com/license/
  */
 
-package doitincloud.commons.helpers;
+package doitincloud.rdbcache.supports;
 
 import doitincloud.commons.exceptions.ServerErrorException;
 import doitincloud.rdbcache.models.KeyInfo;

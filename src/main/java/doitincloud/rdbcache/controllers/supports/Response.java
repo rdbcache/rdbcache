@@ -6,8 +6,8 @@
 
 package doitincloud.rdbcache.controllers.supports;
 
-import doitincloud.commons.helpers.Context;
-import doitincloud.commons.helpers.KvPairs;
+import doitincloud.rdbcache.supports.Context;
+import doitincloud.rdbcache.supports.KvPairs;
 import doitincloud.rdbcache.models.KvPair;
 import org.springframework.http.ResponseEntity;
 

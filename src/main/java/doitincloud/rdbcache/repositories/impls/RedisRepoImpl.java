@@ -7,10 +7,10 @@
 package doitincloud.rdbcache.repositories.impls;
 
 import doitincloud.commons.exceptions.ServerErrorException;
-import doitincloud.commons.helpers.AnyKey;
-import doitincloud.commons.helpers.KvPairs;
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.KvPairs;
 import doitincloud.rdbcache.configs.PropCfg;
-import doitincloud.commons.helpers.Context;
+import doitincloud.rdbcache.supports.Context;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.KvPair;
@@ -97,7 +97,9 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean ifExist(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
-        LOGGER.trace("ifExist: " + pair.printKey() + " " + keyInfo.toString());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("ifExist: " + pair.printKey() + " " + keyInfo.toString());
+        }
 
         String key = pair.getId();
         String type = pair.getType();
@@ -105,7 +107,7 @@ public class RedisRepoImpl implements RedisRepo {
 
         if (enableDataCache) {
             if (AppCtx.getCacheOps().containsData(pair.getIdType())) {
-                LOGGER.trace("ifExist found from cache " + key);
+                if (LOGGER.isTraceEnabled()) LOGGER.trace("ifExist found from cache " + key);
                 return true;
             }
         }
@@ -126,8 +128,10 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean ifExist(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
-        LOGGER.trace("ifExist pairs(" + pairs.size() + "): " + pairs.printKey() + 
-            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("ifExist pairs(" + pairs.size() + "): " + pairs.printKey() +
+                    "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        }
 
         boolean foundAll = true;
 
@@ -140,7 +144,7 @@ public class RedisRepoImpl implements RedisRepo {
 
             if (enableDataCache) {
                 if (AppCtx.getCacheOps().containsData(pair.getIdType())) {
-                    LOGGER.trace("ifExist found from cache " + key);
+                    if (LOGGER.isTraceEnabled()) LOGGER.trace("ifExist found from cache " + key);
                     continue;
                 }
             }
@@ -165,7 +169,9 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean update(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
-        LOGGER.trace("update: : " + pair.printKey() + " " + keyInfo.toString());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("update: : " + pair.printKey() + " " + keyInfo.toString());
+        }
 
         if (enableDataCache) {
             AppCtx.getCacheOps().updateData(pair);
@@ -200,8 +206,10 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean update(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
-        LOGGER.trace("update pairs(" + pairs.size() + "): " + pairs.printKey() +
-            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("update pairs(" + pairs.size() + "): " + pairs.printKey() +
+                    "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        }
 
         boolean foundAll = true;
 
@@ -245,7 +253,9 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean find(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
-        LOGGER.trace("find: " + pair.printKey() + " " + keyInfo.toString());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("find: " + pair.printKey() + " " + keyInfo.toString());
+        }
 
         boolean foundAll = true;
 
@@ -297,7 +307,7 @@ public class RedisRepoImpl implements RedisRepo {
             LOGGER.debug("find - not found " + key);
         }
 
-        LOGGER.trace("find returns " + foundAll);
+        if (LOGGER.isTraceEnabled()) LOGGER.trace("find returns " + foundAll);
 
         return foundAll;
     }
@@ -305,8 +315,10 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean find(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
-        LOGGER.trace("find pairs(" + pairs.size() + "): " + pairs.printKey() + 
-            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("find pairs(" + pairs.size() + "): " + pairs.printKey() +
+                    "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        }
 
         boolean foundAll = true;
 
@@ -373,7 +385,9 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean save(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
-        LOGGER.trace("save: " + pair.printKey() + " " + keyInfo.toString());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("save: " + pair.printKey() + " " + keyInfo.toString());
+        }
 
         boolean savedAll = true;
 
@@ -412,7 +426,7 @@ public class RedisRepoImpl implements RedisRepo {
             }
         }
 
-        LOGGER.trace("save returns " + savedAll);
+        if (LOGGER.isTraceEnabled()) LOGGER.trace("save returns " + savedAll);
 
         return savedAll;
     }
@@ -420,8 +434,10 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean save(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
-        LOGGER.trace("save pairs(" + pairs.size() + "): " + pairs.printKey() + 
-            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("save pairs(" + pairs.size() + "): " + pairs.printKey() +
+                    "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        }
 
         boolean savedAll = true;
 
@@ -464,7 +480,7 @@ public class RedisRepoImpl implements RedisRepo {
             }
         }
 
-        LOGGER.trace("save returns " + savedAll);
+        if (LOGGER.isTraceEnabled()) LOGGER.trace("save returns " + savedAll);
 
         return savedAll;
     }
@@ -472,7 +488,9 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean findAndSave(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
-        LOGGER.trace("findAndSave: " + pair.printKey() + " " + keyInfo.toString());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("findAndSave: " + pair.printKey() + " " + keyInfo.toString());
+        }
 
         boolean allOk = true;
 
@@ -541,7 +559,7 @@ public class RedisRepoImpl implements RedisRepo {
             allOk = fmap != null && fmap.size() > 0;
         }
 
-        LOGGER.trace("findAndSave returns " + allOk);
+        if (LOGGER.isTraceEnabled()) LOGGER.trace("findAndSave returns " + allOk);
 
         return allOk;
     }
@@ -549,8 +567,10 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public boolean findAndSave(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
-        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.printKey() + 
-            "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.printKey() +
+                    "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        }
 
         boolean allOk = true;
 
@@ -622,7 +642,7 @@ public class RedisRepoImpl implements RedisRepo {
             }
         }
 
-        LOGGER.trace("findAndSave returns " + allOk);
+        if (LOGGER.isTraceEnabled()) LOGGER.trace("findAndSave returns " + allOk);
 
         return allOk;
     }
@@ -630,7 +650,9 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public void delete(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
-        LOGGER.trace("findAndSave: " + pair.printKey() + " " + keyInfo.toString());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("findAndSave: " + pair.printKey() + " " + keyInfo.toString());
+        }
 
         if (enableDataCache) {
             AppCtx.getCacheOps().removeKeyAndData(pair);
@@ -666,8 +688,10 @@ public class RedisRepoImpl implements RedisRepo {
     @Override
     public void delete(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
-        LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.printKey() +
-                "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.printKey() +
+                    "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
+        }
 
         if (enableDataCache) {
             AppCtx.getCacheOps().removeKeyAndData(pairs);

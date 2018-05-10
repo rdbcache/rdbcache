@@ -10,7 +10,6 @@ import javax.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Embeddable
 public class KvIdType implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 20180316L;
@@ -67,7 +66,6 @@ public class KvIdType implements Serializable, Cloneable {
 
     @Override
     public int hashCode() {
-
         return Objects.hash(id, type);
     }
 

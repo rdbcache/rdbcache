@@ -6,19 +6,16 @@
 
 package doitincloud.rdbcache.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name="rdbcache_monitor")
-public class Monitor implements Serializable {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class Monitor {
 
-    private static final long serialVersionUID = 20180316L;
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name = "";

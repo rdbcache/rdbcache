@@ -14,6 +14,9 @@ import doitincloud.commons.helpers.*;
 import doitincloud.rdbcache.models.*;
 import doitincloud.rdbcache.repositories.KeyInfoRepo;
 
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.Context;
+import doitincloud.rdbcache.supports.KvPairs;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -78,7 +81,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     @Override
     public boolean find(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
-        LOGGER.trace("find " + pair.printKey() + " " + keyInfo.toString());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("find " + pair.printKey() + " " + keyInfo.toString());
+        }
 
         String key = pair.getId();
         String type = pair.getType();
@@ -89,7 +94,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             if (keyInfoCached != null) {
                 keyInfo.copy(keyInfoCached);
-                LOGGER.trace("find - found from cache: " + key);
+                if (LOGGER.isTraceEnabled()) LOGGER.trace("find - found from cache: " + key);
                 return true;
             }
 
@@ -101,7 +106,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                 if (keyInfoRedis != null) {
                     keyInfo.copy(keyInfoCached);
                     AppCtx.getCacheOps().putKeyInfo(pair.getIdType(), keyInfo);
-                    LOGGER.trace("find - found from cache: " + key);
+                    if (LOGGER.isTraceEnabled()) LOGGER.trace("find - found from cache: " + key);
                     return true;
                 }
             }
@@ -114,15 +119,14 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         KvIdType idType = new KvIdType(key, kvType);
         StopWatch stopWatch = context.startStopWatch("redis", "kvPairRepo.findById");
-        Optional<KvPair> dbPairOpt = AppCtx.getKvPairRepo().findById(idType);
+        KvPair dbPair = AppCtx.getKvPairRepo().findById(idType);
         if (stopWatch != null) stopWatch.stopNow();
 
-        if (!dbPairOpt.isPresent()) {
+        if (dbPair == null) {
             LOGGER.debug("find - not found from anywhere: " + key);
             return false;
         }
 
-        KvPair dbPair = dbPairOpt.get();
         Map<String, Object> map = dbPair.getData();
         KeyInfo keyInfoDb = Utils.toPojo(map, KeyInfo.class);
 
@@ -141,7 +145,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     @Override
     public boolean find(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
-        LOGGER.trace("find " + pairs.printKey() + "anyKey(" + anyKey.size() + ")");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("find " + pairs.printKey() + "anyKey(" + anyKey.size() + ")");
+        }
 
         List<String> keys = new ArrayList<>();
         List<String> redisKeys = new ArrayList<>();
@@ -169,7 +175,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             if (i < anyKey.size()) {
                 // already has it, no need to find
                 keys.add(null);
-                LOGGER.trace("find - already existed: " + key);
+                if (LOGGER.isTraceEnabled()) LOGGER.trace("find - already existed: " + key);
                 continue;
             } else {
                 keys.add(key);
@@ -183,7 +189,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             if (keyInfo != null) {
                 anyKey.add(keyInfo);
                 keys.set(i, null);
-                LOGGER.trace("find - found from cache: " + key);
+                if (LOGGER.isTraceEnabled()) LOGGER.trace("find - found from cache: " + key);
                 continue;
             }
 
@@ -201,7 +207,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             } else {
                 // new generated uuid - skip finding it
                 keys.set(i, null);
-                LOGGER.trace("find - new uuid skipped: " + key);
+                if (LOGGER.isTraceEnabled()) LOGGER.trace("find - new uuid skipped: " + key);
             }
         }
 
@@ -230,7 +236,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                     int index = keys.indexOf(key);
                     anyKey.set(index, keyInfo);
                     keys.set(index, null);
-                    LOGGER.trace("find - found from redis: " + key);
+                    if (LOGGER.isTraceEnabled()) LOGGER.trace("find - found from redis: " + key);
                 }
             } else {
 
@@ -251,7 +257,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                         int index = keys.indexOf(key);
                         anyKey.set(index, keyInfo);
                         keys.set(index, null);
-                        LOGGER.trace("find - found from redis: " + key);
+                        if (LOGGER.isTraceEnabled()) LOGGER.trace("find - found from redis: " + key);
                     }
                 }
             }
@@ -276,7 +282,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
                     continue;
                 }
 
-                LOGGER.trace("find - found from database: " + dbPair.printKey());
+                if (LOGGER.isTraceEnabled()) LOGGER.trace("find - found from database: " + dbPair.printKey());
 
                 String key = dbPair.getId();
                 KeyInfo keyInfo = Utils.toPojo(dbPair.getData(), KeyInfo.class);
@@ -293,7 +299,7 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
             if (redisKeyInfoMap.size() > 0) {
                 Utils.getExcutorService().submit(() -> {
-                    StopWatch stopWatch2 = context.startStopWatch("dbase", "keyInfoOps.putAll");
+                    StopWatch stopWatch2 = context.startStopWatch("redis", "keyInfoOps.putAll");
                     keyInfoOps.putAll(hkeyPrefix + "::" + type, redisKeyInfoMap);
                     if (stopWatch2 != null) stopWatch2.stopNow();
                 });
@@ -315,8 +321,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     @Override
     public boolean save(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
-
-        LOGGER.trace("save " + pair.printKey() + " " + keyInfo.toString());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("save " + pair.printKey() + " " + keyInfo.toString());
+        }
 
         String key = pair.getId();
 
@@ -362,7 +369,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             return false;
         }
 
-        LOGGER.trace("save " + pairs.printKey() + anyKey.print());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("save " + pairs.printKey() + anyKey.print());
+        }
 
         String type = pairs.get(0).getType();
 
@@ -386,12 +395,12 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
             KeyInfo keyInfo = anyKey.getAny(i);
 
             if (keyInfo == null) {
-                LOGGER.trace("save KeyInfo is null for " + key);
+                if (LOGGER.isTraceEnabled()) LOGGER.trace("save KeyInfo is null for " + key);
                 continue;
             }
 
             if (!keyInfo.getIsNew()) {
-                LOGGER.trace("save KeyInfo is not new, skipped for " + key);
+                if (LOGGER.isTraceEnabled()) LOGGER.trace("save KeyInfo is not new, skipped for " + key);
                 continue;
             }
 
@@ -426,13 +435,17 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     @Override
     public void delete(final Context context, final KvPair pair) {
 
-        LOGGER.trace("delete " + pair.printKey());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("delete " + pair.printKey());
+        }
 
         AppCtx.getCacheOps().removeKeyInfo(pair.getIdType());
 
         if (enableRedisCache) {
+            String key = pair.getId();
+            String type = pair.getType();
             StopWatch stopWatch = context.startStopWatch("redis", "keyInfoOps.delete");
-            keyInfoOps.delete(hkeyPrefix + "::" + pair.getType(), pair.getId());
+            keyInfoOps.delete(hkeyPrefix + "::" + type, key);
             if (stopWatch != null) stopWatch.stopNow();
         }
 
@@ -444,7 +457,9 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
     @Override
     public void delete(final Context context, final KvPairs pairs) {
 
-        LOGGER.trace("delete " + pairs.printKey());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("delete " + pairs.printKey());
+        }
 
         AppCtx.getCacheOps().removeKeyInfo(pairs);
 

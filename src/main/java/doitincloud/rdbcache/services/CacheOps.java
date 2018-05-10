@@ -382,7 +382,7 @@ public class CacheOps extends Thread {
         Map<String, Object> map = new LinkedHashMap<>();
         Set<String> keys = cache.keySet();
         for (String key: keys) {
-            if (key.startsWith("table_")) {
+            if (key.startsWith("table")) {
                 continue;
             }
             cache.remove(key);
@@ -393,7 +393,7 @@ public class CacheOps extends Thread {
         Map<String, Object> map = new LinkedHashMap<>();
         Set<String> keys = cache.keySet();
         for (String key: keys) {
-            if (!key.startsWith("table_")) {
+            if (!key.startsWith("table")) {
                 continue;
             }
             Object value = get(key);
@@ -408,7 +408,7 @@ public class CacheOps extends Thread {
     public void removeAllTables() {
         Set<String> keys = cache.keySet();
         for (String key: keys) {
-            if (!key.startsWith("table_")) {
+            if (!key.startsWith("table")) {
                 continue;
             }
             cache.remove(key);

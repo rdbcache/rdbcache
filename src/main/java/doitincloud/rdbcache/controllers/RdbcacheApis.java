@@ -7,7 +7,6 @@
 package doitincloud.rdbcache.controllers;
 
 import doitincloud.rdbcache.configs.AppCtx;
-import doitincloud.commons.helpers.*;
 
 import doitincloud.rdbcache.controllers.supports.Request;
 import doitincloud.rdbcache.controllers.supports.Response;
@@ -19,6 +18,9 @@ import doitincloud.commons.exceptions.BadRequestException;
 import doitincloud.commons.exceptions.NotFoundException;
 
 import doitincloud.rdbcache.queries.QueryInfo;
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.Context;
+import doitincloud.rdbcache.supports.KvPairs;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -894,9 +896,9 @@ public class RdbcacheApis {
 
         LOGGER.trace("pairs(" + pairs.size() +"): " + pairs.printKey());
 
-        Optional<KvPair> opt = AppCtx.getKvPairRepo().findById(new KvIdType(traceId, "trace"));
-        if (opt.isPresent()) {
-            pairs.add(opt.get());
+        KvPair pair = AppCtx.getKvPairRepo().findById(new KvIdType(traceId, "trace"));
+        if (pair != null) {
+            pairs.add(pair);
         }
 
         return Response.send(context, pairs);
@@ -938,9 +940,9 @@ public class RdbcacheApis {
         LOGGER.trace("pairs(" + pairs.size() +"): " + pairs.printKey());
 
         for (String referenced_id: traceIds) {
-            Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(referenced_id, "trace"));
-            if (optional.isPresent()) {
-                pairs.add(optional.get());
+            KvPair pair = AppCtx.getKvPairRepo().findById(new KvIdType(referenced_id, "trace"));
+            if (pair != null) {
+                pairs.add(pair);
             } else {
                 pairs.add(new KvPair(referenced_id));
             }

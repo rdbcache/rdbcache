@@ -1,9 +1,9 @@
 package doitincloud.rdbcache.services;
 
 import doitincloud.rdbcache.configs.AppCtx;
-import doitincloud.commons.helpers.AnyKey;
-import doitincloud.commons.helpers.Context;
-import doitincloud.commons.helpers.KvPairs;
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.Context;
+import doitincloud.rdbcache.supports.KvPairs;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.KvPair;
 

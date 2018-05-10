@@ -4,8 +4,9 @@
  * @license http://rdbcache.com/license/
  */
 
-package doitincloud.commons.helpers;
+package doitincloud.rdbcache.supports;
 
+import doitincloud.commons.helpers.Utils;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.rdbcache.configs.PropCfg;
 import doitincloud.rdbcache.models.Monitor;
@@ -28,7 +29,7 @@ public class Context {
 
     private Boolean monitorEnabled = PropCfg.getEnableMonitor();
 
-    private Boolean sync = PropCfg.getDefaultSync();
+    private String attr = PropCfg.getDefaultAttr();
 
     private Long duration;
 
@@ -37,7 +38,7 @@ public class Context {
         traceId = Utils.generateId();
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
-        if (sync) action += "/sync";
+        if (attr != null && !attr.equals("async")) action += "/"+attr;
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
@@ -47,7 +48,7 @@ public class Context {
         traceId = Utils.generateId();
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
-        if (sync) action += "/sync";
+        if (attr != null && !attr.equals("async")) action += "/"+attr;
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
@@ -56,7 +57,7 @@ public class Context {
         this.traceId = traceId;
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
-        if (sync) action += "/sync";
+        if (attr != null && !attr.equals("async")) action += "/"+attr;
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
@@ -66,7 +67,7 @@ public class Context {
         action = Thread.currentThread().getStackTrace()[2].getMethodName();
         StackTraceElement element = Thread.currentThread().getStackTrace()[2];
         action = element.getMethodName();
-        if (sync) action += "-sync";
+        if (attr != null && !attr.equals("async")) action += "/"+attr;
         monitor = new Monitor(element.getFileName(), element.getClassName(), action);
     }
 
@@ -140,11 +141,22 @@ public class Context {
     }
 
     public Boolean isSync() {
-        return sync;
+        if (attr == null) return false;
+        return attr.equals("sync");
+    }
+
+    public Boolean isDelayed() {
+        if (attr == null) return false;
+        return attr.equals("delayed");
     }
 
     public void setSync(Boolean sync) {
-        this.sync = sync;
+        if (sync) this.attr = "sync";
+        else this.attr = "async";
+    }
+
+    public void setDelayed() {
+        this.attr = "delayed";
     }
 
     public Long getDuration() {

@@ -6,9 +6,9 @@
 
 package doitincloud.rdbcache.controllers.supports;
 
-import doitincloud.commons.helpers.AnyKey;
-import doitincloud.commons.helpers.Context;
-import doitincloud.commons.helpers.KvPairs;
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.Context;
+import doitincloud.rdbcache.supports.KvPairs;
 import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.rdbcache.configs.PropCfg;
 import doitincloud.commons.exceptions.BadRequestException;
@@ -21,8 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -169,13 +167,21 @@ public class Request {
             }
             return;
         }
+        if (opt.equals("delayed")) {
+            if (context.isSync()) {
+                LOGGER.trace("default is delayed, no need to have option delayed");
+            } else {
+                context.setDelayed();
+            }
+            return;
+        }
         if (options[0] == null && expPattern.matcher(opt).matches()) {
             options[0] = opt;
             return;
         }
         if (options[1] == null) {
-            List<String> tables = AppCtx.getDbaseOps().getTableList(context);
-            if (tables.contains(opt)) {
+            Map<String, Object> tables = AppCtx.getDbaseOps().getTablesMap(context);
+            if (tables.containsKey(opt)) {
                 options[1] = opt;
                 return;
             }

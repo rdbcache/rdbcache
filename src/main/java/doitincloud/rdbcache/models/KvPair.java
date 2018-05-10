@@ -7,6 +7,8 @@
 package doitincloud.rdbcache.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import doitincloud.commons.helpers.Utils;
 
 import javax.persistence.*;
@@ -14,20 +16,16 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Entity
-@Table(name="rdbcache_kv_pair")
-public class KvPair implements Serializable, Cloneable {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class KvPair implements Cloneable {
 
-    private static final long serialVersionUID = 20180316L;
-
-    @EmbeddedId
+    @JsonIgnore
     private KvIdType idType;
 
     @JsonIgnore
-    @Transient
     private Boolean isNewUuid = false;
 
-    @Transient
+    @JsonIgnore
     private Map<String, Object> data;
 
     public KvPair(String id, String type, String value) {
@@ -80,6 +78,7 @@ public class KvPair implements Serializable, Cloneable {
         data = new LinkedHashMap<String, Object>();
     }
 
+    @JsonProperty("id")
     public String getId() {
         if (idType == null) return null;
         return idType.getId();
@@ -106,6 +105,7 @@ public class KvPair implements Serializable, Cloneable {
         this.isNewUuid = isNewUuid;
     }
 
+    @JsonProperty("type")
     public String getType() {
         if (idType == null) return null;
         return idType.getType();
@@ -127,8 +127,7 @@ public class KvPair implements Serializable, Cloneable {
         this.idType = idType;
     }
 
-    @JsonIgnore
-    @Access(AccessType.PROPERTY)
+    @JsonProperty("value")
     public String getValue() {
         if (data == null) {
             return null;

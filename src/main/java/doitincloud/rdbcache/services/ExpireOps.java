@@ -9,10 +9,16 @@ package doitincloud.rdbcache.services;
 import doitincloud.rdbcache.configs.PropCfg;
 import doitincloud.commons.helpers.*;
 import doitincloud.rdbcache.configs.AppCtx;
+import doitincloud.rdbcache.controllers.RdbcacheApis;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.KvPair;
 import doitincloud.rdbcache.models.StopWatch;
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.Context;
+import doitincloud.rdbcache.supports.ExpireDbOps;
+import doitincloud.rdbcache.supports.KvPairs;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
@@ -185,9 +191,14 @@ public class ExpireOps {
         }
 
         String hashKey = parts[1];
-        String[] subParts = hashKey.split(":");
-        String type = subParts[0];
-        String key = subParts[1];
+        int index = hashKey.indexOf(":");
+        if (index < 0) {
+            LOGGER.error("invalid event format, failed to figure out type and key");
+            return;
+        }
+        String type = hashKey.substring(0, index);
+        String key = hashKey.substring(index+1);
+
         String traceId = parts[2];
 
         Context context = new Context(traceId);
@@ -232,7 +243,27 @@ public class ExpireOps {
             if (expire > 0) {
                 if (AppCtx.getRedisRepo().find(context, pairs, anyKey)) {
 
-                    AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+                    String qkey = keyInfo.getQueryKey();
+                    if (qkey == null || !qkey.equals("NOOPS")) {
+                        AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+                    } else if (qkey != null && qkey.startsWith("ExpireDbOps::")) {
+                        String beanName = qkey.substring(13);
+                        ApplicationContext ctx = AppCtx.getApplicationContext();
+                        if (ctx != null) {
+                            try {
+                                ExpireDbOps ops = (ExpireDbOps) ctx.getBean(beanName);
+                                if (ops != null) {
+                                    ops.save(context, pairs, anyKey);
+                                } else {
+                                    LOGGER.error("failed to get bean: " + beanName);
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } else {
+                        LOGGER.trace("queryKey = " + keyInfo.getQueryKey());
+                    }
                     AppCtx.getRedisRepo().delete(context, pairs, anyKey);
                     AppCtx.getKeyInfoRepo().delete(context, pairs);
 

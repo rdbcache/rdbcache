@@ -1,9 +1,12 @@
 package doitincloud.rdbcache.queries;
 
 import doitincloud.rdbcache.configs.Configurations;
-import doitincloud.commons.helpers.AnyKey;
-import doitincloud.commons.helpers.Context;
-import doitincloud.commons.helpers.KvPairs;
+import doitincloud.rdbcache.configs.DataSourceConfig;
+import doitincloud.rdbcache.configs.JdbcTemplateConfig;
+import doitincloud.rdbcache.services.DbaseOps;
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.Context;
+import doitincloud.rdbcache.supports.KvPairs;
 import doitincloud.commons.helpers.Utils;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.KvPair;
@@ -22,11 +25,11 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = Configurations.class)
+@ContextConfiguration(classes = {Configurations.class} )
 public class QueryTest {
 
     @Autowired
-    JdbcTemplate jdbcTemplate;
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     public void selectTest() {

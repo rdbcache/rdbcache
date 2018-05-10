@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import doitincloud.rdbcache.supports.KvPairs;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

@@ -4,6 +4,7 @@ import doitincloud.rdbcache.configs.AppCtx;
 import doitincloud.rdbcache.models.KeyInfo;
 
 import doitincloud.rdbcache.services.CacheOps;
+import doitincloud.rdbcache.supports.AnyKey;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

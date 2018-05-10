@@ -2,7 +2,7 @@ package doitincloud.rdbcache.queries;
 
 import com.google.common.io.CharStreams;
 import doitincloud.rdbcache.configs.AppCtx;
-import doitincloud.commons.helpers.Context;
+import doitincloud.rdbcache.supports.Context;
 import doitincloud.commons.helpers.Utils;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.KvPair;

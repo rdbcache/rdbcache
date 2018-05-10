@@ -7,7 +7,7 @@
 package doitincloud.rdbcache.queries;
 
 import doitincloud.rdbcache.configs.AppCtx;
-import doitincloud.commons.helpers.Context;
+import doitincloud.rdbcache.supports.Context;
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.KvPair;
 
@@ -234,7 +234,7 @@ public class Parser {
         int stdParamsCount = 0;
         String stdClause = "";
 
-        // 1) to get std clause and a flesh copy of params from pair data
+        // 1) to get std clause and a fresh copy of params from pair data
         //
         boolean ready = true;
         for (String indexKey : indexes) {

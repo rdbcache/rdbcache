@@ -6,7 +6,6 @@
 
 package doitincloud.rdbcache.configs;
 
-import doitincloud.rdbcache.controllers.RdbcacheApis;
 import doitincloud.commons.helpers.VersionInfo;
 import doitincloud.rdbcache.repositories.*;
 import doitincloud.rdbcache.services.*;
@@ -24,8 +23,6 @@ public class AppCtx {
     private static ApplicationContext ctx;
 
     private static VersionInfo versionInfo;
-
-    private static RdbcacheApis rdbcacheApis;
 
     private static AsyncOps asyncOps;
 
@@ -51,9 +48,9 @@ public class AppCtx {
 
     private static RedisRepo redisRepo;
 
-    private static StopWatchRepo stopWatchRepo;
-
     private static JdbcTemplate jdbcTemplate;
+
+    private static JdbcTemplate systemJdbcTemplate;
 
     private static StringRedisTemplate stringRedisTemplate;
 
@@ -67,28 +64,13 @@ public class AppCtx {
 
     public static VersionInfo getVersionInfo() {
         if (versionInfo == null) {
-            versionInfo = new VersionInfo();
+            versionInfo = new VersionInfo("rdbcache");
         }
         return versionInfo;
     }
 
     public static void setVersionInfo(VersionInfo versionInfo) {
         AppCtx.versionInfo = versionInfo;
-    }
-
-    public static RdbcacheApis getRdbcacheApis() {
-        if (ctx != null && rdbcacheApis == null) {
-            try {
-                rdbcacheApis = ctx.getBean(RdbcacheApis.class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return rdbcacheApis;
-    }
-
-    public static void setRdbcacheApis(RdbcacheApis rdbcacheApis) {
-        AppCtx.rdbcacheApis = rdbcacheApis;
     }
 
     public static AsyncOps getAsyncOps() {
@@ -271,21 +253,6 @@ public class AppCtx {
         AppCtx.redisRepo = redisRepo;
     }
 
-    public static StopWatchRepo getStopWatchRepo() {
-        if (ctx != null && stopWatchRepo == null) {
-            try {
-                stopWatchRepo = ctx.getBean(StopWatchRepo.class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return stopWatchRepo;
-    }
-
-    public static void setStopWatchRepo(StopWatchRepo stopWatchRepo) {
-        AppCtx.stopWatchRepo = stopWatchRepo;
-    }
-
     public static JdbcTemplate getJdbcTemplate() {
         if (ctx != null && jdbcTemplate == null) {
             try {
@@ -305,8 +272,30 @@ public class AppCtx {
         return template.getDataSource();
     }
 
+    public static JdbcTemplate getSystemJdbcTemplate() {
+        if (ctx != null && systemJdbcTemplate == null) {
+            try {
+                systemJdbcTemplate = (JdbcTemplate) ctx.getBean("systemJdbcTemplate");
+            } catch (Exception e) {
+                //e.printStackTrace();
+            }
+            if (systemJdbcTemplate == null) {
+                systemJdbcTemplate = getJdbcTemplate();
+            }
+        }
+        return systemJdbcTemplate;
+    }
+
     public static void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
         AppCtx.jdbcTemplate = jdbcTemplate;
+    }
+
+    public static DataSource getSystemJdbcDataSource() {
+
+        JdbcTemplate template = getSystemJdbcTemplate();
+        if (template == null) return null;
+
+        return template.getDataSource();
     }
 
     public static StringRedisTemplate getStringRedisTemplate() {

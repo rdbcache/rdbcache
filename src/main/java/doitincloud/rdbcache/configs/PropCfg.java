@@ -25,7 +25,7 @@ public class PropCfg {
 
     private static String defaultExpire = "180";
 
-    private static Boolean defaultSync = false;
+    private static String defaultAttr = "async";
     
     private static Boolean enableMonitor = false;
 
@@ -114,13 +114,13 @@ public class PropCfg {
         return defaultExpire;
     }
 
-    @Value("${rdbcache.default_sync}")
-    public void setDefaultSync(Boolean sync) {
-        defaultSync = sync;
+    @Value("${rdbcache.default_attr}")
+    public void setDefaultAttr(String attr) {
+        defaultAttr = attr;
     }
 
-    public static Boolean getDefaultSync() {
-        return defaultSync;
+    public static String getDefaultAttr() {
+        return defaultAttr;
     }
 
     @Value("${rdbcache.enable_monitor}")

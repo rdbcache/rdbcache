@@ -1,9 +1,7 @@
 package doitincloud.rdbcache.configs;
 
 import doitincloud.rdbcache.repositories.*;
-import doitincloud.rdbcache.repositories.impls.DbaseRepoImpl;
-import doitincloud.rdbcache.repositories.impls.KeyInfoRepoImpl;
-import doitincloud.rdbcache.repositories.impls.RedisRepoImpl;
+import doitincloud.rdbcache.repositories.impls.*;
 import doitincloud.rdbcache.services.*;
 
 import org.springframework.beans.BeansException;
@@ -15,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 
 import org.springframework.core.io.ClassPathResource;
 
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+//import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,10 +21,10 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
-import org.springframework.orm.jpa.JpaTransactionManager;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.Database;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+//import org.springframework.orm.jpa.JpaTransactionManager;
+//import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+//import org.springframework.orm.jpa.vendor.Database;
+//import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -37,38 +35,23 @@ import java.util.Properties;
 import static org.mockito.Mockito.mock;
 
 @Configuration
-@EnableJpaRepositories(basePackages = "doitincloud.rdbcache.repositories")
+//@EnableJpaRepositories(basePackages = "doitincloud.rdbcache.repositories")
 public class Configurations implements ApplicationContextAware {
+
+    @Bean
+    public KvPairRepo kvPairRepo() {
+        return new KvPairRepoImpl();
+    }
+
+    @Bean
+    public MonitorRepo monitorRepo() {
+        return new MonitorRepoImpl();
+    }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         AppCtx.setApplicationContext(applicationContext);
     }
-
-    @Bean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
-        JdbcTemplate template = new JdbcTemplate(dataSource);
-        return template;
-    }
-
-    /*
-    // use application.properties to configure data source
-    //
-    //@PropertySource(value = { "classpath:application.properties" })
-
-    @Autowired
-    Environment env;
-
-    @Bean
-    public DataSource dataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName(env.getRequiredProperty("spring.datasource.driver-class-name"));
-        dataSource.setUrl(env.getRequiredProperty("spring.datasource.url"));
-        dataSource.setUsername(env.getRequiredProperty("spring.datasource.username"));
-        dataSource.setPassword(env.getRequiredProperty("spring.datasource.password"));
-        return dataSource;
-    }
-    */
 
     // configure H2 database as data source
     //
@@ -95,6 +78,13 @@ public class Configurations implements ApplicationContextAware {
         return dataSourceInitializer;
     }
 
+    @Bean
+    public JdbcTemplate jdbcTemplate() {
+        JdbcTemplate template = new JdbcTemplate(dataSource());
+        return template;
+    }
+
+    /*
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
         LocalContainerEntityManagerFactoryBean entityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
@@ -133,7 +123,7 @@ public class Configurations implements ApplicationContextAware {
     public TransactionTemplate transactionTemplate() {
         return new TransactionTemplate(transactionManager());
     }
-
+    */
     @Bean
     public StringRedisTemplate stringRedisTemplate() {
         return MockRedis.mockStringRedisTemplate();

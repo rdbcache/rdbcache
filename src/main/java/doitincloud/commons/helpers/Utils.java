@@ -8,8 +8,10 @@ package doitincloud.commons.helpers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import doitincloud.commons.exceptions.ServerErrorException;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -36,6 +38,7 @@ public class Utils {
 
         mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         return mapper;
     }
@@ -243,10 +246,24 @@ public class Utils {
 
     public static SimpleDateFormat getDateTimeFormat() {
         if (dateTimeFormat == null) {
-            //dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
-            dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+            dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            //dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         }
         return dateTimeFormat;
+    }
+
+    // 4c93c407-7915-4413-89e0-194b2a02314c
+    // 01234567 8901 2345 6789 012345678901
+    //            1            2         3
+    public static String convertUuid(String s) {
+        if (s.length() != 32) {
+            throw new ServerErrorException("length != 32 convert, not supported");
+        }
+        return s.substring(0,8) + "-" +
+                s.substring(8,12) + "-" +
+                s.substring(12,16) + "-" +
+                s.substring(16,20) + "-" +
+                s.substring(20);
     }
 
     // 4c93c407-7915-4413-89e0-194b2a02314c
@@ -265,156 +282,7 @@ public class Utils {
         return uuidConvert(uuid);
     }
 
-    // loosely check if object a equals object b
-    //
-    public static boolean isValueEquals(Object a, Object b) {
-
-        if (a == null && b == null) {
-            return true;
-        } else if (a == null || b == null) {
-            return false;
-        }
-
-        // equals
-        if (a == b || a.equals(b)) {
-            return true;
-        }
-
-        // String equals
-        String as = a.toString().trim();
-        String bs = b.toString().trim();
-        if (as.equals(bs)) {
-            return true;
-        }
-
-        // class name is same, and reached here
-        String acn = a.getClass().getSimpleName();
-        String bcn = b.getClass().getSimpleName();
-        if (acn.equals(bcn)) {
-            return false;
-        }
-
-        // boolean related
-        if (acn.equals("Boolean") || bcn.equals("Boolean")) {
-            Boolean ab = null;
-            if (acn.equals("Boolean")) {
-                ab = (Boolean) a;
-            } else if (Arrays.asList("1", "true", "TRUE").contains(as)) {
-                ab = true;
-            } else if (Arrays.asList("0", "false", "FALSE").contains(as)) {
-                ab = false;
-            }
-            Boolean bb = null;
-            if (bcn.equals("Boolean")) {
-                bb = (Boolean) b;
-            } else if (Arrays.asList("1", "true", "TRUE").contains(bs)) {
-                bb = true;
-            } else if (Arrays.asList("0", "false", "FALSE").contains(bs)) {
-                bb = false;
-            }
-            if (ab != null && bb != null && ab.equals(bb)) {
-                return true;
-            }
-        }
-
-        // decimal related
-        if (acn.equals("Double") || acn.equals("Float") || acn.equals("BigDecimal") ||
-                bcn.equals("Double") || bcn.equals("Float") || bcn.equals("BigDecimal")) {
-            Double ad = null;
-            try {
-                ad = Double.valueOf(as);
-            } catch (Exception e) {
-                //e.printStackTrace();
-            }
-            Double bd = null;
-            try {
-                bd = Double.valueOf(bs);
-            } catch (Exception e) {
-                //e.printStackTrace();
-            }
-            if (ad != null && bd != null && ad.equals(bd)) {
-                return true;
-            }
-        }
-
-        // number related
-        if (acn.equals("Long") || acn.equals("Integer") ||
-                bcn.equals("Long") || bcn.equals("Integer")) {
-            Long al = null;
-            try {
-                al = Long.valueOf(as);
-            } catch (Exception e) {
-                //e.printStackTrace();
-            }
-            Long bl = null;
-            try {
-                bl = Long.valueOf(bs);
-            } catch (Exception e) {
-                //e.printStackTrace();
-            }
-            if (al != null && bl != null && al.equals(bl)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // get changes of map after use update to update map, but map keeps untouched
-    // return true if key set of update is a subset of key set of map
-    //
-    public static boolean mapChangesAfterUpdate(Map<String, Object> update, Map<String, Object> map, Map<String, Object> changes) {
-
-        if (update == null || map == null) {
-            return false;
-        }
-
-        Map<String, Object> todoMap = new LinkedHashMap<String, Object>();
-        changes.clear();
-        for (Map.Entry<String, Object> entry : update.entrySet()) {
-
-            String key = entry.getKey();
-            if (!map.containsKey(key)) {
-                changes.put(key, entry.getValue()); // for report purpose
-                return false;
-            }
-            Object value = entry.getValue();
-            if (!isValueEquals(value, map.get(key))) {
-                changes.put(key, value);
-            }
-        }
-        return true;
-    }
-
-    // check if map a loosely equals to map b
-    //
-    public static boolean isMapEquals(Map<String, Object> a, Map<String, Object> b) {
-
-        if (a == null && b == null) {
-            return true;
-        } else if (a == null || b == null) {
-            return false;
-        } else if (a.size() != b.size()) {
-            return false;
-        }
-
-        for (Map.Entry<String, Object> entry : a.entrySet()) {
-            String key = entry.getKey();
-            if (!isValueEquals(entry.getValue(), b.get(key))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean isMapEquals(String a, Map<String, Object> b) {
-        return isMapEquals(toMap(a), b);
-    }
-
-    public static boolean isMapEquals(Map<String, Object> a, String b) {
-        return isMapEquals(a, toMap(b));
-    }
-
-    public static boolean isMapEquals(String a, String b) {
-        return isMapEquals(toMap(a), toMap(b));
+    public static String generateUuid() {
+        return UUID.randomUUID().toString();
     }
 }

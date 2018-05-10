@@ -9,6 +9,9 @@ import doitincloud.rdbcache.repositories.SimpleKeyInfoRepo;
 import doitincloud.rdbcache.services.CacheOps;
 import doitincloud.rdbcache.services.DbaseOps;
 
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.Context;
+import doitincloud.rdbcache.supports.KvPairs;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
@@ -31,6 +34,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -65,7 +69,10 @@ public class RequestTest {
         DbaseOps dbaseOps = mock(DbaseOps.class, Mockito.RETURNS_DEEP_STUBS);
         assertNotNull(dbaseOps);
 
-        Mockito.when(dbaseOps.getTableList(any(Context.class))).thenReturn(Arrays.asList("user_table", "tb1"));
+        Map<String, Object> tablesMap = new LinkedHashMap<>();
+        tablesMap.put("user_table", "data");
+        tablesMap.put("tb1", "data");
+        Mockito.when(dbaseOps.getTablesMap(any(Context.class))).thenReturn(tablesMap);
 
         BDDMockito.when(AppCtx.getDbaseOps()).thenReturn(dbaseOps);
 

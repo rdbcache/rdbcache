@@ -6,17 +6,14 @@
 
 package doitincloud.rdbcache.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import javax.persistence.*;
 import java.io.Serializable;
 
-@Entity
-@Table(name="rdbcache_stopwatch")
-public class StopWatch implements Serializable {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class StopWatch {
 
-    private static final long serialVersionUID = 20180316L;
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name="monitor_id")

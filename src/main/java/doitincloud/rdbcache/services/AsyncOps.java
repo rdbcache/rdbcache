@@ -11,6 +11,9 @@ import doitincloud.commons.helpers.*;
 
 import doitincloud.rdbcache.models.KeyInfo;
 import doitincloud.rdbcache.models.StopWatch;
+import doitincloud.rdbcache.supports.AnyKey;
+import doitincloud.rdbcache.supports.Context;
+import doitincloud.rdbcache.supports.KvPairs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -38,6 +41,19 @@ public class AsyncOps {
     public void handleApplicationReadyEvent(ApplicationReadyEvent event) {
     }
 
+    public void doSetExpKey(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("doSetExpKey: " + pair.printKey() + " table: " + keyInfo.getTable());
+
+        // set expire key always runs asynchronously
+        //
+        Utils.getExcutorService().submit(() -> {
+
+            AppCtx.getExpireOps().setExpireKey(context, pair, keyInfo);
+            context.closeMonitor();
+        });
+    }
+
     public void doSetExpKey(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doSetExpKey: " + pairs.size() + " table: " + anyKey.printTable());
@@ -47,6 +63,25 @@ public class AsyncOps {
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
+            context.closeMonitor();
+        });
+    }
+
+    public void doSaveToRedis(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("doSaveToRedis: " + pair.printKey() + " table: " + keyInfo.getTable());
+
+        if (context.isSync()) {
+
+            AppCtx.getRedisRepo().save(context, pair, keyInfo);
+            doSetExpKey(context, pair, keyInfo);
+            return;
+        }
+
+        Utils.getExcutorService().submit(() -> {
+
+            AppCtx.getRedisRepo().save(context, pair, keyInfo);
+            AppCtx.getExpireOps().setExpireKey(context, pair, keyInfo);
             context.closeMonitor();
         });
     }
@@ -70,6 +105,27 @@ public class AsyncOps {
         });
     }
 
+    public void doSaveToDbase(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("doSaveToDbase: " + pair.printKey() + " table: " + keyInfo.getTable());
+
+        if (context.isSync()) {
+
+            AppCtx.getDbaseRepo().save(context, pair, keyInfo);
+            doSetExpKey(context, pair, keyInfo);
+            return;
+        }
+
+        Utils.getExcutorService().submit(() -> {
+
+            if (!context.isDelayed()) {
+                AppCtx.getDbaseRepo().save(context, pair, keyInfo);
+            }
+            AppCtx.getExpireOps().setExpireKey(context, pair, keyInfo);
+            context.closeMonitor();
+        });
+    }
+
     public void doSaveToDbase(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doSaveToDbase: " + pairs.size() + " table: " + anyKey.printTable());
@@ -83,8 +139,31 @@ public class AsyncOps {
 
         Utils.getExcutorService().submit(() -> {
 
-            AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+            if (!context.isDelayed()) {
+                AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+            }
             AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
+            context.closeMonitor();
+        });
+    }
+
+    public void doUpdateToDbase(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("doUpateToDbase: " + pair.printKey() + " table: " + keyInfo.getTable());
+
+        if (context.isSync()) {
+
+            AppCtx.getDbaseRepo().update(context, pair, keyInfo);
+            doSetExpKey(context, pair, keyInfo);
+            return;
+        }
+
+        Utils.getExcutorService().submit(() -> {
+
+            if (!context.isDelayed()) {
+                AppCtx.getDbaseRepo().update(context, pair, keyInfo);
+            }
+            AppCtx.getExpireOps().setExpireKey(context, pair, keyInfo);
             context.closeMonitor();
         });
     }
@@ -102,8 +181,33 @@ public class AsyncOps {
 
         Utils.getExcutorService().submit(() -> {
 
-            AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            if (!context.isDelayed()) {
+                AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            }
             AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
+            context.closeMonitor();
+        });
+    }
+
+    public void doPushOperations(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("doPushOperations: " + pair.printKey() + " table: " + keyInfo.getTable());
+
+        if (context.isSync()) {
+
+            AppCtx.getDbaseRepo().update(context, pair, keyInfo);
+            AppCtx.getRedisRepo().update(context, pair, keyInfo);
+            doSetExpKey(context, pair, keyInfo);
+            return;
+        }
+
+        Utils.getExcutorService().submit(() -> {
+
+            if (!context.isDelayed()) {
+                AppCtx.getDbaseRepo().update(context, pair, keyInfo);
+            }
+            AppCtx.getRedisRepo().update(context, pair, keyInfo);
+            AppCtx.getExpireOps().setExpireKey(context, pair, keyInfo);
             context.closeMonitor();
         });
     }
@@ -122,7 +226,9 @@ public class AsyncOps {
 
         Utils.getExcutorService().submit(() -> {
 
-            AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            if (!context.isDelayed()) {
+                AppCtx.getDbaseRepo().update(context, pairs, anyKey);
+            }
             AppCtx.getRedisRepo().update(context, pairs, anyKey);
             AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
             context.closeMonitor();
@@ -144,8 +250,33 @@ public class AsyncOps {
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getRedisRepo().save(context, pairs,  anyKey);
-            AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+            if (!context.isDelayed()) {
+                AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+            }
             AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
+            context.closeMonitor();
+        });
+    }
+
+    public void doSaveToRedisAndDbase(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("doSaveToRedisAndDbase: " + pair.printKey() + " table: " + keyInfo.getTable());
+
+        if (context.isSync()) {
+
+            AppCtx.getRedisRepo().save(context, pair, keyInfo);
+            AppCtx.getDbaseRepo().save(context, pair, keyInfo);
+            doSetExpKey(context, pair, keyInfo);
+            return;
+        }
+
+        Utils.getExcutorService().submit(() -> {
+
+            AppCtx.getRedisRepo().save(context, pair, keyInfo);
+            if (!context.isDelayed()) {
+                AppCtx.getDbaseRepo().save(context, pair, keyInfo);
+            }
+            AppCtx.getExpireOps().setExpireKey(context, pair, keyInfo);
             context.closeMonitor();
         });
     }
@@ -165,8 +296,43 @@ public class AsyncOps {
         Utils.getExcutorService().submit(() -> {
 
             AppCtx.getRedisRepo().save(context, pairs, anyKey);
-            AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+            if (!context.isDelayed()) {
+                AppCtx.getDbaseRepo().save(context, pairs, anyKey);
+            }
             AppCtx.getExpireOps().setExpireKey(context, pairs, anyKey);
+            context.closeMonitor();
+        });
+    }
+
+    public void doPutOperation(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("doPutOperation: " + pair.printKey() + " table: " + keyInfo.getTable());
+
+        if (context.isSync()) {
+
+            if (AppCtx.getRedisRepo().ifExist(context, pair, keyInfo)) {
+                AppCtx.getRedisRepo().update(context, pair, keyInfo);
+                AppCtx.getDbaseRepo().update(context, pair, keyInfo);
+            } else {
+                AppCtx.getDbaseRepo().save(context, pair, keyInfo);
+                AppCtx.getDbaseRepo().find(context, pair, keyInfo);
+                AppCtx.getRedisRepo().save(context, pair, keyInfo);
+            }
+            doSetExpKey(context, pair, keyInfo);
+            return;
+        }
+
+        Utils.getExcutorService().submit(() -> {
+
+            if (AppCtx.getRedisRepo().ifExist(context, pair, keyInfo)) {
+                AppCtx.getRedisRepo().update(context, pair, keyInfo);
+                AppCtx.getDbaseRepo().update(context, pair, keyInfo);
+            } else {
+                AppCtx.getDbaseRepo().save(context, pair, keyInfo);
+                AppCtx.getDbaseRepo().find(context, pair, keyInfo);
+                AppCtx.getRedisRepo().save(context, pair, keyInfo);
+            }
+            AppCtx.getExpireOps().setExpireKey(context, pair, keyInfo);
             context.closeMonitor();
         });
     }
@@ -204,6 +370,31 @@ public class AsyncOps {
         });
     }
 
+    public void doDeleteFromRedis(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("doDeleteFromRedis: " + pair.printKey());
+
+        if (context.isSync()) {
+
+            AppCtx.getRedisRepo().delete(context, pair, keyInfo);
+            AppCtx.getKeyInfoRepo().delete(context, pair);
+            deleteKvPairKeyInfo(context, pair, keyInfo);
+
+            Utils.getExcutorService().submit(() -> {
+                context.closeMonitor();
+            });
+            return;
+        }
+
+        Utils.getExcutorService().submit(() -> {
+
+            AppCtx.getRedisRepo().delete(context, pair, keyInfo);
+            AppCtx.getKeyInfoRepo().delete(context, pair);
+            deleteKvPairKeyInfo(context, pair, keyInfo);
+            context.closeMonitor();
+        });
+    }
+
     public void doDeleteFromRedis(Context context, KvPairs pairs, AnyKey anyKey) {
 
         LOGGER.trace("doDeleteFromRedis: " + pairs.size());
@@ -225,6 +416,33 @@ public class AsyncOps {
             AppCtx.getRedisRepo().delete(context, pairs, anyKey);
             AppCtx.getKeyInfoRepo().delete(context, pairs);
             deleteKvPairsKeyInfo(context, pairs, anyKey);
+            context.closeMonitor();
+        });
+    }
+
+    public void doDeleteFromRedisAndDbase(Context context, KvPair pair, KeyInfo keyInfo) {
+
+        LOGGER.trace("doDeleteFromRedisAndDbase: " + pair.printKey());
+
+        if (context.isSync()) {
+
+            AppCtx.getRedisRepo().delete(context, pair, keyInfo);
+            AppCtx.getDbaseRepo().delete(context, pair, keyInfo);
+            AppCtx.getKeyInfoRepo().delete(context, pair);
+            deleteKvPairKeyInfo(context, pair, keyInfo);
+
+            Utils.getExcutorService().submit(() -> {
+                context.closeMonitor();
+            });
+            return;
+        }
+
+        Utils.getExcutorService().submit(() -> {
+
+            AppCtx.getRedisRepo().delete(context, pair, keyInfo);
+            AppCtx.getDbaseRepo().delete(context, pair, keyInfo);
+            AppCtx.getKeyInfoRepo().delete(context, pair);
+            deleteKvPairKeyInfo(context, pair, keyInfo);
             context.closeMonitor();
         });
     }

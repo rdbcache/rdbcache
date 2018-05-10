@@ -1,10 +1,7 @@
 package doitincloud.rdbcache.controllers;
 
 import com.google.common.io.CharStreams;
-import doitincloud.rdbcache.configs.AppCtx;
-import doitincloud.rdbcache.configs.Configurations;
-import doitincloud.rdbcache.configs.MockRedis;
-import doitincloud.rdbcache.configs.PropCfg;
+import doitincloud.rdbcache.configs.*;
 import doitincloud.commons.helpers.Utils;
 import doitincloud.rdbcache.models.KvIdType;
 import doitincloud.rdbcache.models.KvPair;
@@ -1308,8 +1305,8 @@ public class RdbcacheApisTest {
             Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::user_table");
             assertFalse(rdchkeys.containsKey(key));
 
-            Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
-            assertFalse(optional.isPresent());
+            KvPair pair = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
+            assertNull(pair);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -1379,8 +1376,8 @@ public class RdbcacheApisTest {
                 Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::user_table");
                 assertFalse(rdchkeys.containsKey(key));
 
-                Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
-                assertFalse(optional.isPresent());
+                KvPair pair = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
+                assertNull(pair);
             }
 
         } catch (Exception e) {
@@ -1448,8 +1445,8 @@ public class RdbcacheApisTest {
             assertFalse(redis.containsKey(PropCfg.getHdataPrefix() + "::" + key));
             Map<String, Object> rdchkeys = (Map<String, Object>) redis.get("rdchkeys::user_table");
             assertFalse(rdchkeys.containsKey(key));
-            Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
-            assertFalse(optional.isPresent());
+            KvPair pair = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
+            assertNull(pair);
 
             {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.
@@ -1526,8 +1523,8 @@ public class RdbcacheApisTest {
                 //System.out.println(Utils.toJsonMap(rdchkeys));
                 assertFalse(rdchkeys.containsKey(key));
 
-                Optional<KvPair> optional = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
-                assertFalse(optional.isPresent());
+                KvPair pair = AppCtx.getKvPairRepo().findById(new KvIdType(key, "keyInfo"));
+                assertNull(pair);
 
                 {
                     RequestBuilder requestBuilder = MockMvcRequestBuilders.

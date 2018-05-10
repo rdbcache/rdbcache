@@ -1,3 +1,5 @@
+select 1;
+
 delete from tb1;
 
 delete from tb2;
@@ -19,4 +21,5 @@ insert into tb2 (id, name, dob) values('id25', null, null);
 insert into user_table (email, name, dob) values ('mike@example.com', 'Mike A.', '1977-01-01');
 insert into user_table (email, name, dob) values ('kevin@example.com', 'Kevin B.', '1980-07-21');
 insert into user_table (email, name, dob) values ('david@example.com', 'David C.', '1979-11-08');
+
 

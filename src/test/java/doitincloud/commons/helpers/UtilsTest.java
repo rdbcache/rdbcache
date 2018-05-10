@@ -1,14 +1,12 @@
 package doitincloud.commons.helpers;
 
 import doitincloud.rdbcache.models.KeyInfo;
+import doitincloud.rdbcache.supports.DbUtils;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class UtilsTest {
 
@@ -131,48 +129,48 @@ public class UtilsTest {
 
     @Test
     public void isValueEqualsTest() {
-        assertTrue(Utils.isValueEquals(null, null));
-        assertFalse(Utils.isValueEquals(null, ""));
-        assertFalse(Utils.isValueEquals("", null));
+        assertTrue(DbUtils.isValueEquals(null, null));
+        assertFalse(DbUtils.isValueEquals(null, ""));
+        assertFalse(DbUtils.isValueEquals("", null));
 
         String a = "string a";
         String b = "string b";
         String c = "string a";
 
-        assertTrue(Utils.isValueEquals(a, a));
-        assertTrue(Utils.isValueEquals(a, c));
-        assertFalse(Utils.isValueEquals(a, b));
+        assertTrue(DbUtils.isValueEquals(a, a));
+        assertTrue(DbUtils.isValueEquals(a, c));
+        assertFalse(DbUtils.isValueEquals(a, b));
 
         a = "string a ";
         b = " string a";
-        assertTrue(Utils.isValueEquals(a, b));
+        assertTrue(DbUtils.isValueEquals(a, b));
 
         Boolean boolTrue = true, boolFalse = false;
-        assertTrue(Utils.isValueEquals(boolTrue, 1));
-        assertTrue(Utils.isValueEquals(boolTrue, "true"));
-        assertTrue(Utils.isValueEquals(boolTrue, "TRUE"));
-        assertTrue(Utils.isValueEquals(boolFalse, 0));
-        assertTrue(Utils.isValueEquals(boolFalse, "false"));
-        assertTrue(Utils.isValueEquals(boolFalse, "FALSE"));
+        assertTrue(DbUtils.isValueEquals(boolTrue, 1));
+        assertTrue(DbUtils.isValueEquals(boolTrue, "true"));
+        assertTrue(DbUtils.isValueEquals(boolTrue, "TRUE"));
+        assertTrue(DbUtils.isValueEquals(boolFalse, 0));
+        assertTrue(DbUtils.isValueEquals(boolFalse, "false"));
+        assertTrue(DbUtils.isValueEquals(boolFalse, "FALSE"));
 
         Double doubleA = 3.1415926;
         Float floatA = 3.141592F;
         BigDecimal bdA = new BigDecimal("3.1415926");
-        assertTrue(Utils.isValueEquals(doubleA, "3.1415926"));
-        assertTrue(Utils.isValueEquals(floatA, "3.141592"));
-        assertTrue(Utils.isValueEquals(bdA, "3.1415926"));
+        assertTrue(DbUtils.isValueEquals(doubleA, "3.1415926"));
+        assertTrue(DbUtils.isValueEquals(floatA, "3.141592"));
+        assertTrue(DbUtils.isValueEquals(bdA, "3.1415926"));
 
         Long longA = 31415926L;
         Integer integerA = 3141592;
-        assertTrue(Utils.isValueEquals(longA, "31415926"));
-        assertTrue(Utils.isValueEquals(integerA, "3141592"));
+        assertTrue(DbUtils.isValueEquals(longA, "31415926"));
+        assertTrue(DbUtils.isValueEquals(integerA, "3141592"));
     }
 
     @Test
     public void mapChangesAfterUpdateTest() {
 
         Map<String, Object> changes = new LinkedHashMap<>();
-        assertFalse(Utils.mapChangesAfterUpdate(null, null, changes));
+        assertFalse(DbUtils.mapChangesAfterUpdate(null, null, changes, new ArrayList<>()));
 
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("a", 1);
@@ -183,41 +181,41 @@ public class UtilsTest {
         map.put("a", "A");
         map.put("b", "B");
         map.put("c", "C");
-        assertTrue(Utils.mapChangesAfterUpdate(update, map, changes));
+        assertTrue(DbUtils.mapChangesAfterUpdate(update, map, changes, new ArrayList<>()));
         Map<String, Object> expected = new LinkedHashMap<>();
         map.put("a", "A");
         map.put("b", "B");
         assertEquals(changes, expected);
 
         update.put("f", "F");
-        assertFalse(Utils.mapChangesAfterUpdate(update, map, changes));
+        assertFalse(DbUtils.mapChangesAfterUpdate(update, map, changes, new ArrayList<>()));
     }
 
     @Test
     public void isMapEqualsTest() {
         Map<String, Object> mapA = null, mapB = null;
 
-        assertTrue(Utils.isMapEquals(mapA, mapB));
+        assertTrue(DbUtils.isMapEquals(mapA, mapB));
 
         mapA = new LinkedHashMap<>();
         mapA.put("a", 1);
         mapA.put("b", 2);
         mapA.put("c", 3);
 
-        assertFalse(Utils.isMapEquals(mapA, mapB));
+        assertFalse(DbUtils.isMapEquals(mapA, mapB));
 
         mapB = new LinkedHashMap<>();
         mapB.put("a", 1);
         mapB.put("b", 2);
 
-        assertFalse(Utils.isMapEquals(mapA, mapB));
+        assertFalse(DbUtils.isMapEquals(mapA, mapB));
 
         mapB.put("c", "C");
 
-        assertFalse(Utils.isMapEquals(mapA, mapB));
+        assertFalse(DbUtils.isMapEquals(mapA, mapB));
 
         mapB.put("c", 3);
 
-        assertTrue(Utils.isMapEquals(mapA, mapB));
+        assertTrue(DbUtils.isMapEquals(mapA, mapB));
     }
 }

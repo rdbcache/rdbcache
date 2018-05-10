@@ -43,6 +43,8 @@ public class VersionInfo {
 
     private String briefInfo;
 
+    private String defaultName;
+
     public String getJdkVersion() {
         return jdkVersion;
     }
@@ -91,8 +93,8 @@ public class VersionInfo {
 
         if (briefInfo != null) return briefInfo;
 
-        if (appName.equals("default")) {
-            return "rdbcache";
+        if (appName == null || appName.equals("default")) {
+            return defaultName;
         }
 
         String appBuildTimeStr = appBuildTime;
@@ -114,7 +116,7 @@ public class VersionInfo {
     public String getFullInfo() {
 
         if (appName == null) {
-            return "rdbcache";
+            return defaultName;
         }
 
         String info = getBriefInfo() + "\n";
@@ -125,9 +127,11 @@ public class VersionInfo {
         return info;
     }
 
-    public VersionInfo() {
+    public VersionInfo(String defaultName) {
 
         boolean loaded = false;
+
+        this.defaultName = defaultName;
 
         Properties properties = new Properties();
         try {
@@ -175,7 +179,7 @@ public class VersionInfo {
             Manifest manifest = jarConnection.getManifest();
             attributes = manifest.getMainAttributes();
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         if (attributes == null) return;
 

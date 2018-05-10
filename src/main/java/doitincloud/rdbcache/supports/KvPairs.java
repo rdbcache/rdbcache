@@ -4,9 +4,10 @@
  * @license http://rdbcache.com/license/
  */
 
-package doitincloud.commons.helpers;
+package doitincloud.rdbcache.supports;
 
 import doitincloud.commons.exceptions.ServerErrorException;
+import doitincloud.rdbcache.models.KvIdType;
 import doitincloud.rdbcache.models.KvPair;
 
 import java.util.ArrayList;
@@ -14,6 +15,10 @@ import java.util.List;
 import java.util.Map;
 
 public class KvPairs extends ArrayList<KvPair>{
+
+    public KvPairs(KvIdType idType) {
+        add(new KvPair(idType));
+    }
 
     public KvPairs(String id, String value) {
         add(new KvPair(id, "data", value));
