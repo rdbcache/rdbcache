@@ -289,7 +289,7 @@
             <fileset>
               <directory>${basedir}/src/main/resources</directory>
               <includes>
-                <include>**/data.sql</include>
+                <include>**/*.sql</include>
               </includes>
               <followSymlinks>false</followSymlinks>
             </fileset>

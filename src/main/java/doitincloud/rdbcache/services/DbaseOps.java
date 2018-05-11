@@ -835,7 +835,7 @@ public class DbaseOps {
                 for (int i = 0; i < indexes.size(); i++) {
                     Map<String, Object> index = indexes.get(i);
                     String key_name = (String) index.get("Key_name");
-                    List<String> columns = (List<String>) map.get(key_name);
+                    List<String> columns = (List<String>) mapPerTable.get(key_name);
                     if (columns == null) {
                         columns = new ArrayList<String>();
                         mapPerTable.put(key_name, columns);
@@ -874,12 +874,12 @@ public class DbaseOps {
                 Map<String, Object> index = indexes.get(i);
                 String table = (String) index.get("TABLE_NAME");
                 String key_name = (String) index.get("INDEX_NAME");
-                List<String> columns = (List<String>) map.get(key_name);
                 Map<String, Object> mapPerTable = (Map<String, Object>) map.get(table);
                 if (mapPerTable == null) {
                     mapPerTable = new LinkedHashMap<>();
                     map.put(table, mapPerTable);
                 }
+                List<String> columns = (List<String>) mapPerTable.get(key_name);
                 if (columns == null) {
                     columns = new ArrayList<String>();
                     mapPerTable.put(key_name, columns);
